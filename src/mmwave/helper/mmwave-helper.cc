@@ -2105,11 +2105,11 @@ MmWaveHelper::ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
 void
 MmWaveHelper::EnableTraces (void)
 {
-	//EnableDlPhyTrace ();
-	//EnableUlPhyTrace ();
-	//EnableEnbPacketCountTrace ();
-	//EnableUePacketCountTrace ();
-	//EnableTransportBlockTrace ();
+	EnableDlPhyTrace ();
+	EnableUlPhyTrace ();
+	EnableEnbPacketCountTrace ();
+	EnableUePacketCountTrace ();
+	EnableTransportBlockTrace ();
 	EnableRlcTraces ();
 	EnablePdcpTraces ();
 	EnableMcTraces ();

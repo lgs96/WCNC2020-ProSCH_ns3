@@ -52,7 +52,7 @@ MmWave3gppPropagationLossModel::GetTypeId (void)
     .AddConstructor<MmWave3gppPropagationLossModel> ()
     .AddAttribute ("MinLoss",
                    "The minimum value (dB) of the total loss, used at short ranges.",
-                   DoubleValue (0.0),
+                   DoubleValue (10.0),
                    MakeDoubleAccessor (&MmWave3gppPropagationLossModel::SetMinLoss,
                                        &MmWave3gppPropagationLossModel::GetMinLoss),
                    MakeDoubleChecker<double> ())
@@ -63,7 +63,7 @@ MmWave3gppPropagationLossModel::GetTypeId (void)
 					MakeStringChecker ())
 	.AddAttribute ("Scenario",
 				"The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'",
-				StringValue ("RMa"),
+				StringValue ("UMa"),
 				MakeStringAccessor (&MmWave3gppPropagationLossModel::m_scenario),
 				MakeStringChecker ())
 	.AddAttribute ("OptionalNlos",

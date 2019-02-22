@@ -1357,7 +1357,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 			dci.m_rv = 0;
 			dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
-			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
+	//		NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 			NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
 			SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
 			slotInfo.m_dci = dci;

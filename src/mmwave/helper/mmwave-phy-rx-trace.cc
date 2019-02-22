@@ -189,7 +189,7 @@ MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::
 			NS_FATAL_ERROR ("Could not open tracefile");
 		}
 	}
-	m_rxPacketTraceFile << "DL\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
+	m_rxPacketTraceFile << "DL\t" <<Simulator::Now()<< "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 			<< "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
 			<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
 			<< 10*std::log10(params.m_sinr) << "\t" << " \t" << params.m_corrupt << "\t" <<  params.m_tbler << std::endl;
@@ -209,13 +209,13 @@ MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std:
 	{
 		m_rxPacketTraceFilename = "RxPacketTrace.txt";
 		m_rxPacketTraceFile.open(m_rxPacketTraceFilename.c_str ());
-		m_rxPacketTraceFile << "\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
+		m_rxPacketTraceFile << "\tTime\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
 		if (!m_rxPacketTraceFile.is_open())
 		{
 			NS_FATAL_ERROR ("Could not open tracefile");
 		}
 	}
-	m_rxPacketTraceFile << "UL\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
+	m_rxPacketTraceFile << "UL\t" << Simulator::Now() << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 				<< "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
 				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
 				<< 10*std::log10(params.m_sinr) << " \t" << params.m_corrupt << "\t" << params.m_tbler << std::endl;

@@ -980,7 +980,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
   // FIRST SEGMENT
   LteRlcSduStatusTag tag;
-  (*it)->RemovePacketTag (tag);
+ (*it)->RemovePacketTag (tag);
   if ( (tag.GetStatus () == LteRlcSduStatusTag::FULL_SDU) ||
        (tag.GetStatus () == LteRlcSduStatusTag::FIRST_SEGMENT)
      )

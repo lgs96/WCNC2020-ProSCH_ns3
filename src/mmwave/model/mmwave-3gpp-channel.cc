@@ -180,7 +180,7 @@ MmWave3gppChannel::GetTypeId (void)
 	.SetParent<Object> ()
 	.AddAttribute ("UpdatePeriod",
 				"Enable spatially-consistent UT mobility modeling procedure A, the update period unit is in ms, set to 0 ms to disable update",
-				TimeValue (MilliSeconds (0)),
+				TimeValue (MilliSeconds (100)),
 				MakeTimeAccessor (&MmWave3gppChannel::m_updatePeriod),
 				MakeTimeChecker ())
 	.AddAttribute ("CellScan",
@@ -190,7 +190,7 @@ MmWave3gppChannel::GetTypeId (void)
 				MakeBooleanChecker ())
 	.AddAttribute ("Blockage",
 				"Enable blockage model A (sec 7.6.4.1)",
-				BooleanValue (false),
+				BooleanValue (true),
 				MakeBooleanAccessor (&MmWave3gppChannel::m_blockage),
 				MakeBooleanChecker ())
 	.AddAttribute ("NumNonselfBlocking",

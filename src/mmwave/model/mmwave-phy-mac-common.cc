@@ -143,7 +143,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 							 MakeDoubleChecker<double> ())
 		 .AddAttribute ("NumHarqProcess",
 							 "Number of concurrent stop-and-wait Hybrid ARQ processes per user",
-							 UintegerValue (20),
+							 UintegerValue (10),
 							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_numHarqProcess),
 							 MakeUintegerChecker<uint8_t> ())
 		 .AddAttribute ("HarqDlTimeout",

@@ -388,7 +388,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
-	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
@@ -513,7 +513,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable("McEnbPdcp",LOG_FUNCTION);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_FUNCTION);
+	//LogComponentEnable("LteRlcAm", LOG_LEVEL_ALL);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -525,7 +525,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable("UdpClient", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable ("Socket",LOG_LEVEL_ALL);
-	// LogComponentEnable("UdpSocketImpl", LOG_LEVEL_ALL);
+	/// LogComponentEnable("UdpSocketImpl", LOG_LEVEL_ALL);
 	// LogComponentEnable("UdpL4Protocol", LOG_LEVEL_ALL);
 	//  LogComponentEnable("IpL4Protocol", LOG_LEVEL_ALL);
 	// LogComponentEnable("Ipv4EndPoint", LOG_LEVEL_ALL);
@@ -561,7 +561,7 @@ main (int argc, char *argv[])
 
 	uint16_t ExperimentNum = 2;	
 
-	double simTime = 20;
+	double simTime = 5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = false;
 	bool rlcAmEnabled = true;
@@ -575,14 +575,14 @@ main (int argc, char *argv[])
 	double TxPower = 15;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
-	uint16_t Velocity = 10;
+	uint16_t Velocity = 0;
 	std::string scheduler ="MmWaveFlexTtiMacScheduler";
 	std::string pathLossModel = "BuildingsObstaclePropagationLossModel";
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
 	bool ReadBuilding = false;
-	int BuildingNum = 40;
+	int BuildingNum = 1;
 	int x2LinkDelay = 10;
 	// Command line arguments
 	CommandLine cmd;
@@ -701,9 +701,11 @@ main (int argc, char *argv[])
 	//	NodeContainer mmWaveEnbNodes_73G;
 	NodeContainer lteEnbNodes;
 	NodeContainer allEnbNodes;
+	
+	//Test1: Hold buffer test
 
 	//	mmWaveEnbNodes_73G.Create(3);
-	mmWaveEnbNodes_28G.Create(6);
+	mmWaveEnbNodes_28G.Create(2);
 	lteEnbNodes.Create(1);
 	ueNodes.Create(nodeNum);
 
@@ -714,11 +716,11 @@ main (int argc, char *argv[])
 
 	Vector mmw1Position = Vector(0.0,0.0, 35);  ///28Ghz //path 0
 	Vector mmw2Position = Vector(0.0, 50.0, 35); //28Ghz // path 0
-	Vector mmw3Position = Vector(0.0, 100.0, 35); //28Ghz // path 0
+//	Vector mmw3Position = Vector(0.0, 100.0, 35); //28Ghz // path 0
 
-	Vector mmw4Position = Vector(100.0, 0.0, 35); //28Ghz // path 1
-	Vector mmw5Position = Vector(100.0,50.0, 35);  ///28Ghz //path 1
-	Vector mmw6Position = Vector(100.0, 100, 35); //28Ghz // path 1
+//	Vector mmw4Position = Vector(100.0, 0.0, 35); //28Ghz // path 1
+//	Vector mmw5Position = Vector(100.0,50.0, 35);  ///28Ghz //path 1
+//	Vector mmw6Position = Vector(100.0, 100, 35); //28Ghz // path 1
 	//Vector mmw7Position = Vector (100.0, 60,25);
 	//Vector mmw8Position = Vector(100.0, 90, 25); //73Ghz // path 1
 	// Vector mmw7Position = Vector(0.0, 40, 12); //73Ghz // path 1
@@ -728,11 +730,11 @@ main (int argc, char *argv[])
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
 	enbPositionAlloc->Add (Vector ((double)30.0, -5, 35));
 	enbPositionAlloc->Add (mmw1Position);
-	enbPositionAlloc->Add (mmw3Position);
-	enbPositionAlloc->Add (mmw5Position);
 	enbPositionAlloc->Add (mmw2Position);
-	enbPositionAlloc->Add (mmw4Position);
-	enbPositionAlloc->Add (mmw6Position);
+//	enbPositionAlloc->Add (mmw3Position);
+//	enbPositionAlloc->Add (mmw4Position);
+//	enbPositionAlloc->Add (mmw5Position);
+//	enbPositionAlloc->Add (mmw6Position);
 	//	enbPositionAlloc->Add (mmw7Position);
 	//enbPositionAlloc->Add (mmw8Position);
 
@@ -745,7 +747,7 @@ main (int argc, char *argv[])
 
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
 	//for(uint16_t i =0 ; i<ueNodes.GetN(); i++){
-	uePositionAlloc->Add(Vector(50 ,0,1.5));
+	uePositionAlloc->Add(Vector(-10 ,10,1.5));
 	//uePositionAlloc->Add(Vector(50 ,51,1.5));
 
 	//	uePositionAlloc->Add(Vector(52 ,100,1.5));
@@ -759,17 +761,17 @@ main (int argc, char *argv[])
 	uemobility.Install (ueNodes);
 	uemobility.AssignStreams(ueNodes,0);
 
-	Simulator::Schedule(Seconds(0.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
-	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
-	Simulator::Schedule(Seconds(20.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
+	Simulator::Schedule(Seconds(0.5),&ChangeSpeed, ueNodes.Get(0),Vector(Velocity,0,0));
+//	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
+//	Simulator::Schedule(Seconds(20.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
 
 
 	if(!ReadBuilding)
 	{
-		int Building_xlim_low = 5;
-		int Building_xlim_high = 95;
-		int Building_ylim_low = 5;
-		int Building_ylim_high = 95;
+		//int Building_xlim_low = 5;
+		//int Building_xlim_high = 95;
+		//int Building_ylim_low = 5;
+		//int Building_ylim_high = 95;
 
 		Ptr<Building> building1;
 		//	ofstream file("building_topology.txt");
@@ -777,13 +779,13 @@ main (int argc, char *argv[])
 
 		for (int i = 0; i<BuildingNum; i++){
 
-			double xcoordinate = (double)((int)rand()%(Building_xlim_high-Building_xlim_low)+Building_xlim_low);
-			double ycoordinate = (double)((int)rand()%(Building_ylim_high-Building_ylim_low)+Building_ylim_low);
-			double xlength = rand()%6+1;
-			double ylength = rand()%6+1;
+		//	double xcoordinate = (double)((int)rand()%(Building_xlim_high-Building_xlim_low)+Building_xlim_low);
+		//	double ycoordinate = (double)((int)rand()%(Building_ylim_high-Building_ylim_low)+Building_ylim_low);
+		//	double xlength = rand()%6+1;
+		//	double ylength = rand()%6+1;
 
 			building1 = Create<Building>();
-			building1->SetBoundaries(Box(xcoordinate, xcoordinate + xlength, ycoordinate, ycoordinate + ylength,0,35));
+			building1->SetBoundaries(Box(0, 10, 2,8,0,35));
 
 			//		file<<xcoordinate<<"\t"<<xcoordinate + xlength<<"\t"<<ycoordinate<<"\t"<<ycoordinate + ylength<<std::endl;
 		}
@@ -904,7 +906,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1000Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("500Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

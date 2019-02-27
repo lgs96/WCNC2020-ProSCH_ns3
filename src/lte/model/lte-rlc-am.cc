@@ -53,12 +53,19 @@ LteRlcAm::LteRlcAm ()
   m_txedBuffer.resize (1024);
   m_txedBufferSize = 0;
 
+  //Process1
+  m_holdBufferSize = 0;
+
   // LL HO
   m_transmittingRlcSduBufferSize = 0;
   m_txedRlcSduBuffer.resize (0);
   m_txedRlcSduBufferSize = 0;
   is_fragmented = 0;
   //
+
+  //Process1
+  m_enableHoldBuffer =false;
+  m_allowedCellId = 0xfffa;
 
   m_statusPduRequested = false;
   m_statusPduBufferSize = 0;
@@ -202,6 +209,10 @@ LteRlcAm::DoDispose ()
 
   m_txonBuffer.clear ();
   m_txonBufferSize = 0;
+
+  m_holdBuffer.clear ();
+  m_holdBufferSize = 0;
+
   m_txedBuffer.clear ();
   m_txedBufferSize = 0;
   m_retxBuffer.clear ();
@@ -221,6 +232,10 @@ LteRlcAm::DoDispose ()
   is_fragmented = 0;
   m_txedRlcSduBuffer.clear ();
   m_txedRlcSduBufferSize = 0;
+
+  //Process1
+  m_enableHoldBuffer =false;
+  m_allowedCellId = 0xfffb;
 
   m_traceBufferSizeEvent.Cancel();
   m_bufferSizeFile.close();
@@ -252,6 +267,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
       LteRlcSduStatusTag tag;
       tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
       p->AddPacketTag (tag);
+
 
       NS_LOG_INFO ("Txon Buffer: New packet added");
       m_txonBuffer.push_back (p);
@@ -296,12 +312,87 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
 }
 
+void
+LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
+{
+  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
+
+  if(m_enableAqm == false)
+  {
+    if (m_txonBufferSize + m_holdBufferSize + p->GetSize () <= m_maxTxBufferSize)
+    {
+      /** Store arrival time */
+      Time now = Simulator::Now ();
+      RlcTag timeTag (now);
+      p->AddPacketTag (timeTag);
+
+      /** Store PDCP PDU */
+
+      LteRlcSduStatusTag tag;
+      tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
+      p->AddPacketTag (tag);
+
+      if(!m_enableHoldBuffer||sourceCellId == m_allowedCellId){
+    	  NS_LOG_INFO ("Txon Buffer: New packet added");
+      	  m_txonBuffer.push_back (p);
+      	  m_txonBufferSize += p->GetSize ();
+      	  NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
+      	  NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+      }
+      else{
+    	  NS_LOG_INFO ("Hold Buffer: New packet added");
+		  m_holdBuffer.push_back (p);
+		  m_holdBufferSize += p->GetSize ();
+		  NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
+		  NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
+      }
+    }
+    else
+    {
+      // Discard full RLC SDU
+      NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
+      NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
+      NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
+      NS_LOG_LOGIC ("holdBufferSize   ="<<m_holdBufferSize);
+      NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
+    }
+  }
+  else // Use CoDel queue
+  {
+    //Store arrival time
+    Time now = Simulator::Now ();
+    RlcTag timeTag (now);
+    p->AddPacketTag (timeTag);
+
+    //Store PDCP PDU
+
+    LteRlcSduStatusTag tag;
+    tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
+    p->AddPacketTag (tag);
+
+    NS_LOG_LOGIC ("Txon Buffer: New packet added");
+    Ptr<Ipv4QueueDiscItem> item;
+    Ipv4Header ipv4Header;
+    Address dest;
+    item = Create<Ipv4QueueDiscItem> (p, dest, 0, ipv4Header);
+    m_txonQueue->Enqueue (item);
+  }
+
+
+  /** Report Buffer Status */
+  DoReportBufferStatus ();
+  m_rbsTimer.Cancel ();
+  m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
+}
+
 void 
 LteRlcAm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
   NS_LOG_INFO("Send MC PDU received from " << params.sourceCellId << " in cell " << params.targetCellId);
-  DoTransmitPdcpPdu(params.ueData);
+  NS_LOG_LOGIC("Send MC PDU received from " << params.sourceCellId << " in cell " << params.targetCellId);
+  //DoTransmitPdcpPdu(params.ueData);
+  DoTransmitPdcpPdu_test1(params.ueData,params.sourceCellId);
 }
 
 
@@ -1159,6 +1250,13 @@ Ptr<Packet>
 LteRlcAm::GetSegmentedRlcsdu()
 {
   return m_segmented_rlcsdu;
+}
+
+void
+LteRlcAm::RlcHoldBuffer(uint16_t sourceCellId, uint16_t targetCellId)
+{
+	m_allowedCellId = sourceCellId;
+  	m_enableHoldBuffer = true;
 }
 
 /* LL HO
@@ -2667,6 +2765,7 @@ LteRlcAm::DoReportBufferStatus (void)
   Time now = Simulator::Now ();
 
   NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+  NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
   NS_LOG_LOGIC ("retxBufferSize = " << m_retxBufferSize);
   NS_LOG_LOGIC ("txedBufferSize = " << m_txedBufferSize);
   NS_LOG_LOGIC ("VT(A) = " << m_vtA);

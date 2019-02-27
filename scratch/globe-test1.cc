@@ -513,7 +513,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable("McEnbPdcp",LOG_FUNCTION);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_LEVEL_ALL);
+	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -602,7 +602,7 @@ main (int argc, char *argv[])
 
 	cmd.Parse(argc, argv);
 	// Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
-	Config::SetDefault("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(3));
+	Config::SetDefault("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(2));
 	//	Config::SetDefault("ns3::McUePdcp::EnableReordering", BooleanValue(isEnablePdcpReordering));
 	//	Config::SetDefault("ns3::McEnbPdcp::EnableDuplication", BooleanValue(isDuplication));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
@@ -747,7 +747,7 @@ main (int argc, char *argv[])
 
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
 	//for(uint16_t i =0 ; i<ueNodes.GetN(); i++){
-	uePositionAlloc->Add(Vector(-10 ,10,1.5));
+	uePositionAlloc->Add(Vector(-10 ,25,1.5));
 	//uePositionAlloc->Add(Vector(50 ,51,1.5));
 
 	//	uePositionAlloc->Add(Vector(52 ,100,1.5));
@@ -785,7 +785,7 @@ main (int argc, char *argv[])
 		//	double ylength = rand()%6+1;
 
 			building1 = Create<Building>();
-			building1->SetBoundaries(Box(-2, 8, 2,4,0,35));
+			building1->SetBoundaries(Box(0, 10, 10,15,0,35));
 
 			//		file<<xcoordinate<<"\t"<<xcoordinate + xlength<<"\t"<<ycoordinate<<"\t"<<ycoordinate + ylength<<std::endl;
 		}

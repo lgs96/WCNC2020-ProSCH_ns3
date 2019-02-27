@@ -61,6 +61,8 @@ public:
    */
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p);
 
+  virtual void DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId);
+
   /**
    * RLC EPC X2 SAP
    */
@@ -88,10 +90,16 @@ public:
     return m_txedRlcSduBuffer;
   }
 
+  //Process1 gsoul
+  void RlcHoldBuffer(uint16_t sourceCellId, uint16_t targetCellId);
+
 private:
   //whether the last SDU in the txonBuffer is a complete SDU.
   bool is_fragmented;
 
+  //Process1 gsoul
+  bool m_enableHoldBuffer;
+  uint16_t m_allowedCellId;
   //
   std::vector < Ptr <Packet> > m_txedRlcSduBuffer;
   uint32_t m_txedRlcSduBufferSize;
@@ -147,6 +155,8 @@ private:
 
 private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
+    //Process1
+    std::vector < Ptr<Packet> > m_holdBuffer;
 
     struct RetxSegPdu
     {
@@ -176,6 +186,9 @@ private:
   std::map <uint32_t, Ptr <Packet> > m_transmittingRlcSduBuffer;
 
     uint32_t m_txonBufferSize;
+    //Process1
+    uint32_t m_holdBufferSize;
+
     uint32_t m_retxBufferSize;
     uint32_t m_txedBufferSize;
 

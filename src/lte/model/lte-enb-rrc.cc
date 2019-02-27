@@ -1024,9 +1024,10 @@ void UeManager::SendHoldBufferMsg (EpcX2SapUser::HoldBufferParams params){
 					m_rlcMap.begin(); rlcIt != m_rlcMap.end(); ++rlcIt) {
 		Ptr <LteRlc> rlc = rlcIt->second->m_rlc;
 
+		//operate only on RLCAM
 		if (0 != rlc->GetObject<LteRlcAm>()){
 				Ptr<LteRlcAm> rlcAm = rlc->GetObject<LteRlcAm>();
-				//rlcAm -> RlcHoldBuffer(params.sourceCellId,params.targetCellId);
+				rlcAm -> RlcHoldBuffer(params.sourceCellId,params.targetCellId);
 		}
 	}
 }

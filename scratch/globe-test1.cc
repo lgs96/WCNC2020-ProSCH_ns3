@@ -575,7 +575,7 @@ main (int argc, char *argv[])
 	double TxPower = 15;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
-	uint16_t Velocity = 0;
+	uint16_t Velocity = 10;
 	std::string scheduler ="MmWaveFlexTtiMacScheduler";
 	std::string pathLossModel = "BuildingsObstaclePropagationLossModel";
 	std::string X2dataRate = "100Gb/s";
@@ -785,7 +785,7 @@ main (int argc, char *argv[])
 		//	double ylength = rand()%6+1;
 
 			building1 = Create<Building>();
-			building1->SetBoundaries(Box(0, 10, 2,8,0,35));
+			building1->SetBoundaries(Box(-2, 8, 2,4,0,35));
 
 			//		file<<xcoordinate<<"\t"<<xcoordinate + xlength<<"\t"<<ycoordinate<<"\t"<<ycoordinate + ylength<<std::endl;
 		}

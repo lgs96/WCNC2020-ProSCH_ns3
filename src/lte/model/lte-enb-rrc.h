@@ -391,6 +391,8 @@ public:
    */
   void RecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params);
 
+  void SendHoldBufferMsg (EpcX2SapUser::HoldBufferParams params);
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -408,7 +410,6 @@ private:
    * @param the bearer id, used only if mcLteToMmWaveForwarding is true
    */
   void ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTeid, bool mcLteToMmWaveForwarding, bool mcMmToMmWaveForwarding, uint8_t bid);
-
   
   bool m_firstConnection;
   bool m_receivedLteMmWaveHandoverCompleted;

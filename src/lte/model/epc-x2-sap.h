@@ -279,6 +279,7 @@ public:
     Ptr<Packet>         rrcContext;
   };
 
+
   /**
    * \brief Parameters of the HANDOVER PREPARATION FAILURE message.
    *
@@ -396,6 +397,11 @@ public:
     bool useMmWaveConnection;
   }; 
 
+  struct HoldBufferParams
+  {
+	uint16_t sourceCellId;
+	uint16_t targetCellId;
+  };
 };
 
 

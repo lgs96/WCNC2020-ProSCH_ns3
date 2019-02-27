@@ -72,8 +72,8 @@ public:
     NotifyMmWaveLteHandover = 16,
     NotifyCoordinatorHandoverFailed = 17,
     SwitchConnection        = 18,
-    SecondaryCellHandoverCompleted = 19
-
+    SecondaryCellHandoverCompleted = 19,
+	EndMarker				= 20
   };
 
   enum TypeOfMessage_t {
@@ -624,6 +624,33 @@ private:
   uint8_t m_drbid;
   bool     m_useMmWaveConnection;
 };
+
+class EpcX2EndMarkerHeader : public Header
+{
+public:
+	EpcX2EndMarkerHeader ();
+  virtual ~EpcX2EndMarkerHeader ();
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual void Print (std::ostream &os) const;
+
+  uint32_t GetGtpTeid () const;
+  void SetGtpTeid (uint32_t gtpTeid);
+
+  uint32_t GetLengthOfIes () const;
+  uint32_t GetNumberOfIes () const;
+
+private:
+  uint32_t          m_numberOfIes;
+  uint32_t          m_headerLength;
+
+  uint32_t m_gtpTeid;
+};
+
 
 } // namespace ns3
 

@@ -566,6 +566,28 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       m_x2SapUser->RecvSecondaryCellHandoverCompleted(params);
     }
+  else if (procedureCode == EpcX2Header::EndMarker)
+    {
+	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
+
+      EpcX2EndMarkerHeader x2emHeader;
+	  packet->RemoveHeader(x2emHeader);
+
+	  EpcX2SapUser::EndMarkerParams params;
+	  params.gtpTeid = x2emHeader.GetGtpTeid();
+
+	  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+
+	  if(user != 0)
+	  {
+		  user -> GetEndMarker ();
+	  }
+	  else
+	  {
+		  NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+	  }
+    }
+
   else
     {
       NS_ASSERT_MSG (false, "ProcedureCode NOT SUPPORTED!!!");
@@ -1240,6 +1262,52 @@ EpcX2::DoSendMcPdcpPdu(EpcX2Sap::UeDataParams params)
 
   NS_LOG_INFO ("Forward MC UE DATA through X2 interface");
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));  
+}
+
+//Process3 gsoul
+void
+EpcX2::DoSendEndMarker (EpcX2Sap::EndMarkerParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+
+  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
+	                 "Socket infos not defined for targetCellId = " << params.targetCellId);
+
+  Ptr<Socket> localSocket = m_x2InterfaceSockets [params.targetCellId]->m_localCtrlPlaneSocket;
+  Ipv4Address remoteIpAddr = m_x2InterfaceSockets [params.targetCellId]->m_remoteIpAddr;
+
+  NS_LOG_LOGIC ("localSocket = " << localSocket);
+  NS_LOG_LOGIC ("remoteIpAddr = " << remoteIpAddr);
+
+  NS_LOG_INFO ("Send X2 message: END MARKER");
+
+  EpcX2EndMarkerHeader x2emHeader;
+  x2emHeader.SetGtpTeid (params.gtpTeid);
+
+  EpcX2Header x2Header;
+  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
+  x2Header.SetProcedureCode (EpcX2Header::EndMarker);
+  x2Header.SetLengthOfIes (x2emHeader.GetLengthOfIes ());
+  x2Header.SetNumberOfIes (x2emHeader.GetNumberOfIes ());
+
+  NS_LOG_INFO ("X2 header: " << x2Header);
+  NS_LOG_INFO ("X2 End Marker: " << x2emHeader);
+
+  // Build the X2 packet
+  Ptr<Packet> packet = Create <Packet> ();
+  packet->AddHeader (x2emHeader);
+  packet->AddHeader (x2Header);
+
+  EpcX2Tag tag (Simulator::Now());
+  packet->AddPacketTag (tag);
+
+  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+  // Send the X2 message through the socket
+  localSocket->SendTo (packet, 0, InetSocketAddress (remoteIpAddr, m_x2cUdpPort));
 }
 
 void

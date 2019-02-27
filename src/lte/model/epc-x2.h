@@ -178,6 +178,9 @@ protected:
   virtual void DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params);
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
+  //Process3 gsoul
+  virtual void DoSendEndMarker (EpcX2SapProvider::EndMarkerParams params);
+
   virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params);
   virtual void DoSendMcHandoverRequest (EpcX2SapProvider::SecondaryHandoverParams params);

@@ -93,6 +93,9 @@ public:
   //Process1 gsoul
   void RlcHoldBuffer(uint16_t sourceCellId, uint16_t targetCellId);
 
+  //Process3 gsoul
+  void DoGetEndMarker ();
+
 private:
   //whether the last SDU in the txonBuffer is a complete SDU.
   bool is_fragmented;

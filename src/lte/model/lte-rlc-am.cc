@@ -64,8 +64,8 @@ LteRlcAm::LteRlcAm ()
   //
 
   //Process1
-  m_enableHoldBuffer =false;
-  m_allowedCellId = 0xfffa;
+//  m_enableHoldBuffer =false;
+//  m_allowedCellId = 0xfffa;
 
   m_statusPduRequested = false;
   m_statusPduBufferSize = 0;
@@ -234,8 +234,8 @@ LteRlcAm::DoDispose ()
   m_txedRlcSduBufferSize = 0;
 
   //Process1
-  m_enableHoldBuffer =false;
-  m_allowedCellId = 0xfffb;
+//  m_enableHoldBuffer = true;
+//  m_allowedCellId = 0xfffb;
 
   m_traceBufferSizeEvent.Cancel();
   m_bufferSizeFile.close();
@@ -257,12 +257,9 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
   {
     if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
     {
-      /** Store arrival time */
       Time now = Simulator::Now ();
       RlcTag timeTag (now);
       p->AddPacketTag (timeTag);
-
-      /** Store PDCP PDU */
 
       LteRlcSduStatusTag tag;
       tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
@@ -304,7 +301,6 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
     item = Create<Ipv4QueueDiscItem> (p, dest, 0, ipv4Header);
     m_txonQueue->Enqueue (item);
   }
-  
 
   /** Report Buffer Status */
   DoReportBufferStatus ();
@@ -328,6 +324,8 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
 
       /** Store PDCP PDU */
 
+      NS_LOG_LOGIC ("RLC Buffering..packet from "<<sourceCellId);
+      NS_LOG_LOGIC ("enable Hold Buffer: "<<m_enableHoldBuffer<<" Allowed cell id: "<<m_allowedCellId);
       LteRlcSduStatusTag tag;
       tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
       p->AddPacketTag (tag);
@@ -341,10 +339,10 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
       }
       else{
     	  NS_LOG_INFO ("Hold Buffer: New packet added");
-		  m_holdBuffer.push_back (p);
-		  m_holdBufferSize += p->GetSize ();
-		  NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
-		  NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
+	  m_holdBuffer.push_back (p);
+	  m_holdBufferSize += p->GetSize ();
+          NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
+          NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
       }
     }
     else
@@ -395,6 +393,37 @@ LteRlcAm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
   DoTransmitPdcpPdu_test1(params.ueData,params.sourceCellId);
 }
 
+//Process1, enable hold buffer
+void
+LteRlcAm::RlcHoldBuffer(uint16_t sourceCellId, uint16_t targetCellId)
+{
+  NS_LOG_FUNCTION(this);
+  NS_LOG_LOGIC("Enable Hold Buffer at "<<Simulator::Now() <<". From now on, only forwarded packets are transmitted.");
+  m_allowedCellId = sourceCellId;
+  m_enableHoldBuffer = true;
+  NS_LOG_LOGIC("source: "<<sourceCellId<<"target: "<<targetCellId<<"m_enableHoldBuffer: "<<m_enableHoldBuffer);
+}
+
+//Process3, after receive end marker packet, RLC layer transfer its hold buffer to tx on buffer and disable hold buffer
+void
+LteRlcAm::DoGetEndMarker()
+{
+  NS_LOG_FUNCTION(this);
+  NS_LOG_LOGIC("Received end marker at " << Simulator::Now() << ". Transfer hold buffer to txon buffer.");
+
+  m_allowedCellId = 0xfffa;
+  m_enableHoldBuffer = false;
+
+  //Transfer hold buffer's packets to tx on  buffer
+  while (!m_holdBuffer.empty())
+  {
+	Ptr <Packet> p = *(m_holdBuffer.begin());
+    m_txonBuffer.push_back(p);
+    m_holdBufferSize -= (*(m_holdBuffer.begin()))->GetSize();
+    m_holdBuffer.erase (m_holdBuffer.begin());
+    NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
+  }
+}
 
 /**
  * MAC SAP
@@ -1250,13 +1279,6 @@ Ptr<Packet>
 LteRlcAm::GetSegmentedRlcsdu()
 {
   return m_segmented_rlcsdu;
-}
-
-void
-LteRlcAm::RlcHoldBuffer(uint16_t sourceCellId, uint16_t targetCellId)
-{
-	m_allowedCellId = sourceCellId;
-  	m_enableHoldBuffer = true;
 }
 
 /* LL HO

@@ -980,7 +980,7 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 						NS_LOG_LOGIC(
 								"ueData size = " << params.ueData->GetSize ());
 					} else {
-						NS_LOG_INFO("Forward to target cell RLC in HO");
+						NS_LOG_LOGIC("Forward to target cell RLC in HO");
 						m_rrc->m_x2SapProvider->ForwardRlcPdu(params);
 						NS_LOG_LOGIC("sourceCellId = " << params.sourceCellId);
 						NS_LOG_LOGIC("targetCellId = " << params.targetCellId);
@@ -1013,6 +1013,16 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 		m_x2forwardingBuffer.erase(m_x2forwardingBuffer.begin());
 		NS_LOG_LOGIC(
 				this << " After forwarding: buffer size = " << m_x2forwardingBufferSize);
+	}
+	//Process3: send end marker packet after forwarding all buffered packets in x2 buffer.
+	if(!mcLteToMmWaveForwarding)
+	{
+		EpcX2Sap::EndMarkerParams params;
+		params.sourceCellId = m_rrc->m_cellId;
+		params.targetCellId = m_targetCellId;
+		params.gtpTeid = gtpTeid;
+
+		m_rrc->m_x2SapProvider->SendEndMarker (params);
 	}
 }
 

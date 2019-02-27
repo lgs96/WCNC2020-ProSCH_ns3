@@ -116,6 +116,12 @@ LteRlcTm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
   DoTransmitPdcpPdu(params.ueData);
 }
 
+//Process3
+void
+LteRlcTm::DoGetEndMarker()
+{
+}
+
 /**
  * MAC SAP
  */

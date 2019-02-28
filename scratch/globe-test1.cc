@@ -21,6 +21,7 @@
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
 #include "ns3/mobility-module.h"
+#include "ns3/lte-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/config-store.h"
@@ -505,7 +506,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	//LogComponentEnable("EpcX2",LOG_FUNCTION);
+	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);

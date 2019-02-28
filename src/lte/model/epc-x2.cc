@@ -415,6 +415,28 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
           m_x2SapUser->RecvUeContextRelease (params);
         }
+      //Process3 gsoul, now end marker will be sent with ue context release message, and get timer to count whether packets from source cell come or not come
+      else
+      	{
+    	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
+
+    	  EpcX2EndMarkerHeader x2emHeader;
+    	  packet->RemoveHeader(x2emHeader);
+
+    	  EpcX2SapUser::EndMarkerParams params;
+    	  params.gtpTeid = x2emHeader.GetGtpTeid();
+
+		  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+
+	      if(user != 0)
+	      {
+	    	user -> GetEndMarker ();
+		  }
+		  else
+		  {
+			NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+		   }
+      	 }
     }
   else if (procedureCode == EpcX2Header::ResourceStatusReporting)
     {
@@ -566,7 +588,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       m_x2SapUser->RecvSecondaryCellHandoverCompleted(params);
     }
-  else if (procedureCode == EpcX2Header::EndMarker)
+  //Process3 this function is moved to UeContextRelease for late end marker
+ /* else if (procedureCode == EpcX2Header::EndMarker)
     {
 	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
 
@@ -586,7 +609,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 	  {
 		  NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
 	  }
-    }
+    }*/
 
   else
     {
@@ -1288,8 +1311,9 @@ EpcX2::DoSendEndMarker (EpcX2Sap::EndMarkerParams params)
   x2emHeader.SetGtpTeid (params.gtpTeid);
 
   EpcX2Header x2Header;
-  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
-  x2Header.SetProcedureCode (EpcX2Header::EndMarker);
+  //modified for simultaneous transport with ue context release
+  x2Header.SetMessageType (EpcX2Header::SuccessfulOutcome);
+  x2Header.SetProcedureCode (EpcX2Header::UeContextRelease);
   x2Header.SetLengthOfIes (x2emHeader.GetLengthOfIes ());
   x2Header.SetNumberOfIes (x2emHeader.GetNumberOfIes ());
 

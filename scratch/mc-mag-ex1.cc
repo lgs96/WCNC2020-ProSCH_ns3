@@ -388,7 +388,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
-	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
@@ -505,7 +505,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
@@ -513,7 +513,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable("McEnbPdcp",LOG_FUNCTION);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -581,8 +581,8 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
-	int BuildingNum = 60;
+	bool ReadBuilding = true;
+	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments
 	CommandLine cmd;

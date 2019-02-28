@@ -324,7 +324,7 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
 
       /** Store PDCP PDU */
 
-      NS_LOG_LOGIC ("RLC Buffering..packet from "<<sourceCellId);
+      NS_LOG_LOGIC (Simulator::Now()<<" RLC Buffering..packet from "<<sourceCellId);
       NS_LOG_LOGIC ("enable Hold Buffer: "<<m_enableHoldBuffer<<" Allowed cell id: "<<m_allowedCellId);
       LteRlcSduStatusTag tag;
       tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
@@ -339,8 +339,8 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
       }
       else{
     	  NS_LOG_INFO ("Hold Buffer: New packet added");
-	  m_holdBuffer.push_back (p);
-	  m_holdBufferSize += p->GetSize ();
+    	  m_holdBuffer.push_back (p);
+    	  m_holdBufferSize += p->GetSize ();
           NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
           NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
       }
@@ -390,6 +390,19 @@ LteRlcAm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
   NS_LOG_INFO("Send MC PDU received from " << params.sourceCellId << " in cell " << params.targetCellId);
   NS_LOG_LOGIC("Send MC PDU received from " << params.sourceCellId << " in cell " << params.targetCellId);
   //DoTransmitPdcpPdu(params.ueData);
+  if(m_waitingEndMarker && params.sourceCellId == m_allowedCellId)
+  {
+	m_now = Simulator::Now();
+	m_previousInterval = m_now-m_previous;
+	m_previous = m_now;
+	Simulator::Cancel(m_getEndMarker);
+	m_maxInterval = Max (m_maxInterval, m_previousInterval);
+	NS_LOG_LOGIC(m_previous.GetSeconds()<< " Packet interval during handover is "<<m_previousInterval<<". Max interval is "<<m_maxInterval);
+	m_inputInterval = (Seconds(0.001),m_maxInterval);
+
+	m_getEndMarker = Simulator::Schedule(m_inputInterval,&LteRlcAm::FreeHoldBuffer,this);
+  }
+
   DoTransmitPdcpPdu_test1(params.ueData,params.sourceCellId);
 }
 
@@ -398,27 +411,37 @@ void
 LteRlcAm::RlcHoldBuffer(uint16_t sourceCellId, uint16_t targetCellId)
 {
   NS_LOG_FUNCTION(this);
-  NS_LOG_LOGIC("Enable Hold Buffer at "<<Simulator::Now() <<". From now on, only forwarded packets are transmitted.");
+  NS_LOG_LOGIC("Enable Hold Buffer at "<<Simulator::Now() <<". From now on, only packets from source cell are transmitted.");
   m_allowedCellId = sourceCellId;
   m_enableHoldBuffer = true;
-  NS_LOG_LOGIC("source: "<<sourceCellId<<"target: "<<targetCellId<<"m_enableHoldBuffer: "<<m_enableHoldBuffer);
+  NS_LOG_LOGIC("source: "<<sourceCellId<<" target: "<<targetCellId<<" m_enableHoldBuffer: "<<m_enableHoldBuffer);
 }
 
 //Process3, after receive end marker packet, RLC layer transfer its hold buffer to tx on buffer and disable hold buffer
 void
 LteRlcAm::DoGetEndMarker()
 {
+  m_previous = Simulator::Now();
+  m_waitingEndMarker = true;
+  m_getEndMarker = Simulator::Schedule(Seconds(0.001),&LteRlcAm::FreeHoldBuffer,this);
+}
+
+void
+LteRlcAm::FreeHoldBuffer(void)
+{
   NS_LOG_FUNCTION(this);
-  NS_LOG_LOGIC("Received end marker at " << Simulator::Now() << ". Transfer hold buffer to txon buffer.");
+  NS_LOG_LOGIC("Free Hold Buffer. Real end of the handover");
 
   m_allowedCellId = 0xfffa;
   m_enableHoldBuffer = false;
+  m_waitingEndMarker = false;
 
   //Transfer hold buffer's packets to tx on  buffer
   while (!m_holdBuffer.empty())
   {
-	Ptr <Packet> p = *(m_holdBuffer.begin());
+    Ptr <Packet> p = *(m_holdBuffer.begin());
     m_txonBuffer.push_back(p);
+    m_txonBufferSize += p-> GetSize();
     m_holdBufferSize -= (*(m_holdBuffer.begin()))->GetSize();
     m_holdBuffer.erase (m_holdBuffer.begin());
     NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);

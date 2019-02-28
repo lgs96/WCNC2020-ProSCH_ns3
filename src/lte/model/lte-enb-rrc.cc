@@ -1015,7 +1015,8 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 				this << " After forwarding: buffer size = " << m_x2forwardingBufferSize);
 	}
 	//Process3: send end marker packet after forwarding all buffered packets in x2 buffer.
-	if(!mcLteToMmWaveForwarding)
+	//190228 this modification is moved to RecvSecondaryCellHandoverCompleted  function
+/*	if(!mcLteToMmWaveForwarding)
 	{
 		EpcX2Sap::EndMarkerParams params;
 		params.sourceCellId = m_rrc->m_cellId;
@@ -1023,7 +1024,7 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 		params.gtpTeid = gtpTeid;
 
 		m_rrc->m_x2SapProvider->SendEndMarker (params);
-	}
+	}*/
 }
 
 //Process1 gsoul send hold buffer message to RLC
@@ -1794,6 +1795,18 @@ void UeManager::RecvSecondaryCellHandoverCompleted(
 	ueCtxReleaseParams.newEnbUeX2apId = m_mmWaveRnti;
 	ueCtxReleaseParams.sourceCellId = oldMmWaveCellId;
 	m_rrc->m_x2SapProvider->SendUeContextRelease(ueCtxReleaseParams);
+
+	//Process3
+	// send End Marker to the target cell
+	for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator It =
+			m_drbMap.begin(); It != m_drbMap.end(); ++It) {
+				EpcX2Sap::EndMarkerParams params;
+				params.sourceCellId = m_rrc->m_cellId;
+				params.targetCellId = m_mmWaveCellId;
+				params.gtpTeid = It->second->m_gtpTeid;
+
+				m_rrc->m_x2SapProvider->SendEndMarker (params);
+	}
 }
 
 void UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection) {

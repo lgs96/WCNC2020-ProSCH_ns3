@@ -388,7 +388,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
-	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
@@ -510,10 +510,10 @@ main (int argc, char *argv[])
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
 	//LogComponentEnable("EpcX2Header", LOG_FUNCTION);
-        //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
+	// LogComponentEnable("McEnbPdcp",LOG_FUNCTION);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -563,7 +563,7 @@ main (int argc, char *argv[])
 
 	double simTime = 20;
 	double interPacketInterval = 20;  // 500 microseconds
-	bool harqEnabled = true;
+	bool harqEnabled = false;
 	bool rlcAmEnabled = true;
 	bool fixedTti = false;
 	unsigned symPerSf = 24;
@@ -581,8 +581,8 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
-	int BuildingNum = 80;
+	bool ReadBuilding = true;
+	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments
 	CommandLine cmd;
@@ -648,7 +648,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -766,10 +766,10 @@ main (int argc, char *argv[])
 
 	if(!ReadBuilding)
 	{
-		int Building_xlim_low = 2;
-		int Building_xlim_high = 98;
-		int Building_ylim_low = 2;
-		int Building_ylim_high = 98;
+		int Building_xlim_low = 5;
+		int Building_xlim_high = 95;
+		int Building_ylim_low = 5;
+		int Building_ylim_high = 95;
 
 		Ptr<Building> building1;
 		//	ofstream file("building_topology.txt");
@@ -779,8 +779,8 @@ main (int argc, char *argv[])
 
 			double xcoordinate = (double)((int)rand()%(Building_xlim_high-Building_xlim_low)+Building_xlim_low);
 			double ycoordinate = (double)((int)rand()%(Building_ylim_high-Building_ylim_low)+Building_ylim_low);
-			double xlength = rand()%8+1;
-			double ylength = rand()%8+1;
+			double xlength = rand()%6+1;
+			double ylength = rand()%6+1;
 
 			building1 = Create<Building>();
 			building1->SetBoundaries(Box(xcoordinate, xcoordinate + xlength, ycoordinate, ycoordinate + ylength,0,35));

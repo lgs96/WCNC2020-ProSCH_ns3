@@ -80,6 +80,8 @@ McEnbPdcp::McEnbPdcp ()
   m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<McEnbPdcp> (this);
   m_rlcSapUser = new McPdcpSpecificLteRlcSapUser (this);
   m_epcX2PdcpUser = new EpcX2PdcpSpecificUser<McEnbPdcp> (this);
+  //Process4
+  m_previousParams.targetCellId = UINT16_MAX;
 }
 
 McEnbPdcp::~McEnbPdcp ()
@@ -247,6 +249,32 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
     NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
     m_ueDataParams.ueData = p;
     m_epcX2PdcpProvider->SendMcPdcpPdu (m_ueDataParams);
+    ///////////////////////////////////////////
+    //Process4: send end marker from mc-enb-pdcp
+    if(m_previousParams.targetCellId == UINT16_MAX)
+    {
+      NS_LOG_INFO (this<<" Initial setup for end marker");
+      m_previousParams.sourceCellId = m_ueDataParams.sourceCellId;
+      m_previousParams.targetCellId = m_ueDataParams.targetCellId;
+      m_previousParams.gtpTeid = m_ueDataParams.gtpTeid;
+      NS_LOG_INFO (this<<"Source Cell Id: "<<m_previousParams.sourceCellId);
+      NS_LOG_INFO (this<<"Target Cell Id: "<<m_previousParams.targetCellId);
+      NS_LOG_INFO (this<<"GtpTeid: "<<m_previousParams.gtpTeid);
+    }
+    else if(m_ueDataParams.targetCellId != m_previousParams.targetCellId)
+    {
+      NS_LOG_INFO (this<<" Send end marker from McPdcp");
+      NS_LOG_INFO (this<<" TargetCellId is "<<m_previousParams.targetCellId);
+      NS_LOG_INFO (this<<"Source Cell Id: "<<m_previousParams.sourceCellId);
+      NS_LOG_INFO (this<<"Target Cell Id: "<<m_previousParams.targetCellId);
+      NS_LOG_INFO (this<<"GtpTeid: "<<m_previousParams.gtpTeid);
+      m_previousParams.ueData = NULL;
+      m_epcX2PdcpProvider -> SendEndMarker (m_previousParams);
+      m_previousParams.sourceCellId = m_ueDataParams.sourceCellId;
+      m_previousParams.targetCellId = m_ueDataParams.targetCellId;
+      m_previousParams.gtpTeid = m_ueDataParams.gtpTeid;
+    }
+    ///////////////////////////////////////////
   } 
   else 
   {

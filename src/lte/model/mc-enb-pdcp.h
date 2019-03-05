@@ -227,6 +227,8 @@ private:
 
   // UeDataParams needed to forward data to MmWave
   EpcX2Sap::UeDataParams m_ueDataParams;
+  //Process4
+  EpcX2Sap::UeDataParams m_previousParams;
 
   /**
    * Constants. See section 7.2 in TS 36.323

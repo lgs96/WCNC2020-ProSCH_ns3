@@ -1091,6 +1091,9 @@ private:
   void DoRecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params);
   void DoRecvRlcSetupCompleted (EpcX2SapUser::UeDataParams params);
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
+  //Process4
+  void DoRecvEndMarker ();
+
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
   void DoRecvMcHandoverRequest(EpcX2SapUser::SecondaryHandoverParams params);
   void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::SecondaryHandoverParams params);
@@ -1553,6 +1556,9 @@ private:
 
   uint32_t m_x2_received_cnt;
 
+  //Process4 - judge whether end marker packet arrived or not
+  bool m_isEnd;
+  EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
 }; // end of `class LteEnbRrc`
 
 

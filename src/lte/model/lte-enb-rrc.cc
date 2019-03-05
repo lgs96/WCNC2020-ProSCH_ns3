@@ -1798,15 +1798,15 @@ void UeManager::RecvSecondaryCellHandoverCompleted(
 
 	//Process3
 	// send End Marker to the target cell
-	for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator It =
+	/*for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator It =
 			m_drbMap.begin(); It != m_drbMap.end(); ++It) {
 				EpcX2Sap::EndMarkerParams params;
 				params.sourceCellId = m_rrc->m_cellId;
-				params.targetCellId = m_mmWaveCellId;
+				params.targetCellId = oldMmWaveCellId;//Process4
 				params.gtpTeid = It->second->m_gtpTeid;
 
 				m_rrc->m_x2SapProvider->SendEndMarker (params);
-	}
+	}*/
 }
 
 void UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection) {
@@ -2229,6 +2229,7 @@ LteEnbRrc::LteEnbRrc() :
 	m_x2_received_cnt = 0;
 	m_switchEnabled = true;
 	m_lteCellId = 0;
+	m_isEnd = true;
 }
 
 LteEnbRrc::~LteEnbRrc() {
@@ -3873,6 +3874,9 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 
 void LteEnbRrc::DoRecvHandoverRequestAck(
 		EpcX2SapUser::HandoverRequestAckParams params) {
+	//Process4
+	m_isEnd = false;
+
 	NS_LOG_FUNCTION(this);
 
 	NS_LOG_LOGIC("Recv X2 message: HANDOVER REQUEST ACK");
@@ -3935,33 +3939,47 @@ void LteEnbRrc::DoRecvSnStatusTransfer(
 
 void LteEnbRrc::DoRecvUeContextRelease(
 		EpcX2SapUser::UeContextReleaseParams params) {
-	NS_LOG_FUNCTION(this);
+	//Process4 - only operate when end marker is arrived
+	if(m_isEnd){
+		NS_LOG_FUNCTION(this);
 
-	NS_LOG_LOGIC("Recv X2 message: UE CONTEXT RELEASE");
+		NS_LOG_LOGIC("Recv X2 message: UE CONTEXT RELEASE");
 
-	NS_LOG_LOGIC("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
-	NS_LOG_LOGIC("newEnbUeX2apId = " << params.newEnbUeX2apId);
+		NS_LOG_LOGIC("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+		NS_LOG_LOGIC("newEnbUeX2apId = " << params.newEnbUeX2apId);
 
-	uint16_t rnti = params.oldEnbUeX2apId;
+		uint16_t rnti = params.oldEnbUeX2apId;
 
-	if (m_interRatHoMode && m_ismmWave) {
-		NS_LOG_INFO(
-				"Notify LTE eNB that the handover is completed from cell " << m_cellId << " to " << params.sourceCellId);
-		EpcX2Sap::SecondaryHandoverParams sendParams;
-		sendParams.imsi = GetImsiFromRnti(rnti);
-		sendParams.oldCellId = m_lteCellId;
-		sendParams.targetCellId = params.sourceCellId;
-		m_x2SapProvider->NotifyLteMmWaveHandoverCompleted(sendParams);
-	} else if (m_interRatHoMode && !m_ismmWave) {
-		NS_LOG_INFO(
-				"LTE eNB received UE context release from cell " << params.sourceCellId);
-		m_lastMmWaveCell[GetImsiFromRnti(rnti)] = params.sourceCellId;
-		m_mmWaveCellSetupCompleted[GetImsiFromRnti(rnti)] = true;
-		m_imsiUsingLte[GetImsiFromRnti(rnti)] = false;
+		if (m_interRatHoMode && m_ismmWave) {
+			NS_LOG_INFO(
+					"Notify LTE eNB that the handover is completed from cell " << m_cellId << " to " << params.sourceCellId);
+			EpcX2Sap::SecondaryHandoverParams sendParams;
+			sendParams.imsi = GetImsiFromRnti(rnti);
+			sendParams.oldCellId = m_lteCellId;
+			sendParams.targetCellId = params.sourceCellId;
+			m_x2SapProvider->NotifyLteMmWaveHandoverCompleted(sendParams);
+		} else if (m_interRatHoMode && !m_ismmWave) {
+			NS_LOG_INFO(
+					"LTE eNB received UE context release from cell " << params.sourceCellId);
+			m_lastMmWaveCell[GetImsiFromRnti(rnti)] = params.sourceCellId;
+			m_mmWaveCellSetupCompleted[GetImsiFromRnti(rnti)] = true;
+			m_imsiUsingLte[GetImsiFromRnti(rnti)] = false;
+		}
+
+		GetUeManager(rnti)->RecvUeContextRelease(params);
+		RemoveUe(rnti);
 	}
+	else{
+		NS_LOG_FUNCTION(this);
 
-	GetUeManager(rnti)->RecvUeContextRelease(params);
-	RemoveUe(rnti);
+		NS_LOG_LOGIC("Recv X2 message: UE CONTEXT RELEASE, BUT END MARKER NOT ARRIVED YET");
+
+		TempContextReleaseParams.oldEnbUeX2apId = params.oldEnbUeX2apId;
+		TempContextReleaseParams.newEnbUeX2apId = params.newEnbUeX2apId;
+		TempContextReleaseParams.sourceCellId = params.sourceCellId;
+		TempContextReleaseParams.targetCellId =	params.targetCellId;
+
+	}
 }
 
 void LteEnbRrc::DoRecvLteMmWaveHandoverCompleted(
@@ -4071,6 +4089,13 @@ void LteEnbRrc::DoRecvUeData(EpcX2SapUser::UeDataParams params) {
 			NS_FATAL_ERROR("X2-U data received but no X2uTeidInfo found");
 		}
 	}
+}
+
+//Process4
+void LteEnbRrc::DoRecvEndMarker(){
+	NS_LOG_LOGIC("Received end marker, release context");
+	m_isEnd = true;
+	DoRecvUeContextRelease(TempContextReleaseParams);
 }
 
 uint16_t LteEnbRrc::DoAllocateTemporaryCellRnti() {

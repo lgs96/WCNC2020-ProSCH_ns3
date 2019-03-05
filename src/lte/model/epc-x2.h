@@ -178,8 +178,8 @@ protected:
   virtual void DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params);
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
-  //Process3 gsoul
-  virtual void DoSendEndMarker (EpcX2SapProvider::EndMarkerParams params);
+  //Process3 gsoul -> Process4 190304
+  virtual void DoSendEndMarker (EpcX2Sap::UeDataParams params);
 
   virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params);
@@ -236,6 +236,10 @@ private:
    * during a secondary cell handover
    */
   std::map <uint32_t, uint16_t> m_teidToBeForwardedMap;
+
+  //Process4
+  bool m_isEnd;
+  EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
 
 };
 

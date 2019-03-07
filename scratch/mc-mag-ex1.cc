@@ -698,11 +698,10 @@ main (int argc, char *argv[])
 	// create LTE, mmWave eNB nodes and UE node
 	NodeContainer ueNodes;
 	NodeContainer mmWaveEnbNodes_28G;
-	//	NodeContainer mmWaveEnbNodes_73G;
+	
 	NodeContainer lteEnbNodes;
 	NodeContainer allEnbNodes;
 
-	//	mmWaveEnbNodes_73G.Create(3);
 	mmWaveEnbNodes_28G.Create(6);
 	lteEnbNodes.Create(1);
 	ueNodes.Create(nodeNum);
@@ -722,7 +721,6 @@ main (int argc, char *argv[])
 	//Vector mmw7Position = Vector (100.0, 60,25);
 	//Vector mmw8Position = Vector(100.0, 90, 25); //73Ghz // path 1
 	// Vector mmw7Position = Vector(0.0, 40, 12); //73Ghz // path 1
-	//uint16_t t= 1;
 
 	// Install Mobility Model
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();

@@ -387,7 +387,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	int
 main (int argc, char *argv[])
 {
-	//	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
+	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
@@ -505,7 +505,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
@@ -513,7 +513,7 @@ main (int argc, char *argv[])
         //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -582,7 +582,7 @@ main (int argc, char *argv[])
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
 	bool ReadBuilding = false;
-	int BuildingNum = 80;
+	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments
 	CommandLine cmd;
@@ -766,10 +766,10 @@ main (int argc, char *argv[])
 
 	if(!ReadBuilding)
 	{
-		int Building_xlim_low = 2;
-		int Building_xlim_high = 98;
-		int Building_ylim_low = 2;
-		int Building_ylim_high = 98;
+		int Building_xlim_low = 5;
+		int Building_xlim_high = 95;
+		int Building_ylim_low = 5;
+		int Building_ylim_high = 95;
 
 		Ptr<Building> building1;
 		//	ofstream file("building_topology.txt");
@@ -779,8 +779,8 @@ main (int argc, char *argv[])
 
 			double xcoordinate = (double)((int)rand()%(Building_xlim_high-Building_xlim_low)+Building_xlim_low);
 			double ycoordinate = (double)((int)rand()%(Building_ylim_high-Building_ylim_low)+Building_ylim_low);
-			double xlength = rand()%8+1;
-			double ylength = rand()%8+1;
+			double xlength = rand()%6+1;
+			double ylength = rand()%6+1;
 
 			building1 = Create<Building>();
 			building1->SetBoundaries(Box(xcoordinate, xcoordinate + xlength, ycoordinate, ycoordinate + ylength,0,35));
@@ -904,7 +904,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1500Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

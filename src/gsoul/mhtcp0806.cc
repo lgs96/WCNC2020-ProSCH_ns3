@@ -1903,10 +1903,6 @@ void SendEarlyAck1( uint16_t ipLen, Ptr<Packet> dataPacket, Ptr<Ipv4> ipv4, uint
 	ipv4HeaderEA.SetDscp( Ipv4Header::DSCP_AF13 );
 	uint32_t tempWindow = 0;
 
-
-
-
-
 	uint16_t tcpTotalSize = ipLen;
 
 
@@ -1929,43 +1925,40 @@ void SendEarlyAck1( uint16_t ipLen, Ptr<Packet> dataPacket, Ptr<Ipv4> ipv4, uint
 	uint32_t tcpHeaderSize = originTcpHeader.GetLength()*4;
 	uint16_t tcpdatasize = tcpTotalSize - tcpHeaderSize; //for calculate ack num for data
 
-	if( mcache->lastEAAck < dataSeqNum + tcpdatasize)
+	if( mcache->lastEAAck < dataSeqNum + tcpdatasize)//gsoul: this function determines ack number of incoming early ack packet
 	{
 		tcpHeaderEA.SetAckNumber(dataSeqNum + tcpdatasize);
 	}
 	else
 	{
 		return;
-//		tcpHeaderEA.SetAckNumber( mcache->lastEAAck );
+//		tcpHeaderEA.SetAckNumber( mcache->lastEAAck );//gsoul: do not send dup ack..why? because there is no error between server and BS
 
 	}
 
 
 //	tempWindow =  ( mcache->curRi - mcache->GetN() ) > mcache->numUnsent ? ((mcache->curRi - mcache->GetN()- mcache->numUnsent) *segmentSize):0 ;
 
-	tempWindow =  ( mcache->curRi > mcache->GetN() ) ? ((mcache->curRi - mcache->GetN()) *segmentSize):0 ;
-	tempWindow = (uint32_t) ( tempWindow/winfOrg) > 3 ? (tempWindow/winfOrg)-3 : 0 ; // make it conservative for 3..
+	tempWindow =  ( mcache->curRi > mcache->GetN() ) ? ((mcache->curRi - mcache->GetN()) *segmentSize):0 ; //gsoul: tempwindow, what for? ..this window is advertise window!
+	tempWindow = (uint32_t) ( tempWindow/winfOrg) > 3 ? (tempWindow/winfOrg)-3 : 0 ; // make it conservative for 3.. 
 
-	tempWindow = (tempWindow > 65535) ? 65535:tempWindow;
+	tempWindow = (tempWindow > 65535) ? 65535:tempWindow; //gsoul: limit receive window to 65535
 
-
-
-	tcpHeaderEA.SetWindowSize( tempWindow ); //
+	tcpHeaderEA.SetWindowSize( tempWindow );//gsoul: send tcp header with configured advertise window
 	tcpHeaderEA.EnableChecksums();
 
 	Ptr<Packet> newpacket = Create<Packet>(0);
-	newpacket->AddHeader(tcpHeaderEA);
-	newpacket->AddHeader(ipv4HeaderEA);
-	newpacket->AddHeader(mcache->gtpHeader);
-	newpacket->AddHeader(mcache->gtpUdpHeader);
+	newpacket->AddHeader(tcpHeaderEA); //gsoul: tcp header
+	newpacket->AddHeader(ipv4HeaderEA); //gsoul: ip header
+	newpacket->AddHeader(mcache->gtpHeader); //gsoul: gtpheader
+	newpacket->AddHeader(mcache->gtpUdpHeader); //gsoul: gtp udp header? why..?
 
-
-	mcache->lastTcpHeader = tcpHeaderEA;
-	mcache->lastIpv4Route = ipv4RouteEA;
+	mcache->lastTcpHeader = tcpHeaderEA; //gsoul: save sent header in cache.. why?
+	mcache->lastIpv4Route = ipv4RouteEA; 
 	mcache->lastIpv4Header = ipv4HeaderEA;
 
 	mcache->lastEAAck = tcpHeaderEA.GetAckNumber();
-	ipv4->SendWithHeader(newpacket, mcache->gtpIpv4Header, ipv4RouteEA);
+	ipv4->SendWithHeader(newpacket, mcache->gtpIpv4Header, ipv4RouteEA);//gsoul: Send packet with this option
 
 
 	std::cout << "SendEarlyAck1_e: "<<  mcache->lastEAAck  << " ID:"<< mcache->GetAddr()
@@ -1982,7 +1975,7 @@ void SendEarlyAck2( uint16_t ipLen, Ptr<Packet> dataPacket, Ptr<Ipv4> ipv4, uint
 
 	Ipv4Header ipv4HeaderEA; // Early Ack header corresponding to received data
 	ipv4HeaderEA = mcache->lastIpv4Header;
-	ipv4HeaderEA.SetDscp( Ipv4Header::DSCP_AF12 );
+	ipv4HeaderEA.SetDscp( Ipv4Header::DSCP_AF12 );//gsoul: different from SendEarlyAck2
 	uint32_t tempWindow = 0;
 
 
@@ -2025,7 +2018,7 @@ void SendEarlyAck2( uint16_t ipLen, Ptr<Packet> dataPacket, Ptr<Ipv4> ipv4, uint
 
 	tempWindow =  ( mcache->curRi > mcache->GetN() ) ? ((mcache->curRi - mcache->GetN()) *segmentSize):0 ;
 	tempWindow = (uint32_t) ( tempWindow/winfOrg) > 3 ? (tempWindow/winfOrg)-3 : 0 ; // make it conservative for 3..
-	tempWindow = (tempWindow > 65535) ? 65535:tempWindow;
+	tempWindow = (tempWindow > 65535) ? 65535:tempWindow; 
 
 
 	tcpHeaderEA.SetWindowSize( tempWindow );
@@ -2038,7 +2031,7 @@ void SendEarlyAck2( uint16_t ipLen, Ptr<Packet> dataPacket, Ptr<Ipv4> ipv4, uint
 
 
 	Ptr<Packet> newpacket = Create<Packet>(0);
-	newpacket->AddHeader(tcpHeaderEA);
+	newpacket->AddHeader(tcpHeaderEA);//gsoul: send only tcp header? how?
 //	newpacket->AddHeader(ipv4HeaderEA);
 //	newpacket->AddHeader(mcache->gtpHeader);
 //	newpacket->AddHeader(mcache->gtpUdpHeader);
@@ -2549,7 +2542,7 @@ void BatchRetransmission(SequenceNumber32 targetSeq,  Ptr<Ipv4> ipv4, uint32_t i
 //	Ptr<Ipv4Route> ipv4RouteRetrans = Create<Ipv4Route>();
 //	ipv4RouteRetrans->SetDestination( mcache->GetAddr() );
 //	ipv4RouteRetrans->SetOutputDevice( ipv4->GetNetDevice(interface));
-//	ipv4RouteRetrans->SetSource( Ipv4Address("1.0.0.1") );
+//	ipv4RouteRetrans->SetSource( Ipv4Address("1.0.0.1");
 
 	Ptr<Packet> newpacket;
 
@@ -2558,8 +2551,6 @@ void BatchRetransmission(SequenceNumber32 targetSeq,  Ptr<Ipv4> ipv4, uint32_t i
 
 	for (uint16_t index = 0 ; index < howmanyRetrans; index++)
 	{
-
-
 		if( mcache->GetLen(targetSeq)==0) // the packet does't exist in the mmcache.
 		{
 
@@ -4665,9 +4656,7 @@ main (int argc, char *argv[])
 	  	  	  	  	  GetObject<ConstantVelocityMobilityModel>()->GetPosition() << std::endl;
 	  std::cout << "UE speed : " << ueNodes.Get(index)->
 	  	  	  	  	  GetObject<ConstantVelocityMobilityModel>()->GetVelocity() << std::endl;
-
-
-
+///
 	  std::cout << "---------------------------------------------" << std::endl;
 
 	  if(enableEA)

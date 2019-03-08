@@ -387,7 +387,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	int
 main (int argc, char *argv[])
 {
-	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
+	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
@@ -505,7 +505,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
@@ -513,7 +513,7 @@ main (int argc, char *argv[])
         //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -673,6 +673,7 @@ main (int argc, char *argv[])
 	Ipv4Address remoteHostAddr[nodeNum];
 	Ipv4StaticRoutingHelper ipv4RoutingHelper;
 	Ptr<Node> remoteHost ;
+
 	for (uint16_t i=0 ; i<nodeNum; i++)
 	{
 		// Create the Internet by connecting remoteHost to pgw. Setup routing too
@@ -694,6 +695,7 @@ main (int argc, char *argv[])
 		remoteHostAddr[i] = internetIpIfaces.GetAddress (1);
 		Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
 		remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.255.0.0"), 1);
+
 	}
 	// create LTE, mmWave eNB nodes and UE node
 	NodeContainer ueNodes;

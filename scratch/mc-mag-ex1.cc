@@ -387,6 +387,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	int
 main (int argc, char *argv[])
 {
+	ns3::Packet::EnablePrinting();
 	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
@@ -413,7 +414,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
 	// LogComponentEnable("McUeNetDevice", LOG_FUNCTION);
 	// LogComponentEnable("EpcSgwPgwApplication", LOG_FUNCTION);
-	// LogComponentEnable("EpcEnbApplication", LOG_FUNCTION);
+	LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveEnbMac", LOG_LOGIC);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);

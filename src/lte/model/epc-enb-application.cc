@@ -246,7 +246,8 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this);  
   NS_ASSERT (socket == m_lteSocket);
   Ptr<Packet> packet = socket->Recv ();
-
+  std::cout<<"Received from lte"<<std::endl;
+  packet->Print(std::cout);
   /// \internal
   /// Workaround for \bugid{231}
   //SocketAddressTag satag;
@@ -278,6 +279,9 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this << socket);  
   NS_ASSERT (socket == m_s1uSocket);
   Ptr<Packet> packet = socket->Recv ();
+  std::cout<<"Received from s1u"<<std::endl;
+  packet->Print(std::cout);
+
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
   uint32_t teid = gtpu.GetTeid ();

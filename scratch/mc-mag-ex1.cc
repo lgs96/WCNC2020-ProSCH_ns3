@@ -581,7 +581,7 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
+	bool ReadBuilding = true;
 	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments

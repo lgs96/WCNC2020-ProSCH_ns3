@@ -414,7 +414,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
 	// LogComponentEnable("McUeNetDevice", LOG_FUNCTION);
 	// LogComponentEnable("EpcSgwPgwApplication", LOG_FUNCTION);
-	LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveEnbMac", LOG_LOGIC);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
@@ -538,7 +538,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable ("mmWaveInterference", LOG_LEVEL_FUNCTION);
 	// LogComponentEnable("LteSpectrumPhy", LOG_LEVEL_ALL);
 	//	 LogComponentEnable("TcpCongestionOps", LOG_LEVEL_DEBUG);
-	//LogComponentEnable("TcpSocketBase", LOG_LEVEL_INFO);
+	LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWave3gppChannel",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveChannelRaytracing",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveBeamforming",LOG_FUNCTION);

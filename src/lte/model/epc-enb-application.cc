@@ -31,6 +31,7 @@
 #include "ns3/inet-socket-address.h"
 #include "ns3/uinteger.h"
 
+#include "ns3/internet-module.h"
 #include "epc-gtpu-header.h"
 #include "eps-bearer-tag.h"
 
@@ -246,8 +247,11 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this);  
   NS_ASSERT (socket == m_lteSocket);
   Ptr<Packet> packet = socket->Recv ();
+
+  /*Process5 Packet Info
   std::cout<<"Received from lte"<<std::endl;
   packet->Print(std::cout);
+  */
   /// \internal
   /// Workaround for \bugid{231}
   //SocketAddressTag satag;
@@ -269,6 +273,21 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
       std::map<uint8_t, uint32_t>::iterator bidIt = rntiIt->second.find (bid);
       NS_ASSERT (bidIt != rntiIt->second.end ());
       uint32_t teid = bidIt->second;
+
+      //Process5 set server path
+      TcpHeader tempTcpHeader;
+	  Ipv4Header tempIpv4Header;
+	  GtpuHeader tempGtpuHeader;
+
+	  if(packet->PeekHeader(tempTcpHeader)!=0 && tempTcpHeader.GetFlags()==(TcpHeader::SYN|TcpHeader::ACK))
+	  {
+		packet->PeekHeader(tempIpv4Header);
+
+		m_toServerTcpHeader = tempTcpHeader;
+		m_toServerIpv4Header = tempIpv4Header;
+		m_toServerGtpuHeader.SetTeid(teid);
+	  }
+
       SendToS1uSocket (packet, teid);
     }
 }
@@ -278,9 +297,32 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);  
   NS_ASSERT (socket == m_s1uSocket);
+
   Ptr<Packet> packet = socket->Recv ();
-  std::cout<<"Received from s1u"<<std::endl;
-  packet->Print(std::cout);
+
+  //Process5 set client path
+  TcpHeader tempTcpHeader;
+  Ipv4Header tempIpv4Header;
+
+  if(packet->PeekHeader(tempTcpHeader)!=0)
+  {
+	  if(tempTcpHeader.GetFlags()==((TcpHeader::SYN))
+	  {
+	    m_toClientTcpHeader = tempTcpHeader;
+	    m_toClientIpv4Header = tempIpv4Header;
+	  }
+
+	  Ptr<Packet> tempP = packet->Copy();
+	  SendEarlyAck(tempP);
+  }
+
+  //Process5
+  /*
+  TcpHeader tempHeader;
+  if(tempP->PeekHeader(tempHeader)!=0)
+  {
+    SendEarlyAck (tempP);
+  }*/
 
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
@@ -340,3 +382,39 @@ EpcEnbApplication::DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t be
   m_s1apSapEnbProvider->SendErabReleaseIndication (imsi, rnti, erabToBeReleaseIndication);
 }
 }  // namespace ns3
+
+///////////////////////////developing from 190308~ Process5: Proxy tcp in Epc-Enb-App//////////////////////////
+//190308
+void
+EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet)//no h function
+{
+  NS_LOG_FUNCTION (this<< packet);
+
+  TcpHeader originTcpHeader;
+  Ipv4Header originIpv4Header;
+  GtpuHeader originGtpuHeader;
+
+  packet->RemoveHeader(originTcpHeader);
+  packet->RemoveHeader(originIpv4Header);
+  packet->RemoveHeader(originGtpuHeader);
+
+  TcpHeader newTcpHeader = m_toServerTcpHeader;
+  Ipv4Header newIpv4Header = m_toServerIpv4Header;
+  GtpuHeader newGtpuHeader = m_toServerGtpuHeader;
+
+  SequenceNumber32 dataSeqNum = originTcpHeader.GetSequenceNumber();
+  uint32_t dataSize = packet->GetSize();
+  SequenceNumber32 AckNum = dataSeqNum + dataSize;
+
+  newTcpHeader->SetAckNumber(AckNum);
+  newTcpHeader->SetFlags(TcpHeader::ACK);
+  Ptr<Packet> tempP = new Packet();
+  tempP->AddHeader(newTcpHeader);
+  tempP->AddHeader(newIpv4Header);
+  tempP->AddHeader(newGtpuHeader);
+
+  m_s1uSocket->SendTo (packet, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
+}
+
+
+

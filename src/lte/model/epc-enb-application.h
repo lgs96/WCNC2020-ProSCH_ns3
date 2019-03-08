@@ -39,6 +39,8 @@
 #include <ns3/epc-enb-s1-sap.h>
 #include <ns3/epc-s1ap-sap.h>
 #include <map>
+#include "ns3/internet-module.h"
+
 
 namespace ns3 {
 class EpcEnbS1SapUser;
@@ -256,6 +258,15 @@ private:
   std::map<uint64_t, uint16_t> m_imsiRntiMap;
 
   uint16_t m_cellId;
+
+  //Process5
+  TcpHeader m_toServerTcpHeader;
+  TcpHeader m_toClientTcpHeader;
+  Ipv4Header m_toServerIpv4Header;
+  Ipv4Header m_toClientIpv4Header;
+  GtpuHeader m_toServerGtpuHeader;
+  GtpuHeader m_toClientGtpuHeader;
+
 
 };
 

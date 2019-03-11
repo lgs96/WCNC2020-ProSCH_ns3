@@ -122,7 +122,7 @@ LteRlcAm::BufferSizeTrace()
     m_bufferSizeFile.open(GetBufferSizeFilename().c_str(), std::ofstream::app);
     NS_LOG_LOGIC("File opened");
   }
-  m_bufferSizeFile << Simulator::Now().GetSeconds() << " " << m_rnti << " " << (uint16_t) m_lcid << " " << m_txonBufferSize << std::endl;
+  m_bufferSizeFile << Simulator::Now().GetSeconds() << " " << m_rnti << " " << (uint16_t) m_lcid << " " << m_txonBufferSize <<" "<< m_holdBufferSize<< std::endl;
 
   m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(10), &LteRlcAm::BufferSizeTrace, this);
 }

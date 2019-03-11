@@ -387,7 +387,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	int
 main (int argc, char *argv[])
 {
-	LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
+	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
@@ -505,7 +505,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);

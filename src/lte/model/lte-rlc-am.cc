@@ -440,6 +440,11 @@ LteRlcAm::DoGetEndMarker()
      m_holdBuffer.erase (m_holdBuffer.begin());
      NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
    }
+
+  /** Report Buffer Status */
+  DoReportBufferStatus ();
+  m_rbsTimer.Cancel ();
+  m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
 }
 
 //Process3

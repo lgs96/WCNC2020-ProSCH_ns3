@@ -414,7 +414,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
 	// LogComponentEnable("McUeNetDevice", LOG_FUNCTION);
 	// LogComponentEnable("EpcSgwPgwApplication", LOG_FUNCTION);
-	//LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
+	LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveEnbMac", LOG_LOGIC);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);

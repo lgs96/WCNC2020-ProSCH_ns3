@@ -281,17 +281,22 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
 
 	  if(packet->PeekHeader(tempTcpHeader)!=0 && tempTcpHeader.GetFlags()==(TcpHeader::SYN|TcpHeader::ACK))
 	  {
+		NS_LOG_LOGIC("Handshaking phase, sniffing address of SERVER. TCP flag is "<<tempTcpHeader.GetFlags());
 		packet->PeekHeader(tempIpv4Header);
 
 		m_toServerTcpHeader = tempTcpHeader;
 		m_toServerIpv4Header = tempIpv4Header;
 		m_toServerGtpuHeader.SetTeid(teid);
-	  }
 
-      SendToS1uSocket (packet, teid);
+		//Process5, only send uplink (ack packet) when handshaking phase
+	    SendToS1uSocket (packet, teid);
+	  }
+	  //For process5
+      //SendToS1uSocket (packet, teid);
     }
 }
 
+//Modified for Process5, for early ack operation
 void 
 EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 {
@@ -306,14 +311,36 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 
   if(packet->PeekHeader(tempTcpHeader)!=0)
   {
-	  if(tempTcpHeader.GetFlags()==((TcpHeader::SYN))
+	  NS_LOG_LOGIC("Handshaking phase, sniffing address of USER. TCP flag is "<<tempTcpHeader.GetFlags());
+	  //Original operation, now operate only when handshaking phase
+	  if(tempTcpHeader.GetFlags()==((TcpHeader::SYN)||(TcpHeader::ACK)))
 	  {
+		NS_LOG_LOGIC("Handshaking phase, sniffing address of USER. TCP flag is "<<tempTcpHeader.GetFlags());
+		packet->PeekHeader(tempIpv4Header);
+
 	    m_toClientTcpHeader = tempTcpHeader;
 	    m_toClientIpv4Header = tempIpv4Header;
-	  }
 
-	  Ptr<Packet> tempP = packet->Copy();
-	  SendEarlyAck(tempP);
+	    GtpuHeader gtpu;
+	    packet->RemoveHeader (gtpu);
+	    uint32_t teid = gtpu.GetTeid ();
+
+	    std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
+	      if (it != m_teidRbidMap.end ())
+	        {
+	          SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
+	        }
+	      else
+	        {
+	          packet = 0;
+	          NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
+	        }
+	  }
+	  else
+	  {
+	    Ptr<Packet> tempP = packet->Copy();
+	    SendEarlyAck(tempP);
+	  }
   }
 
   //Process5
@@ -324,25 +351,10 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
     SendEarlyAck (tempP);
   }*/
 
-  GtpuHeader gtpu;
-  packet->RemoveHeader (gtpu);
-  uint32_t teid = gtpu.GetTeid ();
-
   /// \internal
   /// Workaround for \bugid{231}
   //SocketAddressTag tag;
   //packet->RemovePacketTag (tag);
-
-  std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
-  if (it != m_teidRbidMap.end ())
-    {
-      SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
-    }
-  else
-    {
-      packet = 0;
-      NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
-    }  
 }
 
 void 
@@ -381,7 +393,6 @@ EpcEnbApplication::DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t be
   //From 3GPP TS 23401-950 Section 5.4.4.2, enB sends EPS bearer Identity in Bearer Release Indication message to MME
   m_s1apSapEnbProvider->SendErabReleaseIndication (imsi, rnti, erabToBeReleaseIndication);
 }
-}  // namespace ns3
 
 ///////////////////////////developing from 190308~ Process5: Proxy tcp in Epc-Enb-App//////////////////////////
 //190308
@@ -390,31 +401,33 @@ EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet)//no h function
 {
   NS_LOG_FUNCTION (this<< packet);
 
+  //Remove header's of received packet from server
   TcpHeader originTcpHeader;
-  Ipv4Header originIpv4Header;
-  GtpuHeader originGtpuHeader;
-
   packet->RemoveHeader(originTcpHeader);
-  packet->RemoveHeader(originIpv4Header);
-  packet->RemoveHeader(originGtpuHeader);
 
+  //Set headers sniffed from user
   TcpHeader newTcpHeader = m_toServerTcpHeader;
   Ipv4Header newIpv4Header = m_toServerIpv4Header;
   GtpuHeader newGtpuHeader = m_toServerGtpuHeader;
 
+  //Set Ealry Ack sequence number
   SequenceNumber32 dataSeqNum = originTcpHeader.GetSequenceNumber();
   uint32_t dataSize = packet->GetSize();
   SequenceNumber32 AckNum = dataSeqNum + dataSize;
+  newTcpHeader.SetAckNumber(AckNum);
+  newTcpHeader.SetFlags(TcpHeader::ACK);
 
-  newTcpHeader->SetAckNumber(AckNum);
-  newTcpHeader->SetFlags(TcpHeader::ACK);
+  //Send empty packet that contains ack sequence
   Ptr<Packet> tempP = new Packet();
   tempP->AddHeader(newTcpHeader);
   tempP->AddHeader(newIpv4Header);
   tempP->AddHeader(newGtpuHeader);
 
+  uint32_t flags = 0;
   m_s1uSocket->SendTo (packet, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
 }
+}
+// namespace ns3
 
 
 

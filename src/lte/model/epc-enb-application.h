@@ -41,6 +41,9 @@
 #include <map>
 #include "ns3/internet-module.h"
 
+//Process5: Added by gsoul
+#include "epc-gtpu-header.h"
+
 
 namespace ns3 {
 class EpcEnbS1SapUser;
@@ -191,6 +194,14 @@ private:
    * \param bid 
    */
   void SetupS1Bearer (uint32_t teid, uint16_t rnti, uint8_t bid);
+
+
+  /**
+   * Process5: Send early ack immediately
+   *
+   * \param packet: received from s1u
+   */
+  void SendEarlyAck (Ptr<Packet> packet);
 
   /**
    * raw packet socket to send and receive the packets to and from the LTE radio interface

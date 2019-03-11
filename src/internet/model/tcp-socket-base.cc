@@ -3648,6 +3648,8 @@ TcpSocketBase::AddOptionSackPermitted (TcpHeader &header)
 {
   NS_LOG_FUNCTION (this << header);
   NS_ASSERT (header.GetFlags () & TcpHeader::SYN);
+//Process5  NS_LOG_LOGIC("gsoul "<<TcpHeader::FlagsToString(header.GetFlags()));
+
 
   Ptr<TcpOptionSackPermitted> option = CreateObject<TcpOptionSackPermitted> ();
   header.AppendOption (option);

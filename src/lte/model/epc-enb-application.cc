@@ -270,29 +270,28 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
     }
   else
     {
+	  //Process5: to test early ack operation
+	  Ipv4Header tempIpv4Header;
+	  TcpHeader tempTcpHeader;
+
+	  packet->RemoveHeader(tempIpv4Header);
+	  packet->RemoveHeader(tempTcpHeader);
+
+	  m_toServerIpv4Header = tempIpv4Header;
+	  m_toServerTcpHeader = tempTcpHeader;
+
+	  packet->AddHeader(tempTcpHeader);
+	  packet->AddHeader(tempIpv4Header);
+
       std::map<uint8_t, uint32_t>::iterator bidIt = rntiIt->second.find (bid);
       NS_ASSERT (bidIt != rntiIt->second.end ());
       uint32_t teid = bidIt->second;
 
-      //Process5 set server path
-      TcpHeader tempTcpHeader;
-	  Ipv4Header tempIpv4Header;
-	  GtpuHeader tempGtpuHeader;
-
-	  if(packet->PeekHeader(tempTcpHeader)!=0 && tempTcpHeader.GetFlags()==(TcpHeader::SYN|TcpHeader::ACK))
-	  {
-		NS_LOG_LOGIC("Handshaking phase, sniffing address of SERVER. TCP flag is "<<tempTcpHeader.GetFlags());
-		packet->PeekHeader(tempIpv4Header);
-
-		m_toServerTcpHeader = tempTcpHeader;
-		m_toServerIpv4Header = tempIpv4Header;
-		m_toServerGtpuHeader.SetTeid(teid);
-
-		//Process5, only send uplink (ack packet) when handshaking phase
-	    SendToS1uSocket (packet, teid);
-	  }
-	  //For process5
-      //SendToS1uSocket (packet, teid);
+      if(tempTcpHeader.GetFlags()==(TcpHeader::SYN|TcpHeader::ACK))
+      {
+    	NS_LOG_LOGIC("Packet from lte, flag is "<<TcpHeader::FlagsToString(tempTcpHeader.GetFlags()));
+        SendToS1uSocket (packet, teid);
+      }
     }
 }
 
@@ -306,42 +305,56 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   Ptr<Packet> packet = socket->Recv ();
 
   //Process5 set client path
-  TcpHeader tempTcpHeader;
+  GtpuHeader tempGtpuHeader;
   Ipv4Header tempIpv4Header;
+  TcpHeader tempTcpHeader;
 
-  if(packet->PeekHeader(tempTcpHeader)!=0)
+  packet->RemoveHeader(tempGtpuHeader);
+  packet->RemoveHeader(tempIpv4Header);
+  uint32_t bytesRemoved = packet->RemoveHeader(tempTcpHeader);
+
+  NS_LOG_LOGIC("Packet from s1u, flag is "<<TcpHeader::FlagsToString(tempTcpHeader.GetFlags())<<" Header is "<<tempTcpHeader<< ""
+		  " Packet Size is "<<packet->GetSize());
+
+  if(!(bytesRemoved == 0 || bytesRemoved > 60))
   {
-	  NS_LOG_LOGIC("Handshaking phase, sniffing address of USER. TCP flag is "<<tempTcpHeader.GetFlags());
 	  //Original operation, now operate only when handshaking phase
-	  if(tempTcpHeader.GetFlags()==((TcpHeader::SYN)||(TcpHeader::ACK)))
+	  if((tempTcpHeader.GetFlags()==(TcpHeader::SYN)||(TcpHeader::ACK))&& packet->GetSize()==0)
 	  {
-		NS_LOG_LOGIC("Handshaking phase, sniffing address of USER. TCP flag is "<<tempTcpHeader.GetFlags());
-		packet->PeekHeader(tempIpv4Header);
+		packet->AddHeader(tempTcpHeader);
+		packet->AddHeader(tempIpv4Header);
+		packet->AddHeader(tempGtpuHeader);
 
-	    m_toClientTcpHeader = tempTcpHeader;
-	    m_toClientIpv4Header = tempIpv4Header;
+		m_toClientTcpHeader = tempTcpHeader;
+		m_toClientIpv4Header = tempIpv4Header;
 
-	    GtpuHeader gtpu;
-	    packet->RemoveHeader (gtpu);
-	    uint32_t teid = gtpu.GetTeid ();
+		//Process5: original code
+		GtpuHeader gtpu;
+		packet->RemoveHeader (gtpu);
+		uint32_t teid = gtpu.GetTeid ();
 
-	    std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
-	      if (it != m_teidRbidMap.end ())
-	        {
-	          SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
-	        }
-	      else
-	        {
-	          packet = 0;
-	          NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
-	        }
+		std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
+		if (it != m_teidRbidMap.end ())
+		{
+		  SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
+		}
+		else
+		{
+		  packet = 0;
+		  NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
+		}
 	  }
 	  else
 	  {
-	    Ptr<Packet> tempP = packet->Copy();
-	    SendEarlyAck(tempP);
+		Ptr<Packet> tempP = packet->Copy();
+		SendEarlyAck(tempP,tempTcpHeader);
 	  }
   }
+  else
+  {
+    NS_LOG_ERROR("Bytes Removed: "<<bytesRemoved<<"invalid");
+  }
+
 
   //Process5
   /*
@@ -378,6 +391,10 @@ EpcEnbApplication::SendToS1uSocket (Ptr<Packet> packet, uint32_t teid)
   // Length of the payload + the non obligatory GTP-U header
   gtpu.SetLength (packet->GetSize () + gtpu.GetSerializedSize () - 8);  
   packet->AddHeader (gtpu);
+
+  //Process5
+  m_toServerGtpuHeader = gtpu;
+
   uint32_t flags = 0;
   m_s1uSocket->SendTo (packet, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
 }
@@ -397,13 +414,9 @@ EpcEnbApplication::DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t be
 ///////////////////////////developing from 190308~ Process5: Proxy tcp in Epc-Enb-App//////////////////////////
 //190308
 void
-EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet)//no h function
+EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet, TcpHeader originTcpHeader)//no h function
 {
   NS_LOG_FUNCTION (this<< packet);
-
-  //Remove header's of received packet from server
-  TcpHeader originTcpHeader;
-  packet->RemoveHeader(originTcpHeader);
 
   //Set headers sniffed from user
   TcpHeader newTcpHeader = m_toServerTcpHeader;
@@ -424,7 +437,7 @@ EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet)//no h function
   tempP->AddHeader(newGtpuHeader);
 
   uint32_t flags = 0;
-  m_s1uSocket->SendTo (packet, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
+  m_s1uSocket->SendTo (tempP, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
 }
 }
 // namespace ns3

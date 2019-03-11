@@ -414,7 +414,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
 	// LogComponentEnable("McUeNetDevice", LOG_FUNCTION);
 	// LogComponentEnable("EpcSgwPgwApplication", LOG_FUNCTION);
-	LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveEnbMac", LOG_LOGIC);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
@@ -538,7 +538,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable ("mmWaveInterference", LOG_LEVEL_FUNCTION);
 	// LogComponentEnable("LteSpectrumPhy", LOG_LEVEL_ALL);
 	//	 LogComponentEnable("TcpCongestionOps", LOG_LEVEL_DEBUG);
-	LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWave3gppChannel",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveChannelRaytracing",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveBeamforming",LOG_FUNCTION);
@@ -582,7 +582,7 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
+	bool ReadBuilding = true;
 	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments

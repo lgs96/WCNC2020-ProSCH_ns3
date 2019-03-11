@@ -201,7 +201,7 @@ private:
    *
    * \param packet: received from s1u
    */
-  void SendEarlyAck (Ptr<Packet> packet);
+  void SendEarlyAck (Ptr<Packet> packet,TcpHeader originTcpHeader);
 
   /**
    * raw packet socket to send and receive the packets to and from the LTE radio interface

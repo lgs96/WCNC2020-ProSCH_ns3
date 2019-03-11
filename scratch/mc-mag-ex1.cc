@@ -334,6 +334,18 @@ RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 }
 
 	static void
+RX (Ptr <OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
+{
+	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber()<<std::endl; 
+}
+
+	static void
+TX (Ptr <OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
+{
+	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetSequenceNumber()<<std::endl; 
+}
+
+	static void
 Traces(uint16_t nodeNum,uint16_t ExNum)
 {
 	AsciiTraceHelper asciiTraceHelper;
@@ -368,6 +380,18 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	std::ostringstream fileRTO;
 	fileRTO<<ExNum<<"_tcp_rto_ue"<<nodeNum+1<<".txt";
 
+	std::ostringstream pathRX;
+	pathRX<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/Rx";
+
+	std::ostringstream fileRX;
+	fileRX<<ExNum<<"_tcp_Rx_ue"<<nodeNum+1<<".txt";
+
+	std::ostringstream pathTX;
+	pathTX<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/Tx";
+
+	std::ostringstream fileTX;
+	fileTX<<ExNum<<"_tcp_Tx_ue"<<nodeNum+1<<".txt";
+
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (fileCW.str ().c_str ());
 	Config::ConnectWithoutContext (pathCW.str ().c_str (), MakeBoundCallback(&CwndChange, stream1));
 
@@ -382,13 +406,19 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 
 	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream (fileRTO.str ().c_str ());
 	Config::ConnectWithoutContext (pathRTO.str ().c_str (), MakeBoundCallback(&RTOChange, stream6));
+
+	Ptr<OutputStreamWrapper> stream7 = asciiTraceHelper.CreateFileStream (fileRX.str ().c_str ());
+	Config::ConnectWithoutContext (pathRX.str ().c_str (), MakeBoundCallback(&RX, stream7));
+
+	Ptr<OutputStreamWrapper> stream8 = asciiTraceHelper.CreateFileStream (fileTX.str ().c_str ());
+	Config::ConnectWithoutContext (pathTX.str ().c_str (), MakeBoundCallback(&TX, stream8));
 }
 
 	int
 main (int argc, char *argv[])
 {
 	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
-	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
@@ -513,7 +543,7 @@ main (int argc, char *argv[])
         //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -537,7 +567,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable ("mmWaveInterference", LOG_LEVEL_FUNCTION);
 	// LogComponentEnable("LteSpectrumPhy", LOG_LEVEL_ALL);
 	//	 LogComponentEnable("TcpCongestionOps", LOG_LEVEL_DEBUG);
-	//LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
+	LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWave3gppChannel",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveChannelRaytracing",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveBeamforming",LOG_FUNCTION);

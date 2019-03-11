@@ -275,7 +275,7 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
 	  TcpHeader tempTcpHeader;
 
 	  packet->RemoveHeader(tempIpv4Header);
-	  packet->RemoveHeader(tempTcpHeader);
+	  uint32_t bytesRemoved = packet->RemoveHeader(tempTcpHeader);
 
 	  m_toServerIpv4Header = tempIpv4Header;
 	  m_toServerTcpHeader = tempTcpHeader;
@@ -291,6 +291,11 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
       {
     	NS_LOG_LOGIC("Packet from lte, flag is "<<TcpHeader::FlagsToString(tempTcpHeader.GetFlags()));
         SendToS1uSocket (packet, teid);
+      }
+      else if(bytesRemoved==0)
+      {
+    	NS_LOG_LOGIC("Not a tcp packet");
+    	SendToS1uSocket (packet, teid);
       }
     }
 }
@@ -350,9 +355,30 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 		SendEarlyAck(tempP,tempTcpHeader);
 	  }
   }
-  else
+  else if(bytesRemoved ==0)
   {
-    NS_LOG_ERROR("Bytes Removed: "<<bytesRemoved<<"invalid");
+	packet->AddHeader(tempTcpHeader);
+	packet->AddHeader(tempIpv4Header);
+	packet->AddHeader(tempGtpuHeader);
+
+	m_toClientTcpHeader = tempTcpHeader;
+	m_toClientIpv4Header = tempIpv4Header;
+
+	//Process5: original code
+	GtpuHeader gtpu;
+	packet->RemoveHeader (gtpu);
+	uint32_t teid = gtpu.GetTeid ();
+
+	std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
+	if (it != m_teidRbidMap.end ())
+	{
+	  SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
+	}
+	else
+	{
+	  packet = 0;
+	  NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
+	}
   }
 
 

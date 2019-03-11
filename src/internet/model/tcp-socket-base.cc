@@ -842,7 +842,6 @@ TcpSocketBase::Send (Ptr<Packet> p, uint32_t flags)
       // Store the packet into Tx buffer
       if (!m_txBuffer->Add (p))
         { // TxBuffer overflow, send failed
-	  NS_LOG_LOGIC("Tx buffer overflow in tcp-socket-base");
           m_errno = ERROR_MSGSIZE;
           return -1;
         }
@@ -3153,6 +3152,9 @@ TcpSocketBase::ReTxTimeout ()
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
   // If erroneous timeout in closed/timed-wait state, just return
+
+  uint32_t inFlightBeforeRto = BytesInFlight();
+
   if (m_state == CLOSED || m_state == TIME_WAIT)
     {
       return;
@@ -3215,7 +3217,7 @@ TcpSocketBase::ReTxTimeout ()
   // retransmission timer, decrease ssThresh
   if (m_tcb->m_congState != TcpSocketState::CA_LOSS || !m_txBuffer->IsHeadRetransmitted ())
     {
-      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
+      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, inFlightBeforeRto);
     }
 
   // Cwnd set to 1 MSS
@@ -3649,8 +3651,6 @@ TcpSocketBase::AddOptionSackPermitted (TcpHeader &header)
 {
   NS_LOG_FUNCTION (this << header);
   NS_ASSERT (header.GetFlags () & TcpHeader::SYN);
-//Process5  NS_LOG_LOGIC("gsoul "<<TcpHeader::FlagsToString(header.GetFlags()));
-
 
   Ptr<TcpOptionSackPermitted> option = CreateObject<TcpOptionSackPermitted> ();
   header.AppendOption (option);

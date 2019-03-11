@@ -330,6 +330,8 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
       tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
       p->AddPacketTag (tag);
 
+      p->Print(std::cout);
+
       if(!m_enableHoldBuffer||sourceCellId == m_allowedCellId){
     	  NS_LOG_INFO ("Txon Buffer: New packet added");
       	  m_txonBuffer.push_back (p);
@@ -440,6 +442,11 @@ LteRlcAm::DoGetEndMarker()
      m_holdBuffer.erase (m_holdBuffer.begin());
      NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
    }
+ 
+  /** Report Buffer Status */
+  DoReportBufferStatus ();
+  m_rbsTimer.Cancel ();
+  m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
 }
 
 //Process3

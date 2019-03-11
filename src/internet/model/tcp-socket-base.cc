@@ -3151,6 +3151,9 @@ TcpSocketBase::ReTxTimeout ()
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
+  
+  uint32_t BytesBeforeRto = BytesInFlight();
+
   // If erroneous timeout in closed/timed-wait state, just return
   if (m_state == CLOSED || m_state == TIME_WAIT)
     {
@@ -3214,7 +3217,7 @@ TcpSocketBase::ReTxTimeout ()
   // retransmission timer, decrease ssThresh
   if (m_tcb->m_congState != TcpSocketState::CA_LOSS || !m_txBuffer->IsHeadRetransmitted ())
     {
-      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
+      m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesBeforeRto);
     }
 
   // Cwnd set to 1 MSS

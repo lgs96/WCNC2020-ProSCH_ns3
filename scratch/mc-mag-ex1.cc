@@ -417,6 +417,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	int
 main (int argc, char *argv[])
 {
+	ns3::Packet::EnablePrinting();
 	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
@@ -543,7 +544,7 @@ main (int argc, char *argv[])
         //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -567,7 +568,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable ("mmWaveInterference", LOG_LEVEL_FUNCTION);
 	// LogComponentEnable("LteSpectrumPhy", LOG_LEVEL_ALL);
 	//	 LogComponentEnable("TcpCongestionOps", LOG_LEVEL_DEBUG);
-	LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWave3gppChannel",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveChannelRaytracing",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveBeamforming",LOG_FUNCTION);

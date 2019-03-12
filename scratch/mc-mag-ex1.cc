@@ -639,6 +639,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower",DoubleValue(TxPower));
+	Config::SetDefault ("ns3::MmWaveUePhy::TxPower",DoubleValue(TxPower));
 	//	Config::SetDefault ("ns3::MmWaveSpectrumPhy::DisableInterference",BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
@@ -904,12 +905,13 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (mcUeDevs));
 
+	Ipv4StaticRoutingHelper ipv4RoutingHelper2;
 	// Assign IP address to UEs, and install applications
 	for (uint32_t u = 0; u < ueNodes.GetN ();u++)
 	{
 		Ptr<Node> ueNode = ueNodes.Get (u);
 		// Set the default gateway for the UE
-		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
+		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper2.GetStaticRouting (ueNode->GetObject<Ipv4> ());
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 	}
 

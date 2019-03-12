@@ -544,7 +544,7 @@ main (int argc, char *argv[])
         //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);

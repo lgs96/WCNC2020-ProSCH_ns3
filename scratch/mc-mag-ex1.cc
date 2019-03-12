@@ -899,7 +899,8 @@ main (int argc, char *argv[])
 
 
 	// Install the IP stack on the UEs
-	internet.Install (ueNodes);
+	InternetStackHelper internet2;
+	internet2.Install (ueNodes);
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (mcUeDevs));
 

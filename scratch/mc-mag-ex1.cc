@@ -609,6 +609,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower",DoubleValue(TxPower));
+	Config::SetDefault ("ns3::MmWaveUePhy::TxPower",DoubleValue(TxPower));
 	//	Config::SetDefault ("ns3::MmWaveSpectrumPhy::DisableInterference",BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));

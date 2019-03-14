@@ -67,8 +67,9 @@ NS_OBJECT_ENSURE_REGISTERED (MmWavePointToPointEpcHelper);
 MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   : m_gtpuUdpPort (2152),  // fixed by the standard
     m_s1apUdpPort (36412),
-	m_proxyLteUdpPort (8198),
-	m_proxyS1uUdpPort (8199)
+	m_proxyTcpPort (8198),
+	m_proxyUdpPort (8199),
+	m_enbProxyUdpPort (8434)
 {
   NS_LOG_FUNCTION (this);
 
@@ -299,22 +300,27 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   Ipv4Address proxyAddress = enbProxyIpIfaces.GetAddress (1);
 
   // Process7: create proxy socket for proxyNode
-  Ptr<Socket> proxyLteSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::UdpSocketFactory"));
-  retval = proxyLteSocket->Bind (InetSocketAddress (proxyAddress, m_proxyLteUdpPort));
+  Ptr<Socket> proxyTcpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::TcpSocketFactory"));
+  retval = proxyTcpSocket->Bind (InetSocketAddress (proxyAddress, m_proxyTcpPort));
   NS_ASSERT (retval == 0);
 
-  Ptr<Socket> proxyS1uSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::UdpSocketFactory"));
-  retval = proxyS1usocket->Bind (InetSocketAddress (proxyAddress, m_proxyS1uUdpPort));
+  Ptr<Socket> proxyUdpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::UdpSocketFactory"));
+  retval = proxyUdpsocket->Bind (InetSocketAddress (proxyAddress, m_proxyUdpPort));
   NS_ASSERT (retval == 0);
 
-  //Process7: create enb socket to connect with proxy
-  Ptr<Socket> enbProxyLteSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::UdpSocketFactory"));
-  retval = enbProxyLteSocket->Bind (InetSocketAddress (proxy_enbAddress,m_enbProxyLteUdpPort));
+  Ptr<Socket> enbProxyUdpSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::UdpSocketFactory"));
+  retval = enbProxyUdpSocket->Bind (InetSocketAddress (proxy_enbAddress,m_enbProxyUdpPort));
   NS_ASSERT (retval == 0);
 
-  Ptr<Socket> enbProxyS1uSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::UdpSocketFactory"));
-  retval = enbProxyS1uSocket->Bind (InetSocketAddress (proxy_enbAddress,m_enbProxyS1uUdpPort));
-  NS_ASSERT (retval == 0);
+  //Process7: tun device in enb for tunneling
+  m_tunProxyDevice = CreateObject<VirtualNetDevice> ();
+  m_tunProxyDevice -> SetAttribute ("Mtu", UintegerValue(30000));
+  m_tunProxyDevice -> SetAddress (Mac48Address::Allocate ());
+
+  enb->AddDevice (m_tunProxyDevice);
+  NetDeviceContainer tunProxyDeviceContainer;
+  tunProxyDeviceContainer.Add (m_tunProxyDevice);
+  Ipv4InterfaceContainer tunProxyDeviceIpv4IfContainer = m_ueAddressHelper.Assign (tunProxyDeviceContainer);
 
   // give PacketSocket powers to the eNB
   //PacketSocketHelper packetSocket;
@@ -334,9 +340,13 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);  
   
+  //Modified by Process7
   NS_LOG_INFO ("create EpcEnbApplication");
-  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId);
+  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, enbProxyUdpSocket, m_tunProxyDevice);
   enb->AddApplication (enbApp);
+
+  m_tunProxyDevice->SetSendCallback (MakeCallback (&EpcEnbApplication::RecvFromTunDevice, enbApp));
+
   NS_ASSERT (enb->GetNApplications () == 1);
   NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbApplication> () != 0, "cannot retrieve EpcEnbApplication");
   NS_LOG_LOGIC ("enb: " << enb << ", enb->GetApplication (0): " << enb->GetApplication (0));

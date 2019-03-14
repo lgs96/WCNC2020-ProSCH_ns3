@@ -278,9 +278,11 @@ private:
   GtpuHeader m_toServerGtpuHeader;
   GtpuHeader m_toClientGtpuHeader;
 
-  //Process6
+  //Process7
+  bool RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber);
   Ptr<Node> m_proxyNode;
-  Pty<Socket> m_proxySocket;
+  Ptr<Socket> m_proxySocket;
+  Ptr<VirtualNetDevice> m_tunProxyDevice;
 
 
 };

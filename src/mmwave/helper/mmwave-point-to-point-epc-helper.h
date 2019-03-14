@@ -234,10 +234,11 @@ private:
   Ptr<Node> m_proxyNode;
   Ptr<EpcEnbProxyApplication> m_proxyApp;
 
-  uint16_t m_proxyLteUdpPort;
-  uint16_t m_proxySluUdpPort;
-  uint16_t m_enbProxyLteUdpPort;
-  uint16_t m_enbProxyS1uUdpPort;
+  uint16_t m_proxyTcpPort;
+  uint16_t m_proxyUdpPort;
+  uint16_t m_enbProxyUdpPort;
+
+  Ptr<VirtualNetDevice> m_tunProxyDevice;
 
 
 };

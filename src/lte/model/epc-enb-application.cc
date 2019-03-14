@@ -83,7 +83,7 @@ EpcEnbApplication::DoDispose (void)
 }
 
 
-EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId)
+EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket, const Ptr<VirtualNetDevice> tunDevice )
   : m_lteSocket (lteSocket),
     m_s1uSocket (s1uSocket),    
     m_enbS1uAddress (enbS1uAddress),
@@ -91,9 +91,11 @@ EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSock
     m_gtpuUdpPort (2152), // fixed by the standard
     m_s1SapUser (0),
     m_s1apSapEnbProvider (0),
-    m_cellId (cellId)
+    m_cellId (cellId),
+	m_proxySocket (proxySocket),
+	m_tunDevice (tunDevice)
 {
-  NS_LOG_FUNCTION (this << lteSocket << s1uSocket << sgwS1uAddress);
+  NS_LOG_FUNCTION (this << lteSocket << s1uSocket << sgwS1uAddress << proxySocket << tunDevice);
   m_s1uSocket->SetRecvCallback (MakeCallback (&EpcEnbApplication::RecvFromS1uSocket, this));
   m_lteSocket->SetRecvCallback (MakeCallback (&EpcEnbApplication::RecvFromLteSocket, this));
   m_s1SapProvider = new MemberEpcEnbS1SapProvider<EpcEnbApplication> (this);
@@ -539,6 +541,44 @@ EpcEnbApplication::SendProxyPacket (Ptr<Packet packet>)
   NS_LOG_FUNCTION(this<<packet);
 
 
+}
+
+bool
+EpcEnbApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
+{
+  NS_LOG_FUNCTION (this << source << dest << packet << packet->GetSize ());
+
+  // get IP address of UE
+  Ptr<Packet> pCopy = packet->Copy ();
+  Ipv4Header ipv4Header;
+  pCopy->RemoveHeader (ipv4Header);
+  Ipv4Address ueAddr =  ipv4Header.GetDestination ();
+  NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
+
+  // find corresponding UeInfo address
+  std::map<Ipv4Address, Ptr<UeInfo> >::iterator it = m_ueInfoByAddrMap.find (ueAddr);
+  if (it == m_ueInfoByAddrMap.end ())
+    {
+      NS_LOG_WARN ("unknown UE address " << ueAddr);
+    }
+  else
+    {
+      Ipv4Address enbAddr = it->second->GetEnbAddr ();
+      uint32_t teid = it->second->Classify (packet);
+      if (teid == 0)
+        {
+          NS_LOG_WARN ("no matching bearer for this packet");
+        }
+      else
+        {
+          SendToLteSocket (packet, enbAddr, teid);
+        }
+    }
+  // there is no reason why we should notify the TUN
+  // VirtualNetDevice that he failed to send the packet: if we receive
+  // any bogus packet, it will just be silently discarded.
+  const bool succeeded = true;
+  return succeeded;
 }
 
 

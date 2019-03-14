@@ -21,6 +21,9 @@
  *
  * Modified by: Michele Polese <michele.polese@gmail.com> 
  *          Support for real S1AP link
+ *
+ * Modified by: Goodsol Lee <gslee2@netlab.snu.ac.kr>
+ * 			Proxy tcp application
  */
 
 #ifndef EPC_ENB_PROXY_APPLICATION_H

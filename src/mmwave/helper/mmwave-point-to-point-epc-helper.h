@@ -27,6 +27,9 @@
  *
  *  Modified by: Michele Polese <michele.polese@gmail.com> 
  *                Dual Connectivity and Handover functionalities
+ *
+ *  Modified by: Goodsol Lee <gslee2@netlab.snu.ac.kr>
+ *  			  Proxy function
  */
 
 #ifndef MMWAVE_POINT_TO_POINT_EPC_HELPER_H
@@ -220,6 +223,22 @@ private:
    * because of some big X2 messages, you need a big MTU.
    */
   uint16_t m_x2LinkMtu;
+
+  /**
+   *
+   * Process7: Varaibles for proxy function
+   *
+   */
+  Ipv4AddressHelper m_proxyIpv4AddressHelper;
+
+  Ptr<Node> m_proxyNode;
+  Ptr<EpcEnbProxyApplication> m_proxyApp;
+
+  uint16_t m_proxyLteUdpPort;
+  uint16_t m_proxySluUdpPort;
+  uint16_t m_enbProxyLteUdpPort;
+  uint16_t m_enbProxyS1uUdpPort;
+
 
 };
 

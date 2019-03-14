@@ -278,6 +278,10 @@ private:
   GtpuHeader m_toServerGtpuHeader;
   GtpuHeader m_toClientGtpuHeader;
 
+  //Process6
+  Ptr<Node> m_proxyNode;
+  Pty<Socket> m_proxySocket;
+
 
 };
 

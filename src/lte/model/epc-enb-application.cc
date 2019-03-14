@@ -321,6 +321,7 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   NS_LOG_LOGIC("Packet from s1u, flag is "<<TcpHeader::FlagsToString(tempTcpHeader.GetFlags())<<" Header is "<<tempTcpHeader<< ""
 		  " Packet Size is "<<packet->GetSize());
 
+  //Process5
   if(!(bytesRemoved == 0 || bytesRemoved > 60))
   {
 	  //Original operation, now operate only when handshaking phase
@@ -333,6 +334,17 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 		m_toClientTcpHeader = tempTcpHeader;
 		m_toClientIpv4Header = tempIpv4Header;
 
+		//Process6
+		if(tempTcpHeader.GetFlags()==(TcpHeader::SYN))
+		{
+		  SendEarlyAck(packet,tempTcpHeader,tempIpv4Header,tempGtpuHeader,true);
+		  StartProxyApp();
+		}
+		else
+		{
+		  //Do nothing, wait for packets
+		}
+		/*
 		//Process5: original code
 		GtpuHeader gtpu;
 		packet->RemoveHeader (gtpu);
@@ -348,11 +360,15 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 		  packet = 0;
 		  NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
 		}
+		*/
 	  }
 	  else
 	  {
-		Ptr<Packet> tempP = packet->Copy();
-		SendEarlyAck(tempP,tempTcpHeader);
+		//Send Proxy SYN|ACK or ACK packet to server TCP
+	    Ptr<Packet> tempP = packet->Copy();
+	    Ptr<Packet> ProxyP = tempP->Copy();
+	    SendEarlyAck(tempP,tempTcpHeader,tempIpv4Header,tempGtpuHeader,false);
+	    SendProxyPacket(ProxyP);
 	  }
   }
   else if(bytesRemoved ==0)
@@ -438,23 +454,49 @@ EpcEnbApplication::DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t be
 }
 
 ///////////////////////////developing from 190308~ Process5: Proxy tcp in Epc-Enb-App//////////////////////////
-//190308
+//190308 + should send advertise window
 void
-EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet, TcpHeader originTcpHeader)//no h function
+EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet, TcpHeader originTcpHeader, Ipv4Header originIpv4Header, GtpuHeader originGtpuHeader, bool isSYN)//no h function
 {
-  NS_LOG_FUNCTION (this<< packet);
+  NS_LOG_FUNCTION (this<< packet<<originTcpHeader<<originIpv4Header<<originGtpuHeader<<isSYN);
 
   //Set headers sniffed from user
-  TcpHeader newTcpHeader = m_toServerTcpHeader;
-  Ipv4Header newIpv4Header = m_toServerIpv4Header;
-  GtpuHeader newGtpuHeader = m_toServerGtpuHeader;
+  TcpHeader newTcpHeader;
+  Ipv4Header newIpv4Header;
+  GtpuHeader newGtpuHeader;
 
-  //Set Ealry Ack sequence number
-  SequenceNumber32 dataSeqNum = originTcpHeader.GetSequenceNumber();
-  uint32_t dataSize = packet->GetSize();
-  SequenceNumber32 AckNum = dataSeqNum + dataSize;
-  newTcpHeader.SetAckNumber(AckNum);
-  newTcpHeader.SetFlags(TcpHeader::ACK);
+  if(!isSYN)
+  {
+    //Set Ealry Ack sequence number
+	SequenceNumber32 dataSeqNum = originTcpHeader.GetSequenceNumber();
+	uint16_t destPort = originTcpHeader.GetSourcePort();
+	uint16_t srcPort = originTcpHeader.GetDestinationPort();
+	uint32_t dataSize = packet->GetSize();
+	SequenceNumber32 AckNum = dataSeqNum + dataSize;
+	newTcpHeader.SetAckNumber(AckNum);
+	newTcpHeader.SetFlags(TcpHeader::ACK);
+	newTcpHeader.SetSourcePort(srcPort);
+	newTcpHeader.SetDestinationPort(destPort);
+  }
+  else
+  {
+	SequenceNumber32 dataSeqNum = 0;
+	newTcpHeader.SetSequenceNumber(dataSeqNum);
+	newTcpHeader.SetFlags(TcpHeader::SYN|TcpHeader::ACK);
+	newTcpHeader.SetSourcePort(srcPort);
+	newTcpHeader.SetDestinationPort(destPort);
+  }
+  //Set Ipv4 Header
+  Ipv4Address source = originIpv4Header.GetDestination();
+  Ipv4Address dest = originIpv4Header.GetSource();
+
+  newIpv4Header.SetDestination(dest);
+  newIpv4Header.SetSource(source);
+
+  //Set GtpuHeader
+  uint32_t teid = originGtpuHeader.GetTeid();
+  newGtpuHeader.SetTeid(teid);
+  newGtpuHeader.SetLength (packet->GetSize () + newGtpuHeader.GetSerializedSize () - 8);
 
   //Send empty packet that contains ack sequence
   Ptr<Packet> tempP = new Packet();
@@ -465,8 +507,49 @@ EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet, TcpHeader originTcpHeader)/
   uint32_t flags = 0;
   m_s1uSocket->SendTo (tempP, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
 }
+
+//Process6: 190312 get routing table on proxy app
+void
+EpcEnbApplication::StartProxyApp (TcpHeader originTcpHeader, Ipv4Header originIpv4Header, GtpuHeader originGtpuHeader)
+{
+  NS_LOG_FUNCTION(this<<originTcpHeader<<originIpv4Header<<originGtpuHeader);
+  //Set destination for proxy packet
+  Ipv4Address destAddr = m_toClientIpv4Header.GetDestination();
+  uint16_t destPort = m_toClientTcpHeader.GetDestinationPort();
+
+  //190312 Process6 Proxy application +  node
+  InternetStackHelper internet;
+  internet.Install (m_proxyNode);
+
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  Ptr<Ipv4StaticRouting> proxyStaticRouting = ipv4RoutingHelper.GetStaticRouting (m_proxyNode->GetObject<Ipv4>());
+  proxyStaticRouting->AddNetworkRouteTo (Ipv4Address("7.0.0.0"),Ipv4Mask("255.255.0.0"),1);
+
+  Ptr<Socket> ProxyTcpSocket = Socket::CreateSocket (m_proxyNode,TcpSocketFactory::GetTypeId ());
+  m_proxySocket = ProxyTcpSocket;
+  Address sinkAddress (InetSocketAddress(destAddr,destPort);
+  m_proxySocket->Bind();
+  m_proxySocket->Connect(sinkAddress);
+}
+
+//190312 this function sends packets from server tcp, as soon as it receives packets
+void
+EpcEnbApplication::SendProxyPacket (Ptr<Packet packet>)
+{
+  NS_LOG_FUNCTION(this<<packet);
+
+
+}
+
+
+
+
+
+
 }
 // namespace ns3
+
+
 
 
 

@@ -82,7 +82,8 @@ public:
    * \param sgwS1uAddress the IPv4 address at which this eNB will be able to reach its SGW for S1-U communications
    * \param cellId the identifier of the enb
    */
-  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId);
+  //Process7 modified
+  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket, const Ptr<VirtualNetDevice> tunDevice, Ipv4Address proxyAddress);
 
   /**
    * Destructor

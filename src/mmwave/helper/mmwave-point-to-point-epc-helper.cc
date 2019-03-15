@@ -342,7 +342,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   
   //Modified by Process7
   NS_LOG_INFO ("create EpcEnbApplication");
-  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, enbProxyUdpSocket, m_tunProxyDevice);
+  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, enbProxyUdpSocket, m_tunProxyDevice, proxyAddress);
   enb->AddApplication (enbApp);
 
   m_tunProxyDevice->SetSendCallback (MakeCallback (&EpcEnbApplication::RecvFromTunDevice, enbApp));

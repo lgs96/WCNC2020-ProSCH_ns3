@@ -83,7 +83,7 @@ EpcEnbApplication::DoDispose (void)
 }
 
 
-EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket, const Ptr<VirtualNetDevice> tunDevice )
+EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket, const Ptr<VirtualNetDevice> tunDevice, Ipv4Address proxyAddress )
   : m_lteSocket (lteSocket),
     m_s1uSocket (s1uSocket),    
     m_enbS1uAddress (enbS1uAddress),
@@ -93,7 +93,9 @@ EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSock
     m_s1apSapEnbProvider (0),
     m_cellId (cellId),
 	m_proxySocket (proxySocket),
-	m_tunDevice (tunDevice)
+	m_tunDevice (tunDevice),
+	m_proxyUdpPort (8199),
+	m_proxyAddress (proxyAddress)
 {
   NS_LOG_FUNCTION (this << lteSocket << s1uSocket << sgwS1uAddress << proxySocket << tunDevice);
   m_s1uSocket->SetRecvCallback (MakeCallback (&EpcEnbApplication::RecvFromS1uSocket, this));
@@ -302,7 +304,7 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
     }
 }
 
-//Modified for Process5, for early ack operation
+//Modified for Process5, for early ack operation //Modified again for Process7 in 190315
 void 
 EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 {
@@ -310,19 +312,23 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   NS_ASSERT (socket == m_s1uSocket);
 
   Ptr<Packet> packet = socket->Recv ();
+  Ptr<Packet> pCopy = packet->Copy();
 
   //Process5 set client path
   GtpuHeader tempGtpuHeader;
   Ipv4Header tempIpv4Header;
   TcpHeader tempTcpHeader;
 
-  packet->RemoveHeader(tempGtpuHeader);
-  packet->RemoveHeader(tempIpv4Header);
-  uint32_t bytesRemoved = packet->RemoveHeader(tempTcpHeader);
+  pCopy->RemoveHeader(tempGtpuHeader);
+  pCopy->RemoveHeader(tempIpv4Header);
+  uint32_t bytesRemoved = pCopy->RemoveHeader(tempTcpHeader);
 
   NS_LOG_LOGIC("Packet from s1u, flag is "<<TcpHeader::FlagsToString(tempTcpHeader.GetFlags())<<" Header is "<<tempTcpHeader<< ""
-		  " Packet Size is "<<packet->GetSize());
+		  " Packet Size is "<<pCopy->GetSize());
 
+  packet->RemoveHeader (tempGtpuHeader);
+  SendToProxySocket(packet);
+  /*
   //Process5
   if(!(bytesRemoved == 0 || bytesRemoved > 60))
   {
@@ -340,7 +346,6 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 		if(tempTcpHeader.GetFlags()==(TcpHeader::SYN))
 		{
 		  SendEarlyAck(packet,tempTcpHeader,tempIpv4Header,tempGtpuHeader,true);
-		  StartProxyApp();
 		}
 		else
 		{
@@ -362,7 +367,7 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 		  packet = 0;
 		  NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
 		}
-		*/
+ /*
 	  }
 	  else
 	  {
@@ -412,6 +417,7 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   /// Workaround for \bugid{231}
   //SocketAddressTag tag;
   //packet->RemovePacketTag (tag);
+
 }
 
 void 
@@ -441,6 +447,16 @@ EpcEnbApplication::SendToS1uSocket (Ptr<Packet> packet, uint32_t teid)
 
   uint32_t flags = 0;
   m_s1uSocket->SendTo (packet, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
+}
+
+//Process7
+void
+EpcEnbApplication::SendToProxySocket (Ptr<Packet> packet)
+{
+  NS_LOG_FUNCTION (this<< packet << header << packet->GetSize());
+
+  uint32_t flags = 0;
+  m_proxySocket->SendTo (packet, flags ,InetSocketAddress (m_proxyAddress, m_proxyUdpPort));
 }
 
 void
@@ -509,7 +525,7 @@ EpcEnbApplication::SendEarlyAck (Ptr<Packet> packet, TcpHeader originTcpHeader, 
   uint32_t flags = 0;
   m_s1uSocket->SendTo (tempP, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
 }
-
+/*
 //Process6: 190312 get routing table on proxy app
 void
 EpcEnbApplication::StartProxyApp (TcpHeader originTcpHeader, Ipv4Header originIpv4Header, GtpuHeader originGtpuHeader)
@@ -539,14 +555,13 @@ void
 EpcEnbApplication::SendProxyPacket (Ptr<Packet packet>)
 {
   NS_LOG_FUNCTION(this<<packet);
-
-
 }
+*/
 
 bool
 EpcEnbApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
 {
-  NS_LOG_FUNCTION (this << source << dest << packet << packet->GetSize ());
+  NS_LOG_FUNCTION (this << source << dest << packet << packet->GetSize () << protocolNumber);
 
   // get IP address of UE
   Ptr<Packet> pCopy = packet->Copy ();
@@ -555,25 +570,19 @@ EpcEnbApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& source,
   Ipv4Address ueAddr =  ipv4Header.GetDestination ();
   NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
 
-  // find corresponding UeInfo address
-  std::map<Ipv4Address, Ptr<UeInfo> >::iterator it = m_ueInfoByAddrMap.find (ueAddr);
-  if (it == m_ueInfoByAddrMap.end ())
-    {
-      NS_LOG_WARN ("unknown UE address " << ueAddr);
-    }
+  uint32_t teid = toServerGtpuHeader.GetTeid ();
+
+  std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
+  if (it != m_teidRbidMap.end ())
+  {
+    SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
+  }
   else
-    {
-      Ipv4Address enbAddr = it->second->GetEnbAddr ();
-      uint32_t teid = it->second->Classify (packet);
-      if (teid == 0)
-        {
-          NS_LOG_WARN ("no matching bearer for this packet");
-        }
-      else
-        {
-          SendToLteSocket (packet, enbAddr, teid);
-        }
-    }
+  {
+  	packet = 0;
+  	NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
+  }
+
   // there is no reason why we should notify the TUN
   // VirtualNetDevice that he failed to send the packet: if we receive
   // any bogus packet, it will just be silently discarded.

@@ -348,6 +348,7 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
     else
     {
       // Discard full RLC SDU
+      std::cout << Simulator::Now() << "RLC buffer overflow!!" << std::endl;
       NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
       NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
       NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);

@@ -418,7 +418,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//ns3::Packet::EnablePrinting();
-	LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);

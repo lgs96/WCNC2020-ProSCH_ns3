@@ -42,6 +42,7 @@
 #include <ns3/eps-bearer.h>
 #include <ns3/epc-helper.h>
 #include <ns3/core-network-stats-calculator.h>
+#include <ns3/epc-enb-proxy-application.h>
 
 namespace ns3 {
 

@@ -42,6 +42,7 @@
 #include <ns3/epc-enb-s1-sap.h>
 #include <ns3/epc-s1ap-sap.h>
 #include <map>
+#include "ns3/internet-module.h"
 
 namespace ns3 {
 class EpcEnbS1SapUser;
@@ -75,7 +76,7 @@ public:
    * \param sgwS1uAddress the IPv4 address at which this eNB will be able to reach its SGW for S1-U communications
    * \param cellId the identifier of the enb
    */
-  EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
+  EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
 
   /**
    * Destructor
@@ -83,22 +84,20 @@ public:
    */
   virtual ~EpcEnbProxyApplication (void);
 
-  void RecvFromLteSocket (Ptr<Socket> socket);
+  void RecvFromEnbSocket (Ptr<Socket> socket);
 
-  void RecvFromS1uSocket (Ptr<Socket> socket);
+  //void RecvFromS1uSocket (Ptr<Socket> socket);
 
 private:
 
   void SendToEnbSocket (Ptr<Packet> packet);
 
   Ptr<Socket> m_proxyTcpSocket;
-
- 
   Ptr<Socket> m_proxyEnbSocket;
 
   Ipv4Address m_proxyToEnbAddress;
 
-  uint16_t m_proxyToEnbPort;
+  uint16_t m_proxyToEnbUdpPort;
 
   Ipv4Address m_source;
   Ipv4Address m_dest;

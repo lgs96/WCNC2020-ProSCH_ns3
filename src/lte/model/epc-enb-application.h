@@ -83,7 +83,8 @@ public:
    * \param cellId the identifier of the enb
    */
   //Process7 modified
-  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket, const Ptr<VirtualNetDevice> tunDevice, Ipv4Address proxyAddress);
+  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId);
+  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket,std::pair <Ptr<VirtualNetDevice>,Ipv4Address> tempMap);
 
   /**
    * Destructor
@@ -124,6 +125,8 @@ public:
    * \param socket pointer to the LTE socket
    */
   void RecvFromLteSocket (Ptr<Socket> socket);
+
+  bool RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber);
 
 
   /** 
@@ -202,7 +205,7 @@ private:
    *
    * \param packet: received from s1u
    */
-  void SendEarlyAck (Ptr<Packet> packet,TcpHeader originTcpHeader);
+  //void SendEarlyAck (Ptr<Packet> packet,TcpHeader originTcpHeader);
 
   /**
    * raw packet socket to send and receive the packets to and from the LTE radio interface
@@ -280,9 +283,14 @@ private:
   GtpuHeader m_toClientGtpuHeader;
 
   //Process7
-  bool RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber);
+
+  void RecvFromProxySocket (Ptr<Socket> socket);
+  void SendToProxySocket (Ptr<Packet> packet);
+  void SendToTunDevice (Ptr<Packet> packet);
   Ptr<Node> m_proxyNode;
   Ptr<Socket> m_proxySocket;
+  uint16_t m_proxyUdpPort;
+  Ipv4Address m_proxyAddress;
   Ptr<VirtualNetDevice> m_tunProxyDevice;
 
 

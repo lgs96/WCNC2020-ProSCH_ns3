@@ -231,6 +231,10 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   m_proxyNode = CreateObject<Node> ();
   internet.Install (m_proxyNode);
 
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  Ptr<Ipv4StaticRouting> proxyStaticRouting = ipv4RoutingHelper.GetStaticRouting (m_proxyNode->GetObject<Ipv4>());
+  proxyStaticRouting -> AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.255.0.0"), 1);
+
   // create a point to point link between the new eNB and the SGW with
   // the corresponding new NetDevices on each side  
   NodeContainer enbSgwNodes;
@@ -286,9 +290,9 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   enbProxyNodes.Add (m_proxyNode);
   enbProxyNodes.Add (enb);
   PointToPointHelper p2ph_proxy;
-  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue ("100Gb/s"));
-  p2ph_proxy.SetDeviceAttribute ("Mtu", UintegerValue ("100000"));
-  p2ph_proxy.SetChannelAttribute ("Delay", TimeValue (0));
+  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate("100Gb/s")));
+  p2ph_proxy.SetDeviceAttribute ("Mtu", UintegerValue (30000));
+  p2ph_proxy.SetChannelAttribute ("Delay", TimeValue(Seconds(0)));
   NetDeviceContainer enbProxyDevices = p2ph.Install (enb, m_proxyNode);
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB after installing p2p dev: " << enb->GetObject<Ipv4> ()->GetNInterfaces ());
 
@@ -305,7 +309,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   NS_ASSERT (retval == 0);
 
   Ptr<Socket> proxyUdpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::UdpSocketFactory"));
-  retval = proxyUdpsocket->Bind (InetSocketAddress (proxyAddress, m_proxyUdpPort));
+  retval = proxyUdpSocket->Bind (InetSocketAddress (proxyAddress, m_proxyUdpPort));
   NS_ASSERT (retval == 0);
 
   Ptr<Socket> enbProxyUdpSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::UdpSocketFactory"));
@@ -340,9 +344,11 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);  
   
+  std::pair<Ptr<VirtualNetDevice>,Ipv4Address> tempMap = std::make_pair(m_tunProxyDevice,proxyAddress);
+
   //Modified by Process7
   NS_LOG_INFO ("create EpcEnbApplication");
-  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, enbProxyUdpSocket, m_tunProxyDevice, proxyAddress);
+  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, enbProxyUdpSocket, tempMap);
   enb->AddApplication (enbApp);
 
   m_tunProxyDevice->SetSendCallback (MakeCallback (&EpcEnbApplication::RecvFromTunDevice, enbApp));
@@ -353,10 +359,10 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
 
   //Process7
   NS_LOG_INFO ("create EpcEnbProxyApplication");
-  Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (); //need to add parameter
-  m_proxyNode->AddApplication (enbApp);
-  NS_ASSERT (m_proxyNode->GetApplications () == 1);
-  NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbProxyApplication> () != 0, "cannot retrieve EpcEnbProxyApplication");
+  Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (proxyTcpSocket,proxyUdpSocket,proxy_enbAddress); //need to add parameter
+  m_proxyNode->AddApplication (proxyApp);
+  NS_ASSERT (m_proxyNode->GetNApplications () == 1);
+  NS_ASSERT_MSG (m_proxyNode->GetApplication (0)->GetObject<EpcEnbProxyApplication> () != 0, "cannot retrieve EpcEnbProxyApplication");
   NS_LOG_LOGIC ("proxy: "<<m_proxyNode<<", m_proxyNode->GetApplication (0): "<<enb->GetApplication (0));
   
   NS_LOG_INFO ("Create EpcX2 entity");

@@ -592,7 +592,7 @@ main (int argc, char *argv[])
 
 	uint16_t ExperimentNum = 2;	
 
-	double simTime = 20;
+	double simTime = 10;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -938,7 +938,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("500Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("300Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

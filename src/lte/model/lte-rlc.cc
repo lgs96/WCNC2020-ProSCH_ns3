@@ -306,11 +306,7 @@ LteRlcSm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
   NS_FATAL_ERROR("Not supported");
 }
 
-//Process3
-void
-LteRlcSm::DoGetEndMarker()
-{
-}
+
 
 
 //////////////////////////////////////////

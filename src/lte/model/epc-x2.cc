@@ -398,46 +398,23 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     {
       if (messageType == EpcX2Header::InitiatingMessage)
         {
-		  //Process4
-		  NS_LOG_LOGIC ("Recv X2 message: UE CONTEXT RELEASE");
+          NS_LOG_LOGIC ("Recv X2 message: UE CONTEXT RELEASE");
 
-		  EpcX2UeContextReleaseHeader x2UeCtxReleaseHeader;
-		  packet->RemoveHeader (x2UeCtxReleaseHeader);
+          EpcX2UeContextReleaseHeader x2UeCtxReleaseHeader;
+          packet->RemoveHeader (x2UeCtxReleaseHeader);
 
-		  NS_LOG_INFO ("X2 UeContextRelease header: " << x2UeCtxReleaseHeader);
+          NS_LOG_INFO ("X2 UeContextRelease header: " << x2UeCtxReleaseHeader);
 
-		  EpcX2SapUser::UeContextReleaseParams params;
-		  params.oldEnbUeX2apId = x2UeCtxReleaseHeader.GetOldEnbUeX2apId ();
-		  params.newEnbUeX2apId = x2UeCtxReleaseHeader.GetNewEnbUeX2apId ();
-		  params.sourceCellId = cellsInfo->m_remoteCellId;
+          EpcX2SapUser::UeContextReleaseParams params;
+          params.oldEnbUeX2apId = x2UeCtxReleaseHeader.GetOldEnbUeX2apId ();
+          params.newEnbUeX2apId = x2UeCtxReleaseHeader.GetNewEnbUeX2apId ();
+          params.sourceCellId = cellsInfo->m_remoteCellId;
 
-		  NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
-		  NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
+          NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+          NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
 
-		  m_x2SapUser->RecvUeContextRelease (params);
+          m_x2SapUser->RecvUeContextRelease (params);
         }
-      //Process3 gsoul, now end marker will be sent with ue context release message, and get timer to count whether packets from source cell come or not come
-/*      else
-      	{
-    	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
-
-    	  EpcX2EndMarkerHeader x2emHeader;
-    	  packet->RemoveHeader(x2emHeader);
-
-    	  EpcX2SapUser::EndMarkerParams params;
-    	  params.gtpTeid = x2emHeader.GetGtpTeid();
-
-		  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
-
-	      if(user != 0)
-	      {
-	    	user -> GetEndMarker ();
-		  }
-		  else
-		  {
-			NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
-		   }
-      	 }*/
     }
   else if (procedureCode == EpcX2Header::ResourceStatusReporting)
     {
@@ -589,29 +566,6 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       m_x2SapUser->RecvSecondaryCellHandoverCompleted(params);
     }
-  //Process3 this function is moved to UeContextRelease for late end marker
- /* else if (procedureCode == EpcX2Header::EndMarker)
-    {
-	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
-
-      EpcX2EndMarkerHeader x2emHeader;
-	  packet->RemoveHeader(x2emHeader);
-
-	  EpcX2SapUser::EndMarkerParams params;
-	  params.gtpTeid = x2emHeader.GetGtpTeid();
-
-	  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
-
-	  if(user != 0)
-	  {
-		  user -> GetEndMarker ();
-	  }
-	  else
-	  {
-		  NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
-	  }
-    }*/
-
   else
     {
       NS_ASSERT_MSG (false, "ProcedureCode NOT SUPPORTED!!!");
@@ -660,9 +614,6 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   NS_LOG_LOGIC("Received packet on X2 u, size " << packet->GetSize() 
     << " source " << params.sourceCellId << " target " << params.targetCellId << " type " << gtpu.GetMessageType());
 
-  NS_LOG_LOGIC("found "<<m_teidToBeForwardedMap.find(params.gtpTeid)->first<<" "<<m_teidToBeForwardedMap.find(params.gtpTeid)->second);
-  NS_LOG_LOGIC("end "<<m_teidToBeForwardedMap.end()->first<<" "<<m_teidToBeForwardedMap.end()->second);
-
   if(m_teidToBeForwardedMap.find(params.gtpTeid) == m_teidToBeForwardedMap.end())
   {
     if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
@@ -680,24 +631,7 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
       {
         NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
       }
-    }
-    //Process4 -->forwarding to the true path
-    else if (gtpu.GetMessageType() == EpcX2Header::EndMarker)
-    {
-      // add PdcpTag
-	  PdcpTag pdcpTag (Simulator::Now ());
-	  params.ueData->AddByteTag (pdcpTag);
-	  // call rlc interface
-	  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
-	  if(user != 0)
-	  {
-		user -> GetEndMarker(params);
-	  }
-	  else
-	  {
-		NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
-	  }
-    }
+    } 
     else if (gtpu.GetMessageType() == EpcX2Header::McForwardUplinkData)
     {
       // call pdcp interface
@@ -709,18 +643,12 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
       m_x2SapUser->RecvUeData (params);
     }
   }
-  else // the packet was received during a secondary cell HO, forward to the target cell , Process4
+  else // the packet was received during a secondary cell HO, forward to the target cell
   {
     params.sourceCellId = cellsInfo->m_remoteCellId;
     params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
     NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);
-    if(gtpu.GetMessageType() == EpcX2Header::EndMarker)
-    {
-      DoSendEndMarker(params);
-      m_x2SapUser->RecvEndMarker();
-    }
-    else
-      DoSendMcPdcpPdu(params);
+    DoSendMcPdcpPdu(params);
   }
 }
 
@@ -1312,43 +1240,6 @@ EpcX2::DoSendMcPdcpPdu(EpcX2Sap::UeDataParams params)
 
   NS_LOG_INFO ("Forward MC UE DATA through X2 interface");
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));  
-}
-
-//Process3 gsoul -> Process4 now, similar function with DoSendMcPdcpPdu
-void
-EpcX2::DoSendEndMarker (EpcX2Sap::UeDataParams params)
-{
-  NS_LOG_FUNCTION (this);
-
-  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
-  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
-  NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
-
-  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
-				 "Missing infos for targetCellId = " << params.targetCellId);
-  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.targetCellId];
-  Ptr<Socket> sourceSocket = socketInfo->m_localUserPlaneSocket;
-  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
-
-  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
-  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
-
-  // add a message type to the gtpu header, so that it is possible to distinguish at receiver
-  GtpuHeader gtpu;
-  gtpu.SetTeid (params.gtpTeid);
-  //gtpu.SetMessageType(EpcX2Header::McForwardDownlinkData);
-  gtpu.SetMessageType(EpcX2Header::EndMarker);
-  gtpu.SetLength (0 + gtpu.GetSerializedSize () - 8); /// \todo This should be done in GtpuHeader
-  NS_LOG_INFO ("GTP-U header: " << gtpu);
-
-  Ptr<Packet> packet = new Packet();
-  packet->AddHeader (gtpu);
-
-  EpcX2Tag tag (Simulator::Now());
-  packet->AddPacketTag (tag);
-
-  NS_LOG_INFO ("Forward MC END MARKER through X2 interface");
-  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));
 }
 
 void

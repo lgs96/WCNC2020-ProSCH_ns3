@@ -170,12 +170,6 @@ LteRlcUmLowLat::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
   DoTransmitPdcpPdu(params.ueData);
 }
 
-//Process3
-void
-LteRlcUmLowLat::DoGetEndMarker()
-{
-}
-
 /**
  * MAC SAP
  */

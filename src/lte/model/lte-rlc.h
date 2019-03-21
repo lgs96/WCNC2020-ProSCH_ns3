@@ -195,9 +195,6 @@ protected:
 
   virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params) = 0;
 
-  //Process3
-  virtual void DoGetEndMarker() = 0;
-
   LteMacSapUser* m_macSapUser;
   LteMacSapProvider* m_macSapProvider;
 
@@ -248,8 +245,7 @@ public:
   virtual void DoNotifyHarqDeliveryFailure ();
   virtual void DoReceivePdu (Ptr<Packet> p);
   virtual void DoSendMcPdcpSdu (EpcX2Sap::UeDataParams params);
-  //Process3
-  virtual void DoGetEndMarker();
+
 
 
 private:

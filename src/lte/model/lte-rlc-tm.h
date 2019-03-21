@@ -58,9 +58,6 @@ public:
 
   virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
 
-  //Process3
-  virtual void DoGetEndMarker();
-
 private:
   void ExpireRbsTimer (void);
   void DoReportBufferStatus ();

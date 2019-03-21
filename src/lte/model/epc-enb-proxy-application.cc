@@ -35,6 +35,8 @@
 #include "ns3/uinteger.h"
 #include "ns3/internet-module.h"
 
+#include "ns3/tcp-socket-base.h"
+#include "ns3/tcp-tx-buffer.h"
 #include "epc-gtpu-header.h"
 #include "eps-bearer-tag.h"
 
@@ -164,11 +166,17 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
 	//Send data packet from proxy tcp to user
 	m_proxyTcpSocket->Send(packet);
 
+	//Set advertise window
+	Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
+	uint32_t awndSize = proxyTxBuffer->Available();
+	NS_LOG_LOGIC("Proxy tcp's Awnd size is "<<awndSize);
+
 	//Send Early ACK packet to server, set ack number
 	uint32_t dataSize = packet->GetSize();
     SequenceNumber32 AckNum = dataSeqNum + dataSize;
 	newTcpHeader.SetAckNumber(AckNum);
 	newTcpHeader.SetFlags(TcpHeader::ACK);
+	newTcpHeader.SetWindowSize(awndSize);
 
 	Ptr<Packet> ackPacket = Create<Packet> ();
 	ackPacket->AddHeader(newTcpHeader);

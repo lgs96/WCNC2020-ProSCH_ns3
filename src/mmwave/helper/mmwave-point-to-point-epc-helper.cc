@@ -290,7 +290,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   enbProxyNodes.Add (m_proxyNode);
   enbProxyNodes.Add (enb);
   PointToPointHelper p2ph_proxy;
-  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate("100Gb/s")));
+  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate("1000Gb/s")));
   p2ph_proxy.SetDeviceAttribute ("Mtu", UintegerValue (30000));
   p2ph_proxy.SetChannelAttribute ("Delay", TimeValue(Seconds(0)));
   NetDeviceContainer enbProxyDevices = p2ph.Install (enb, m_proxyNode);

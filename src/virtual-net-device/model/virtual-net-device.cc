@@ -254,7 +254,7 @@ bool
 VirtualNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
   m_macTxTrace (packet);
-  std::cout<<"Virtual device send"<<std::endl;
+//  std::cout<<"Virtual device send"<<std::endl;
   if (m_sendCb (packet, GetAddress (), dest, protocolNumber))
     {
       return true;

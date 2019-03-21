@@ -414,8 +414,8 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
 	// LogComponentEnable("McUeNetDevice", LOG_FUNCTION);
 	//LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_LOGIC);
-	LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
-	LogComponentEnable("EpcEnbProxyApplication",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcEnbProxyApplication",LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveEnbMac", LOG_LOGIC);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
@@ -539,7 +539,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable ("mmWaveInterference", LOG_LEVEL_FUNCTION);
 	// LogComponentEnable("LteSpectrumPhy", LOG_LEVEL_ALL);
 	//	 LogComponentEnable("TcpCongestionOps", LOG_LEVEL_DEBUG);
-	LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("TcpSocketBase", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWave3gppChannel",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveChannelRaytracing",LOG_FUNCTION);
 	//LogComponentEnable("MmWaveBeamforming",LOG_FUNCTION);
@@ -641,10 +641,10 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (1024*1024*100));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
-	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (100 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (100 * 1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (64 *1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));

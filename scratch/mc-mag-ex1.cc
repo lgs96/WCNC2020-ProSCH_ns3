@@ -592,7 +592,7 @@ main (int argc, char *argv[])
 
 	uint16_t ExperimentNum = 2;	
 
-	double simTime = 20;
+	double simTime = 14;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -603,7 +603,8 @@ main (int argc, char *argv[])
 	double x2Latency = 10, mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double TxPower = 15;
+	double EnbTxPower = 20;
+	double UeTxPower = 15;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
 	uint16_t Velocity = 10;
@@ -638,8 +639,8 @@ main (int argc, char *argv[])
 	//	Config::SetDefault("ns3::McEnbPdcp::EnableDuplication", BooleanValue(isDuplication));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
-	Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower",DoubleValue(TxPower));
-	Config::SetDefault ("ns3::MmWaveUePhy::TxPower",DoubleValue(TxPower));
+	Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower",DoubleValue(EnbTxPower));
+	Config::SetDefault ("ns3::MmWaveUePhy::TxPower",DoubleValue(UeTxPower));
 	//	Config::SetDefault ("ns3::MmWaveSpectrumPhy::DisableInterference",BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
@@ -680,7 +681,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -938,7 +939,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("300Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1500Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

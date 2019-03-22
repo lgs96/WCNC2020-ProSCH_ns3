@@ -391,7 +391,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
-	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
+	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
@@ -507,7 +507,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
@@ -907,7 +907,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("300Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("30Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

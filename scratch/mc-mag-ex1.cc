@@ -592,7 +592,7 @@ main (int argc, char *argv[])
 
 	uint16_t ExperimentNum = 2;	
 
-	double simTime = 14;
+	double simTime = 20.5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;

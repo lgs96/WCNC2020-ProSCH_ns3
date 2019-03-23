@@ -852,10 +852,12 @@ main (int argc, char *argv[])
 		*enb_stream->GetStream() << enbPositionAlloc->GetNext() << std::endl;
 	}
 
-
-	for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
-		Box box = (*it)->GetBoundaries();
-		*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;
+	if(!ReadBuilding)
+	{
+		for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
+			Box box = (*it)->GetBoundaries();
+			*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;
+		}
 	}
 
 	// Install mmWave, lte, mc Devices to the nodes

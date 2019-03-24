@@ -613,7 +613,7 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
+	bool ReadBuilding = true;
 	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments
@@ -868,12 +868,6 @@ main (int argc, char *argv[])
 	AsciiTraceHelper asciiTraceHelper_enb;
 	Ptr<OutputStreamWrapper> enb_stream = asciiTraceHelper_enb.CreateFileStream(enbfile.str().c_str());
 
-	std::ostringstream buildingfile;
-	buildingfile <<ExperimentNum<< "_BuildingPosition.txt";
-	AsciiTraceHelper asciiTraceHelper_build;
-	Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());
-
-
 	for (uint16_t i = 0; i<uePositionAlloc->GetSize(); i++) {
 		*ue_stream->GetStream() << uePositionAlloc->GetNext() << std::endl;
 	}
@@ -883,6 +877,11 @@ main (int argc, char *argv[])
 	}
 
 	if(!ReadBuilding){
+		std::ostringstream buildingfile;
+		buildingfile <<ExperimentNum<< "_BuildingPosition.txt";
+		AsciiTraceHelper asciiTraceHelper_build;
+		Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());
+
 		for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
 			Box box = (*it)->GetBoundaries();
 			*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;
@@ -940,7 +939,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("20Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

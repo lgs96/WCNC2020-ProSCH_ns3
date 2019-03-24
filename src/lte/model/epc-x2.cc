@@ -348,6 +348,40 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
           m_x2SapUser->RecvHandoverPreparationFailure (params);
         }
     }
+  //Process8
+  else if (procedureCode == EpcX2Header::PreHandoverPreparation)
+    {
+	  NS_LOG_LOGIC ("Recv X2 message: PREFETCHED HANDOVER REQUEST");
+
+	  EpcX2HandoverRequestHeader x2HoReqHeader;
+      packet->RemoveHeader (x2HoReqHeader);
+
+      NS_LOG_INFO ("X2 HandoverRequest header: " << x2HoReqHeader);
+
+	  EpcX2SapUser::HandoverRequestParams params;
+	  params.oldEnbUeX2apId = x2HoReqHeader.GetOldEnbUeX2apId ();
+	  params.cause          = x2HoReqHeader.GetCause ();
+	  params.sourceCellId   = cellsInfo->m_remoteCellId;
+	  params.targetCellId   = x2HoReqHeader.GetTargetCellId ();
+	  params.mmeUeS1apId    = x2HoReqHeader.GetMmeUeS1apId ();
+	  params.ueAggregateMaxBitRateDownlink = x2HoReqHeader.GetUeAggregateMaxBitRateDownlink ();
+	  params.ueAggregateMaxBitRateUplink   = x2HoReqHeader.GetUeAggregateMaxBitRateUplink ();
+	  params.bearers        = x2HoReqHeader.GetBearers ();
+	  // RlcRequests for secondary cell HO
+	  params.rlcRequests    = x2HoReqHeader.GetRlcSetupRequests();
+	  params.rrcContext     = packet;
+	  params.isMc           = x2HoReqHeader.GetIsMc ();
+
+	  NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+	  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+	  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+	  NS_LOG_LOGIC ("mmeUeS1apId = " << params.mmeUeS1apId);
+	  NS_LOG_LOGIC ("cellsInfo->m_localCellId = " << cellsInfo->m_localCellId);
+	  NS_ASSERT_MSG (params.targetCellId == cellsInfo->m_localCellId,
+				     "TargetCellId mismatches with localCellId");
+
+	  m_x2SapUser->RecvPreHandoverRequest (params);
+    }
   else if (procedureCode == EpcX2Header::LoadIndication)
     {
       if (messageType == EpcX2Header::InitiatingMessage)
@@ -712,6 +746,63 @@ EpcX2::DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
 }
 
+//Process8 Send prefetched handover request to master node
+void
+EpcX2::DoPreSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+  NS_LOG_LOGIC ("mmeUeS1apId  = " << params.mmeUeS1apId);
+
+  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
+                 "Missing infos for targetCellId = " << params.targetCellId);
+  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.targetCellId];
+  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+  NS_LOG_INFO ("Send X2 message: PREFETCHED HANDOVER REQUEST");
+
+  // Build the X2 message
+  EpcX2HandoverRequestHeader x2HoReqHeader;
+  x2HoReqHeader.SetOldEnbUeX2apId (params.oldEnbUeX2apId);
+  x2HoReqHeader.SetCause (params.cause);
+  x2HoReqHeader.SetTargetCellId (params.targetCellId);
+  x2HoReqHeader.SetMmeUeS1apId (params.mmeUeS1apId);
+  x2HoReqHeader.SetUeAggregateMaxBitRateDownlink (params.ueAggregateMaxBitRateDownlink);
+  x2HoReqHeader.SetUeAggregateMaxBitRateUplink (params.ueAggregateMaxBitRateUplink);
+  x2HoReqHeader.SetBearers (params.bearers);
+  // For secondary cell handover
+  x2HoReqHeader.SetRlcSetupRequests (params.rlcRequests);
+  x2HoReqHeader.SetIsMc (params.isMc);
+
+  EpcX2Header x2Header;
+  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
+  x2Header.SetProcedureCode (EpcX2Header::PrefetchedHandoverPreparation);
+  x2Header.SetLengthOfIes (x2HoReqHeader.GetLengthOfIes ());
+  x2Header.SetNumberOfIes (x2HoReqHeader.GetNumberOfIes ());
+
+  NS_LOG_INFO ("X2 header: " << x2Header);
+  NS_LOG_INFO ("X2 HandoverRequest header: " << x2HoReqHeader);
+
+  // Build the X2 packet
+  Ptr<Packet> packet = (params.rrcContext != 0) ? (params.rrcContext) : (Create <Packet> ());
+  packet->AddHeader (x2HoReqHeader);
+  packet->AddHeader (x2Header);
+
+  EpcX2Tag tag (Simulator::Now());
+  packet->AddPacketTag (tag);
+
+  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+  // Send the X2 message through the socket
+  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+}
 void
 EpcX2::DoSendRlcSetupRequest (EpcX2SapProvider::RlcSetupRequest params)
 {

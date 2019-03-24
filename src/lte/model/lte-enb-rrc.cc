@@ -671,6 +671,89 @@ namespace ns3 {
 						NS_LOG_INFO("UeManager is in CONNECTION_RECONFIGURATION, postpone the PrepareHandover command to cell " << m_queuedHandoverRequestCellId);
 					}
 					break;
+				// Process8
+				case HANDOVER_PREPARATION:
+					{
+						NS_LOG_LOGIC("Handover prefetch signal is already sent, wait for response from LTE cell");
+					}
+					break;
+
+				default:
+					NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
+					break;
+			}
+
+		}
+
+	//Process8 this fucntion is same fucntion with PrepareHandover. But this function is used in procedure of Proxy Based Handover
+	void
+		UeManager::PrePrepareHandover (uint16_t cellId)
+		{
+			NS_LOG_FUNCTION (this << cellId);
+			switch (m_state)
+			{
+				case CONNECTED_NORMALLY:
+					{
+						m_targetCellId = cellId;
+						EpcX2SapProvider::HandoverRequestParams params;
+						params.oldEnbUeX2apId = m_rnti;
+						params.cause          = EpcX2SapProvider::HandoverDesirableForRadioReason;
+						params.sourceCellId   = m_rrc->m_cellId;
+						params.targetCellId   = cellId;
+						params.mmeUeS1apId    = m_imsi;
+						params.ueAggregateMaxBitRateDownlink = 200 * 1000;
+						params.ueAggregateMaxBitRateUplink = 100 * 1000;
+						params.bearers = GetErabList ();
+						params.rlcRequests = m_rlcRequestVector;
+						// clear the vector to avoid keeping old information
+						// the target eNB will add the rlcRequests in its own vector
+						m_rlcRequestVector.clear();
+
+						LteRrcSap::HandoverPreparationInfo hpi;
+						hpi.asConfig.sourceUeIdentity = m_rnti;
+						hpi.asConfig.sourceDlCarrierFreq = m_rrc->m_dlEarfcn;
+						hpi.asConfig.sourceMeasConfig = m_rrc->m_ueMeasConfig;
+						hpi.asConfig.sourceRadioResourceConfig = GetRadioResourceConfigForHandoverPreparationInfo ();
+						hpi.asConfig.sourceMasterInformationBlock.dlBandwidth = m_rrc->m_dlBandwidth;
+						hpi.asConfig.sourceMasterInformationBlock.systemFrameNumber = 0;
+						hpi.asConfig.sourceSystemInformationBlockType1.cellAccessRelatedInfo.plmnIdentityInfo.plmnIdentity = m_rrc->m_sib1.cellAccessRelatedInfo.plmnIdentityInfo.plmnIdentity;
+						hpi.asConfig.sourceSystemInformationBlockType1.cellAccessRelatedInfo.cellIdentity = m_rrc->m_cellId;
+						hpi.asConfig.sourceSystemInformationBlockType1.cellAccessRelatedInfo.csgIndication = m_rrc->m_sib1.cellAccessRelatedInfo.csgIndication;
+						hpi.asConfig.sourceSystemInformationBlockType1.cellAccessRelatedInfo.csgIdentity = m_rrc->m_sib1.cellAccessRelatedInfo.csgIdentity;
+						LteEnbCmacSapProvider::RachConfig rc = m_rrc->m_cmacSapProvider->GetRachConfig ();
+						hpi.asConfig.sourceSystemInformationBlockType2.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
+						hpi.asConfig.sourceSystemInformationBlockType2.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
+						hpi.asConfig.sourceSystemInformationBlockType2.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
+						hpi.asConfig.sourceSystemInformationBlockType2.freqInfo.ulCarrierFreq = m_rrc->m_ulEarfcn;
+						hpi.asConfig.sourceSystemInformationBlockType2.freqInfo.ulBandwidth = m_rrc->m_ulBandwidth;
+						params.rrcContext = m_rrc->m_rrcSapUser->EncodeHandoverPreparationInformation (hpi);
+
+						params.isMc = m_isMc;
+
+						NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+						NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+						NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+						NS_LOG_LOGIC ("mmeUeS1apId = " << params.mmeUeS1apId);
+						NS_LOG_LOGIC ("rrcContext   = " << params.rrcContext);
+
+						m_rrc->m_x2SapProvider->PreSendHandoverRequest (params);
+						SwitchToState (HANDOVER_PREPARATION);
+					}
+					break;
+
+				case CONNECTION_RECONFIGURATION:
+				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
+					{
+						m_queuedHandoverRequestCellId = cellId;
+						NS_LOG_INFO("UeManager is in CONNECTION_RECONFIGURATION, postpone the PrepareHandover command to cell " << m_queuedHandoverRequestCellId);
+					}
+					break;
+				// Process8
+				case HANDOVER_PREPARATION:
+					{
+						NS_LOG_INFO("Handover prefetch signal is already sent, wait for response from LTE cell");
+					}
+					break;
 
 				default:
 					NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
@@ -761,7 +844,7 @@ namespace ns3 {
 
 			Ptr<Packet> encodedHandoverCommand = params.rrcContext;
 			LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
-			m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration (m_rnti, handoverCommand);
+			m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration		 (m_rnti, handoverCommand);
 			SwitchToState (HANDOVER_LEAVING);
 			m_handoverLeavingTimeout = Simulator::Schedule (m_rrc->m_handoverLeavingTimeoutDuration, 
 					&LteEnbRrc::HandoverLeavingTimeout, 
@@ -3029,6 +3112,28 @@ namespace ns3 {
 				m_x2SapProvider->SendUeSinrUpdate (params); 
 			}
 
+			//Process8 start point 190323
+			for(std::map<uint64_t, double>::iterator imsiIter = m_ueImsiSinrMap.begin(); imsiIter != m_ueImsiSinrMap.end(); ++imsiIter)
+			{
+				uint64_t imsi = imsiIter->first;
+				double sinr = imsiIter->second;
+				uint16_t rnti = GetRntiFromImsi(imsi);
+				std::map<uint64_t,double> tempMap;
+
+				double currentSinrDb = 10*std::log10(sinr);
+				double previousSinrDb = 10*std::log10(m_previousSinrMap.find(imsi)->second);
+				NS_ASSERT(m_previousSinrMap.find(imsi)!=m_previousSinrMap.end());
+
+				//HELP: condition should be checked. To make whole system quickly, this condition will be almost same as 'ALWAYS'
+				if(true)
+				{
+					PreSendHandoverRequest(rnti,m_lteCellId);
+				}
+				tempMap.insert(imsiIter);
+			}
+
+			m_previousSinrMap.clear();
+			m_previousSinrMap.insert(tempMap.begin(),tempMap.end());
 		}
 
 	void 
@@ -3903,6 +4008,20 @@ namespace ns3 {
 			ueManager->PrepareHandover (cellId);
 
 		}
+	//Process8 prefetch handover signal, the function flow is same with sendhandoverrequest. Difference is a processing procedure in the lte cell
+	void
+		LteEnbRrc::PreSendHandoverRequest (uint16_t rnti, uint16_t cellId)
+		{
+			NS_LOG_FUNCTION (this << rnti << cellId);
+			NS_LOG_LOGIC ("Request to send HANDOVER REQUEST");
+			NS_ASSERT (m_configured);
+
+			NS_LOG_INFO("LteEnbRrc on cell " << m_cellId << " for rnti " << rnti << " PreSendHandoverRequest at time " << Simulator::Now().GetSeconds() << " to cellId " << cellId);
+
+			Ptr<UeManager> ueManager = GetUeManager (rnti);
+			ueManager->PrePrepareHandover(cellId);
+		}
+
 
 	void 
 		LteEnbRrc::DoCompleteSetupUe (uint16_t rnti, LteEnbRrcSapProvider::CompleteSetupUeParameters params)
@@ -4075,6 +4194,107 @@ namespace ns3 {
 
 			m_x2SapProvider->SendHandoverRequestAck (ackParams);
 		}
+	void
+		LteEnbRrc::DoRecvPreHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
+		{
+			NS_LOG_FUNCTION (this);
+
+			NS_LOG_INFO ("Recv X2 message: PREFETCHED HANDOVER REQUEST");
+
+			NS_LOG_LOGIC ("oldEnbUeX2apId = " << req.oldEnbUeX2apId);
+			NS_LOG_LOGIC ("sourceCellId = " << req.sourceCellId);
+			NS_LOG_LOGIC ("targetCellId = " << req.targetCellId);
+			NS_LOG_LOGIC ("mmeUeS1apId = " << req.mmeUeS1apId);
+			NS_LOG_INFO ("isMc = " << req.isMc);
+
+			NS_ASSERT (req.targetCellId == m_cellId);
+
+			if (m_admitHandoverRequest == false)
+			{
+				NS_LOG_INFO ("rejecting handover request from cellId " << req.sourceCellId);
+				EpcX2Sap::HandoverPreparationFailureParams res;
+				res.oldEnbUeX2apId =  req.oldEnbUeX2apId;
+				res.sourceCellId = req.sourceCellId;
+				res.targetCellId = req.targetCellId;
+				res.cause = 0;
+				res.criticalityDiagnostics = 0;
+				m_x2SapProvider->SendHandoverPreparationFailure (res);
+				return;
+			}
+
+			uint16_t rnti = AddUe (UeManager::HANDOVER_JOINING);
+			LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue anrcrv = m_cmacSapProvider->AllocateNcRaPreamble (rnti);
+			if (anrcrv.valid == false)
+			{
+				NS_LOG_INFO (this << " failed to allocate a preamble for non-contention based RA => cannot accept HO");
+				RemoveUe (rnti);
+				NS_FATAL_ERROR ("should trigger HO Preparation Failure, but it is not implemented");
+				return;
+			}
+
+			Ptr<UeManager> ueManager = GetUeManager (rnti);
+			ueManager->SetSource (req.sourceCellId, req.oldEnbUeX2apId);
+			ueManager->SetImsi (req.mmeUeS1apId);
+			ueManager->SetIsMc (req.isMc);
+			RegisterImsiToRnti(req.mmeUeS1apId, rnti);
+
+			EpcX2SapProvider::HandoverRequestAckParams ackParams;
+			ackParams.oldEnbUeX2apId = req.oldEnbUeX2apId;
+			ackParams.newEnbUeX2apId = rnti;
+			ackParams.sourceCellId = req.sourceCellId;
+			ackParams.targetCellId = req.targetCellId;
+
+			for (std::vector <EpcX2Sap::ErabToBeSetupItem>::iterator it = req.bearers.begin ();
+					it != req.bearers.end ();
+					++it)
+			{
+				ueManager->SetupDataRadioBearer (it->erabLevelQosParameters, it->erabId, it->gtpTeid, it->transportLayerAddress);
+				EpcX2Sap::ErabAdmittedItem i;
+				i.erabId = it->erabId;
+				ackParams.admittedBearers.push_back (i);
+			}
+
+			// For secondary cell HO for MC devices, setup RLC instances
+			for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
+					it != req.rlcRequests.end ();
+					++it)
+			{
+				ueManager->RecvRlcSetupRequest(*it);
+			}
+
+			LteRrcSap::RrcConnectionReconfiguration handoverCommand = ueManager->GetRrcConnectionReconfigurationForHandover ();
+			handoverCommand.haveMobilityControlInfo = true;
+			handoverCommand.mobilityControlInfo.targetPhysCellId = m_cellId;
+			handoverCommand.mobilityControlInfo.haveCarrierFreq = true;
+			handoverCommand.mobilityControlInfo.carrierFreq.dlCarrierFreq = m_dlEarfcn;
+			handoverCommand.mobilityControlInfo.carrierFreq.ulCarrierFreq = m_ulEarfcn;
+			handoverCommand.mobilityControlInfo.haveCarrierBandwidth = true;
+			handoverCommand.mobilityControlInfo.carrierBandwidth.dlBandwidth = m_dlBandwidth;
+			handoverCommand.mobilityControlInfo.carrierBandwidth.ulBandwidth = m_ulBandwidth;
+			handoverCommand.mobilityControlInfo.newUeIdentity = rnti;
+			handoverCommand.mobilityControlInfo.haveRachConfigDedicated = true;
+			handoverCommand.mobilityControlInfo.rachConfigDedicated.raPreambleIndex = anrcrv.raPreambleId;
+			handoverCommand.mobilityControlInfo.rachConfigDedicated.raPrachMaskIndex = anrcrv.raPrachMaskIndex;
+
+			LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider->GetRachConfig ();
+			handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
+			handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
+			handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
+
+			Ptr<Packet> encodedHandoverCommand = m_rrcSapUser->EncodeHandoverCommand (handoverCommand);
+
+			ackParams.rrcContext = encodedHandoverCommand;
+
+			NS_LOG_LOGIC ("Send X2 message: HANDOVER REQUEST ACK");
+
+			NS_LOG_LOGIC ("oldEnbUeX2apId = " << ackParams.oldEnbUeX2apId);
+			NS_LOG_LOGIC ("newEnbUeX2apId = " << ackParams.newEnbUeX2apId);
+			NS_LOG_LOGIC ("sourceCellId = " << ackParams.sourceCellId);
+			NS_LOG_LOGIC ("targetCellId = " << ackParams.targetCellId);
+
+			m_x2SapProvider->SendHandoverRequestAck (ackParams);
+		}
+
 
 	void
 		LteEnbRrc::DoRecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params)

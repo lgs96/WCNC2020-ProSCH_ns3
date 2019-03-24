@@ -837,13 +837,7 @@ main (int argc, char *argv[])
 	enbfile <<ExperimentNum<< "_EnbPosition.txt";
 	AsciiTraceHelper asciiTraceHelper_enb;
 	Ptr<OutputStreamWrapper> enb_stream = asciiTraceHelper_enb.CreateFileStream(enbfile.str().c_str());
-
-	std::ostringstream buildingfile;
-	buildingfile <<ExperimentNum<< "_BuildingPosition.txt";
-	AsciiTraceHelper asciiTraceHelper_build;
-	Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());
-
-
+	
 	for (uint16_t i = 0; i<uePositionAlloc->GetSize(); i++) {
 		*ue_stream->GetStream() << uePositionAlloc->GetNext() << std::endl;
 	}
@@ -852,14 +846,18 @@ main (int argc, char *argv[])
 		*enb_stream->GetStream() << enbPositionAlloc->GetNext() << std::endl;
 	}
 
-	if(!ReadBuilding)
+	for(!ReadBuilding)
 	{
+		std::ostringstream buildingfile;
+		buildingfile <<ExperimentNum<< "_BuildingPosition.txt";
+		AsciiTraceHelper asciiTraceHelper_build;
+		Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());
+
 		for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
 			Box box = (*it)->GetBoundaries();
 			*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;
 		}
 	}
-
 	// Install mmWave, lte, mc Devices to the nodes
 	NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
 	NetDeviceContainer mmWaveEnbDevs_28GHZ = mmwaveHelper->InstallEnbDevice(mmWaveEnbNodes_28G);

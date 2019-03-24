@@ -72,8 +72,9 @@ public:
     NotifyMmWaveLteHandover = 16,
     NotifyCoordinatorHandoverFailed = 17,
     SwitchConnection        = 18,
-    SecondaryCellHandoverCompleted = 19
-
+    SecondaryCellHandoverCompleted = 19,
+	//Process8
+	PrefetchedHandoverRequest = 20
   };
 
   enum TypeOfMessage_t {

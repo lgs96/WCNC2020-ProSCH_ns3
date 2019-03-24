@@ -189,6 +189,9 @@ public:
    */
   void PrepareHandover (uint16_t cellId);
 
+  //Process8
+  void PrePrepareHandover (uint16_t cellId);
+
   /** 
    * take the necessary actions in response to the reception of an X2 HANDOVER REQUEST ACK message
    * 
@@ -953,6 +956,8 @@ public:
    */
   void SendHandoverRequest (uint16_t rnti, uint16_t cellId);
 
+  void PreSendHandoverRequest (uint16_t rnti, uint16_t cellId);
+
   /**
    *  \brief This function acts as an interface to trigger Release indication messages towards eNB and EPC
    *  \param imsi the IMSI
@@ -1081,6 +1086,7 @@ private:
   // X2 SAP methods
 
   void DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams params);
+  void DoRecvPreHandoverRequest (EpcX2SapUser::HandoverRequestParams params);
   void DoRecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params);
   void DoRecvHandoverPreparationFailure (EpcX2SapUser::HandoverPreparationFailureParams params);
   void DoRecvSnStatusTransfer (EpcX2SapUser::SnStatusTransferParams params);
@@ -1551,6 +1557,10 @@ private:
   int m_crtPeriod;
 
   uint32_t m_x2_received_cnt;
+
+  // Process8
+  std::map<uint64_t, double> m_previousSinrMap;
+
 
 }; // end of `class LteEnbRrc`
 

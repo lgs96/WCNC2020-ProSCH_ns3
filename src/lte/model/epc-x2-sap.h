@@ -476,6 +476,8 @@ public:
    */
 
   virtual void SendHandoverRequest (HandoverRequestParams params) = 0;
+  //Process8
+  virtual void PreSendHandoverRequest (HandoverRequestParams params) = 0;
 
   virtual void SendHandoverRequestAck (HandoverRequestAckParams params) = 0;
 
@@ -538,6 +540,9 @@ public:
 
   virtual void RecvHandoverRequest (HandoverRequestParams params) = 0;
 
+  //Process8
+  virtual void RecvPreHandoverRequest (HandoverRequestParams params) = 0;
+
   virtual void RecvHandoverRequestAck (HandoverRequestAckParams params) = 0;
 
   virtual void RecvHandoverPreparationFailure (HandoverPreparationFailureParams params) = 0;
@@ -581,6 +586,9 @@ public:
   //
 
   virtual void SendHandoverRequest (HandoverRequestParams params);
+
+  //Process8
+  virtual void PreSendHandoverRequest (HandoverRequestParams params);
 
   virtual void SendHandoverRequestAck (HandoverRequestAckParams params);
 
@@ -643,6 +651,14 @@ void
 EpcX2SpecificEpcX2SapProvider<C>::SendHandoverRequest (HandoverRequestParams params)
 {
   m_x2->DoSendHandoverRequest (params);
+}
+
+//Process8
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::PreSendHandoverRequest (HandoverRequestParams params)
+{
+  m_x2->DoPreSendHandoverRequest (params);
 }
 
 template <class C>
@@ -799,6 +815,9 @@ public:
 
   virtual void RecvHandoverRequest (HandoverRequestParams params);
 
+  //Process8
+  virtual void RecvPreHandoverRequest (HandoverRequestParams params);
+
   virtual void RecvHandoverRequestAck (HandoverRequestAckParams params);
 
   virtual void RecvHandoverPreparationFailure (HandoverPreparationFailureParams params);
@@ -849,6 +868,14 @@ void
 EpcX2SpecificEpcX2SapUser<C>::RecvHandoverRequest (HandoverRequestParams params)
 {
   m_rrc->DoRecvHandoverRequest (params);
+}
+
+//Process8
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvPreHandoverRequest(HandoverRequestParams params)
+{
+  m_rrc->DoRecvPreHandoverRequest (params);
 }
 
 template <class C>

@@ -1294,6 +1294,12 @@ namespace ns3 {
 			NS_LOG_FUNCTION (this << cellId);
 			switch (m_state)
 			{
+				case CONNECTED_NORMALLY:
+					NS_ASSERT (cellId == m_targetCellId);
+					NS_LOG_INFO ("Master cell requires prefetched Handover Signal");
+					PrePrepareHandover(m_rrc->m_lteCellId);
+					break;
+
 				case HANDOVER_PREPARATION:
 					NS_ASSERT (cellId == m_targetCellId);
 					NS_LOG_INFO ("target eNB sent HO preparation failure, aborting HO");
@@ -3112,16 +3118,15 @@ namespace ns3 {
 				m_x2SapProvider->SendUeSinrUpdate (params); 
 			}
 
+			std::map<uint64_t,double> tempMap;
 			//Process8 start point 190323
 			for(std::map<uint64_t, double>::iterator imsiIter = m_ueImsiSinrMap.begin(); imsiIter != m_ueImsiSinrMap.end(); ++imsiIter)
 			{
 				uint64_t imsi = imsiIter->first;
 				double sinr = imsiIter->second;
 				uint16_t rnti = GetRntiFromImsi(imsi);
-				std::map<uint64_t,double> tempMap;
-
-				double currentSinrDb = 10*std::log10(sinr);
-				double previousSinrDb = 10*std::log10(m_previousSinrMap.find(imsi)->second);
+				//double currentSinrDb = 10*std::log10(sinr);
+				//double previousSinrDb = 10*std::log10(m_previousSinrMap.find(imsi)->second);
 				NS_ASSERT(m_previousSinrMap.find(imsi)!=m_previousSinrMap.end());
 
 				//HELP: condition should be checked. To make whole system quickly, this condition will be almost same as 'ALWAYS'
@@ -3129,7 +3134,7 @@ namespace ns3 {
 				{
 					PreSendHandoverRequest(rnti,m_lteCellId);
 				}
-				tempMap.insert(imsiIter);
+				tempMap.insert(std::make_pair(imsi,sinr));
 			}
 
 			m_previousSinrMap.clear();
@@ -3211,6 +3216,7 @@ namespace ns3 {
 
 		}
 
+	//Process8: TttBasedHandover is modified for Proxy based handover
 	void 
 		LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb)
 		{
@@ -3243,6 +3249,7 @@ namespace ns3 {
 				NS_LOG_DEBUG("Current SINR " << currentSinrDb);
 			}
 
+			// Process8: yes, this is for from outage to recovery situation
 			// the UE was in outage, now a mmWave eNB is available. It may be the one to which the UE is already attached or
 			// another one
 			if(alreadyAssociatedImsi && m_imsiUsingLte[imsi])
@@ -3298,6 +3305,8 @@ namespace ns3 {
 				// the UE is connected to a mmWave eNB which was not in outage
 				// check if there are HO events pending
 				HandoverEventMap::iterator handoverEvent = m_imsiHandoverEventsMap.find(imsi); 
+
+				//Process8: Handover event is already scheduled!
 				if(handoverEvent != m_imsiHandoverEventsMap.end())
 				{
 					// an handover event is already scheduled
@@ -3376,34 +3385,54 @@ namespace ns3 {
 
 			if(handoverNeeded)
 			{
-				NS_LOG_DEBUG("handoverNeeded");
-				// compute the TTT
-				uint8_t millisecondsToHandover = ComputeTtt(sinrDifference);
-				NS_LOG_INFO("The sinrDifference is " << sinrDifference << " and the TTT computed is " << (uint32_t)millisecondsToHandover 
-						<< " ms, thus the event will happen at time " << Simulator::Now().GetMilliSeconds() + millisecondsToHandover);
-				if(currentSinrDb < m_outageThreshold)
+				// Did master cell get prefetched signal from source mmwave cell?
+				if((m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end())
+						&&(m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi]== true))
 				{
-					millisecondsToHandover = 0;
-					NS_LOG_INFO("Current Cell is in outage, handover immediately");
-				}
-				// schedule the event
-				EventId scheduledHandoverEvent = Simulator::Schedule(MilliSeconds(millisecondsToHandover), &LteEnbRrc::PerformHandover, this, imsi);
-				LteEnbRrc::HandoverEventInfo handoverInfo;
-				handoverInfo.sourceCellId = m_lastMmWaveCell[imsi];
-				handoverInfo.targetCellId = maxSinrCellId;
-				handoverInfo.scheduledHandoverEvent = scheduledHandoverEvent;
-				HandoverEventMap::iterator handoverEvent = m_imsiHandoverEventsMap.find(imsi); 
-				if(handoverEvent != m_imsiHandoverEventsMap.end()) // another event was scheduled, but it was already deleted. Replace the entry
-				{
-					handoverEvent->second = handoverInfo;
+					NS_LOG_DEBUG("handoverNeeded");
+					// compute the TTT
+					uint8_t millisecondsToHandover = ComputeTtt(sinrDifference);
+					NS_LOG_INFO("The sinrDifference is " << sinrDifference << " and the TTT computed is " << (uint32_t)millisecondsToHandover
+							<< " ms, thus the event will happen at time " << Simulator::Now().GetMilliSeconds() + millisecondsToHandover);
+					if(currentSinrDb < m_outageThreshold)
+					{
+						millisecondsToHandover = 0;
+						NS_LOG_INFO("Current Cell is in outage, handover immediately");
+					}
+					// schedule the event
+					EventId scheduledHandoverEvent = Simulator::Schedule(MilliSeconds(millisecondsToHandover), &LteEnbRrc::PerformHandover, this, imsi);
+					LteEnbRrc::HandoverEventInfo handoverInfo;
+					handoverInfo.sourceCellId = m_lastMmWaveCell[imsi];
+					handoverInfo.targetCellId = maxSinrCellId;
+					handoverInfo.scheduledHandoverEvent = scheduledHandoverEvent;
+					HandoverEventMap::iterator handoverEvent = m_imsiHandoverEventsMap.find(imsi);
+					if(handoverEvent != m_imsiHandoverEventsMap.end()) // another event was scheduled, but it was already deleted. Replace the entry
+					{
+						handoverEvent->second = handoverInfo;
+					}
+					else
+					{
+						m_imsiHandoverEventsMap.insert(std::pair<uint64_t, HandoverEventInfo> (imsi, handoverInfo));
+					}
+					// when the handover event happens, we need to check that no other procedures are ongoing and in case
+					// postpone it!
+					//Process8: send handover failure for prefetched signal, in this case targeCellId is in CONNECTED_NORMALLY
+					m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi] = false;
 				}
 				else
 				{
-					m_imsiHandoverEventsMap.insert(std::pair<uint64_t, HandoverEventInfo> (imsi, handoverInfo));
+					NS_LOG_LOGIC("No prefetched handover signal.. request handover signal to mmwave cell");
+					EpcX2Sap::HandoverPreparationFailureParams res;
+					res.imsi = imsi;
+					res.sourceCellId = m_lastMmWaveCell[imsi]; //source cell is a forwarding address...
+					res.targetCellId = m_cellId;
+					res.cause = 0;
+					res.criticalityDiagnostics = 0;
+					res.hasImsi = true;
+					m_x2SapProvider->SendHandoverPreparationFailure (res);
 				}
-				// when the handover event happens, we need to check that no other procedures are ongoing and in case
-				// postpone it!
 			}
+
 		}
 
 	uint8_t
@@ -3470,12 +3499,19 @@ namespace ns3 {
 					// The new secondary cell HO procedure does not require to switch to LTE
 					NS_LOG_INFO("PerformHandover ----- handover from " << m_lastMmWaveCell[imsi] << " to " << handoverInfo.targetCellId << " at time " << Simulator::Now().GetSeconds());
 
+					/*
 					// trigger ho via X2
 					EpcX2SapProvider::SecondaryHandoverParams params;
 					params.imsi = imsi;
 					params.targetCellId = handoverInfo.targetCellId;
 					params.oldCellId = m_lastMmWaveCell[imsi];
 					m_x2SapProvider->SendMcHandoverRequest(params);
+					*/
+
+					//Process8: send prefetched handover signal
+					NS_LOG_LOGIC("Send prefetched handover signal");
+					//Phase2 start point
+					SendProxyHandoverRequest(m_prefetchedHoParams);
 
 					m_mmWaveCellSetupCompleted[imsi] = false;    
 				}
@@ -3688,6 +3724,7 @@ namespace ns3 {
 							}
 						}
 					} 
+					//Process8: this branch is for secondary cell handover, we are going to focus on TttBasedHandover
 					else
 					{
 						if(m_handoverMode == THRESHOLD)
@@ -4118,6 +4155,7 @@ namespace ns3 {
 				res.targetCellId = req.targetCellId;
 				res.cause = 0;
 				res.criticalityDiagnostics = 0;
+				res.hasImsi = false;
 				m_x2SapProvider->SendHandoverPreparationFailure (res);
 				return;
 			}
@@ -4194,6 +4232,8 @@ namespace ns3 {
 
 			m_x2SapProvider->SendHandoverRequestAck (ackParams);
 		}
+
+	//Process8
 	void
 		LteEnbRrc::DoRecvPreHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
 		{
@@ -4201,98 +4241,37 @@ namespace ns3 {
 
 			NS_LOG_INFO ("Recv X2 message: PREFETCHED HANDOVER REQUEST");
 
-			NS_LOG_LOGIC ("oldEnbUeX2apId = " << req.oldEnbUeX2apId);
-			NS_LOG_LOGIC ("sourceCellId = " << req.sourceCellId);
-			NS_LOG_LOGIC ("targetCellId = " << req.targetCellId);
-			NS_LOG_LOGIC ("mmeUeS1apId = " << req.mmeUeS1apId);
-			NS_LOG_INFO ("isMc = " << req.isMc);
+			m_prefetchedHoParams.oldEnbUeX2apId = req.oldEnbUeX2apId;
+			m_prefetchedHoParams.cause          = req.cause;
+			m_prefetchedHoParams.sourceCellId   = req.sourceCellId;
+			m_prefetchedHoParams.targetCellId   = req.targetCellId;
+			m_prefetchedHoParams.mmeUeS1apId    = req.mmeUeS1apId;
+			m_prefetchedHoParams.ueAggregateMaxBitRateDownlink = req.ueAggregateMaxBitRateDownlink;
+			m_prefetchedHoParams.ueAggregateMaxBitRateUplink   = req.ueAggregateMaxBitRateUplink;
+			m_prefetchedHoParams.bearers        = req.bearers;
+            // RlcRequests for secondary cell HO
+			m_prefetchedHoParams.rlcRequests    = req.rlcRequests;
+			m_prefetchedHoParams.rrcContext     = req.rrcContext;
+			m_prefetchedHoParams.isMc           = req.isMc;
 
-			NS_ASSERT (req.targetCellId == m_cellId);
-
-			if (m_admitHandoverRequest == false)
+			// Prefetched signal identification
+			if(m_isPrefetchedEnbMap.find(req.sourceCellId)!=m_isPrefetchedEnbMap.end())
 			{
-				NS_LOG_INFO ("rejecting handover request from cellId " << req.sourceCellId);
-				EpcX2Sap::HandoverPreparationFailureParams res;
-				res.oldEnbUeX2apId =  req.oldEnbUeX2apId;
-				res.sourceCellId = req.sourceCellId;
-				res.targetCellId = req.targetCellId;
-				res.cause = 0;
-				res.criticalityDiagnostics = 0;
-				m_x2SapProvider->SendHandoverPreparationFailure (res);
-				return;
+			  if(m_isPrefetchedEnbMap.find(req.sourceCellId)->second.find(req.imsi)!=m_isPrefetchedEnbMap.find(req.sourceCellId)->second.end())
+			  {
+			    m_isPrefetchedEnbMap.find(req.sourceCellId)->second[req.imsi] = true;
+			  }
+			  else
+			  {
+			    m_isPrefetchedEnbMap.find(req.sourceCellId)->second.insert(std::make_pair(req.imsi,true));
+			  }
 			}
-
-			uint16_t rnti = AddUe (UeManager::HANDOVER_JOINING);
-			LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue anrcrv = m_cmacSapProvider->AllocateNcRaPreamble (rnti);
-			if (anrcrv.valid == false)
+			else
 			{
-				NS_LOG_INFO (this << " failed to allocate a preamble for non-contention based RA => cannot accept HO");
-				RemoveUe (rnti);
-				NS_FATAL_ERROR ("should trigger HO Preparation Failure, but it is not implemented");
-				return;
+			  std::map<uint64_t,bool> tempPair;
+			  tempPair.insert(std::make_pair(req.imsi,true));
+			  m_isPrefetchedEnbMap.insert(std::make_pair(req.sourceCellId,tempPair));
 			}
-
-			Ptr<UeManager> ueManager = GetUeManager (rnti);
-			ueManager->SetSource (req.sourceCellId, req.oldEnbUeX2apId);
-			ueManager->SetImsi (req.mmeUeS1apId);
-			ueManager->SetIsMc (req.isMc);
-			RegisterImsiToRnti(req.mmeUeS1apId, rnti);
-
-			EpcX2SapProvider::HandoverRequestAckParams ackParams;
-			ackParams.oldEnbUeX2apId = req.oldEnbUeX2apId;
-			ackParams.newEnbUeX2apId = rnti;
-			ackParams.sourceCellId = req.sourceCellId;
-			ackParams.targetCellId = req.targetCellId;
-
-			for (std::vector <EpcX2Sap::ErabToBeSetupItem>::iterator it = req.bearers.begin ();
-					it != req.bearers.end ();
-					++it)
-			{
-				ueManager->SetupDataRadioBearer (it->erabLevelQosParameters, it->erabId, it->gtpTeid, it->transportLayerAddress);
-				EpcX2Sap::ErabAdmittedItem i;
-				i.erabId = it->erabId;
-				ackParams.admittedBearers.push_back (i);
-			}
-
-			// For secondary cell HO for MC devices, setup RLC instances
-			for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
-					it != req.rlcRequests.end ();
-					++it)
-			{
-				ueManager->RecvRlcSetupRequest(*it);
-			}
-
-			LteRrcSap::RrcConnectionReconfiguration handoverCommand = ueManager->GetRrcConnectionReconfigurationForHandover ();
-			handoverCommand.haveMobilityControlInfo = true;
-			handoverCommand.mobilityControlInfo.targetPhysCellId = m_cellId;
-			handoverCommand.mobilityControlInfo.haveCarrierFreq = true;
-			handoverCommand.mobilityControlInfo.carrierFreq.dlCarrierFreq = m_dlEarfcn;
-			handoverCommand.mobilityControlInfo.carrierFreq.ulCarrierFreq = m_ulEarfcn;
-			handoverCommand.mobilityControlInfo.haveCarrierBandwidth = true;
-			handoverCommand.mobilityControlInfo.carrierBandwidth.dlBandwidth = m_dlBandwidth;
-			handoverCommand.mobilityControlInfo.carrierBandwidth.ulBandwidth = m_ulBandwidth;
-			handoverCommand.mobilityControlInfo.newUeIdentity = rnti;
-			handoverCommand.mobilityControlInfo.haveRachConfigDedicated = true;
-			handoverCommand.mobilityControlInfo.rachConfigDedicated.raPreambleIndex = anrcrv.raPreambleId;
-			handoverCommand.mobilityControlInfo.rachConfigDedicated.raPrachMaskIndex = anrcrv.raPrachMaskIndex;
-
-			LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider->GetRachConfig ();
-			handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
-			handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
-			handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
-
-			Ptr<Packet> encodedHandoverCommand = m_rrcSapUser->EncodeHandoverCommand (handoverCommand);
-
-			ackParams.rrcContext = encodedHandoverCommand;
-
-			NS_LOG_LOGIC ("Send X2 message: HANDOVER REQUEST ACK");
-
-			NS_LOG_LOGIC ("oldEnbUeX2apId = " << ackParams.oldEnbUeX2apId);
-			NS_LOG_LOGIC ("newEnbUeX2apId = " << ackParams.newEnbUeX2apId);
-			NS_LOG_LOGIC ("sourceCellId = " << ackParams.sourceCellId);
-			NS_LOG_LOGIC ("targetCellId = " << ackParams.targetCellId);
-
-			m_x2SapProvider->SendHandoverRequestAck (ackParams);
 		}
 
 
@@ -4338,10 +4317,23 @@ namespace ns3 {
 			NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
 			NS_LOG_LOGIC ("cause = " << params.cause);
 			NS_LOG_LOGIC ("criticalityDiagnostics = " << params.criticalityDiagnostics);
+			//Process8
+			NS_LOG_LOGIC ("IMSI = "<< params.imsi);
+			NS_LOG_LOGIC ("has IMSI?= "<<params.hasImsi);
 
-			uint16_t rnti = params.oldEnbUeX2apId;
-			Ptr<UeManager> ueManager = GetUeManager (rnti);
-			ueManager->RecvHandoverPreparationFailure (params.targetCellId);
+			//Process8
+			if(params.hasImsi)
+			{
+			  uint16_t rnti = GetRntiFromImsi(params.imsi);
+			  Ptr<UeManager> ueManager = GetUeManager (rnti);
+			  ueManager->RecvHandoverPreparationFailure (params.targetCellId);
+			}
+			else
+			{
+			  uint16_t rnti = params.oldEnbUeX2apId;
+			  Ptr<UeManager> ueManager = GetUeManager (rnti);
+			  ueManager->RecvHandoverPreparationFailure (params.targetCellId);
+			}
 		}
 
 	void

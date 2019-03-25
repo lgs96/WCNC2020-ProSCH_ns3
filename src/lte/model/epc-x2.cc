@@ -338,18 +338,24 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
           params.targetCellId   = cellsInfo->m_remoteCellId;
           params.cause          = x2HoPrepFailHeader.GetCause ();
           params.criticalityDiagnostics = x2HoPrepFailHeader.GetCriticalityDiagnostics ();
+          //Process8
+          params.imsi = x2HoPrepFailHeader.GetImsi();
+          params.hasImsi = x2HoPrepFailHeader.GetHasImsi();
 
           NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
           NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
           NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
           NS_LOG_LOGIC ("cause = " << params.cause);
           NS_LOG_LOGIC ("criticalityDiagnostics = " << params.criticalityDiagnostics);
+          //Process8
+          NS_LOG_LOGIC ("IMSI = " << params.imsi);
+          NS_LOG_LOGIC ("has IMSI? = " << params.hasImsi);
 
           m_x2SapUser->RecvHandoverPreparationFailure (params);
         }
     }
   //Process8
-  else if (procedureCode == EpcX2Header::PreHandoverPreparation)
+  else if (procedureCode == EpcX2Header::PrefetchedHandoverRequest)
     {
 	  NS_LOG_LOGIC ("Recv X2 message: PREFETCHED HANDOVER REQUEST");
 
@@ -372,6 +378,9 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 	  params.rrcContext     = packet;
 	  params.isMc           = x2HoReqHeader.GetIsMc ();
 
+	  //Process8
+	  params.imsi			= x2HoReqHeader.GetImsi ();
+
 	  NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
 	  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
 	  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
@@ -379,6 +388,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 	  NS_LOG_LOGIC ("cellsInfo->m_localCellId = " << cellsInfo->m_localCellId);
 	  NS_ASSERT_MSG (params.targetCellId == cellsInfo->m_localCellId,
 				     "TargetCellId mismatches with localCellId");
+	  NS_LOG_LOGIC ("IMSI = " << params.imsi);
 
 	  m_x2SapUser->RecvPreHandoverRequest (params);
     }
@@ -756,6 +766,7 @@ EpcX2::DoPreSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
   NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
   NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
   NS_LOG_LOGIC ("mmeUeS1apId  = " << params.mmeUeS1apId);
+  NS_LOG_LOGIC ("IMSI = " << params.imsi);
 
   NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
                  "Missing infos for targetCellId = " << params.targetCellId);
@@ -781,9 +792,12 @@ EpcX2::DoPreSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
   x2HoReqHeader.SetRlcSetupRequests (params.rlcRequests);
   x2HoReqHeader.SetIsMc (params.isMc);
 
+  // Process8
+  x2HoReqHeader.SetImsi (params.imsi);
+
   EpcX2Header x2Header;
   x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
-  x2Header.SetProcedureCode (EpcX2Header::PrefetchedHandoverPreparation);
+  x2Header.SetProcedureCode (EpcX2Header::PrefetchedHandoverRequest);
   x2Header.SetLengthOfIes (x2HoReqHeader.GetLengthOfIes ());
   x2Header.SetNumberOfIes (x2HoReqHeader.GetNumberOfIes ());
 
@@ -961,7 +975,7 @@ EpcX2::DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams para
   localSocket->SendTo (packet, 0, InetSocketAddress (remoteIpAddr, m_x2cUdpPort));
 }
 
-
+//Process8: modified for imsi
 void
 EpcX2::DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFailureParams params)
 {
@@ -972,6 +986,8 @@ EpcX2::DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFa
   NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
   NS_LOG_LOGIC ("cause = " << params.cause);
   NS_LOG_LOGIC ("criticalityDiagnostics = " << params.criticalityDiagnostics);
+  NS_LOG_LOGIC ("Imsi = "<< params.imsi);
+  NS_LOG_LOGIC ("Has Imsi? = "<<params.hasImsi);
 
   NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.sourceCellId) != m_x2InterfaceSockets.end (),
                  "Socket infos not defined for sourceCellId = " << params.sourceCellId);
@@ -989,6 +1005,8 @@ EpcX2::DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFa
   x2HoPrepFailHeader.SetOldEnbUeX2apId (params.oldEnbUeX2apId);
   x2HoPrepFailHeader.SetCause (params.cause);
   x2HoPrepFailHeader.SetCriticalityDiagnostics (params.criticalityDiagnostics);
+  x2HoPrepFailHeader.SetImsi(params.imsi);
+  x2HoPrepFailHeader.SetHasImsi(params.hasImsi);
 
   EpcX2Header x2Header;
   x2Header.SetMessageType (EpcX2Header::UnsuccessfulOutcome);

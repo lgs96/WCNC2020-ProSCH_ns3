@@ -138,6 +138,9 @@ public:
   uint32_t GetLengthOfIes () const;
   uint32_t GetNumberOfIes () const;
 
+  uint64_t GetImsi () const;
+  void SetImsi(uint64_t imsi);
+
 private:
   uint32_t          m_numberOfIes;
   uint32_t          m_headerLength;
@@ -151,6 +154,8 @@ private:
   std::vector <EpcX2Sap::ErabToBeSetupItem> m_erabsToBeSetupList;
   std::vector <EpcX2Sap::RlcSetupRequest> m_rlcRequestsList;
   bool              m_isMc;
+
+  uint64_t 			m_imsi;
 };
 
 
@@ -414,6 +419,14 @@ public:
   uint32_t GetLengthOfIes () const;
   uint32_t GetNumberOfIes () const;
 
+  //Process8
+  uint64_t GetImsi() const;
+  void SetImsi (uint64_t imsi);
+
+  bool GetHasImsi() const;
+  void SetHasImsi (bool hasImsi);
+
+
 private:
   uint32_t          m_numberOfIes;
   uint32_t          m_headerLength;
@@ -421,6 +434,9 @@ private:
   uint16_t          m_oldEnbUeX2apId;
   uint16_t          m_cause;
   uint16_t          m_criticalityDiagnostics;
+
+  uint64_t			m_imsi;
+  bool				m_hasImsi;
 };
 
 

@@ -261,6 +261,9 @@ public:
     // list of RlcSetupRequest for secondary cell handovers (otherwise empty)
     std::vector <RlcSetupRequest> rlcRequests;
     Ptr<Packet>         rrcContext;
+
+    //Process8
+    uint64_t imsi;
   };
 
   /**
@@ -291,6 +294,10 @@ public:
     uint16_t            targetCellId;
     uint16_t            cause;
     uint16_t            criticalityDiagnostics;
+
+    //Process8
+    uint64_t			imsi;
+    bool				hasImsi;
   };
 
   /**

@@ -153,12 +153,13 @@ NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverRequestHeader);
 
 EpcX2HandoverRequestHeader::EpcX2HandoverRequestHeader ()
   : m_numberOfIes (1 + 1 + 1 + 1 + 1 + 1),
-    m_headerLength (6 + 5 + 12 + (3 + 4 + 8 + 8 + 4) + 1 + 4),
+    m_headerLength (6 + 5 + 12 + (3 + 4 + 8 + 8 + 4) + 1 + 4 + 8),
     m_oldEnbUeX2apId (0xfffa),
     m_cause (0xfffa),
     m_targetCellId (0xfffa),
     m_mmeUeS1apId (0xfffffffa),
-    m_isMc (0xfa)
+    m_isMc (0xfa),
+	m_imsi (0xfffffffffffffffa)
 {
   m_erabsToBeSetupList.clear ();
 }
@@ -174,6 +175,7 @@ EpcX2HandoverRequestHeader::~EpcX2HandoverRequestHeader ()
   m_isMc = 0xfb;
   m_erabsToBeSetupList.clear ();
   m_rlcRequestsList.clear();
+  m_imsi = 0xfffffffffffffffb;
 }
 
 TypeId
@@ -279,6 +281,7 @@ EpcX2HandoverRequestHeader::Serialize (Buffer::Iterator start) const
   }
 
   i.WriteU8(m_isMc);
+  i.WriteHtonU64 (m_imsi);
 }
 
 uint32_t
@@ -399,8 +402,13 @@ EpcX2HandoverRequestHeader::Deserialize (Buffer::Iterator start)
   }
 
   m_isMc = i.ReadU8();
+  m_imsi = i.ReadNtohU64();
+
   m_numberOfIes++;
   m_headerLength++;
+
+  m_numberOfIes++;
+  m_headerLength += 8;
 
   return GetSerializedSize ();
 }
@@ -558,6 +566,19 @@ uint32_t
 EpcX2HandoverRequestHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
+}
+
+//Process8
+uint64_t
+EpcX2HandoverRequestHeader::GetImsi () const
+{
+  return m_imsi;
+}
+
+void
+EpcX2HandoverRequestHeader::SetImsi (uint64_t imsi)
+{
+  m_imsi = imsi;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -1629,11 +1650,13 @@ EpcX2HandoverRequestAckHeader::GetNumberOfIes () const
 NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverPreparationFailureHeader);
 
 EpcX2HandoverPreparationFailureHeader::EpcX2HandoverPreparationFailureHeader ()
-  : m_numberOfIes (1 + 1 + 1),
-    m_headerLength (2 + 2 + 2),
+  : m_numberOfIes (1 + 1 + 1 + 1 + 1),
+    m_headerLength (2 + 2 + 2 + 8 + 1),
     m_oldEnbUeX2apId (0xfffa),
     m_cause (0xfffa),
-    m_criticalityDiagnostics (0xfffa)
+    m_criticalityDiagnostics (0xfffa),
+	m_imsi(0xfffffffffffffffa),
+	m_hasImsi(0)
 {
 }
 
@@ -1644,6 +1667,8 @@ EpcX2HandoverPreparationFailureHeader::~EpcX2HandoverPreparationFailureHeader ()
   m_oldEnbUeX2apId = 0xfffb;
   m_cause = 0xfffb;
   m_criticalityDiagnostics = 0xfffb;
+  m_imsi = 0xfffffffffffffffb;
+  m_hasImsi = 0;
 }
 
 TypeId
@@ -1677,6 +1702,8 @@ EpcX2HandoverPreparationFailureHeader::Serialize (Buffer::Iterator start) const
   i.WriteHtonU16 (m_oldEnbUeX2apId);
   i.WriteHtonU16 (m_cause);
   i.WriteHtonU16 (m_criticalityDiagnostics);
+  i.WriteHtonU64 (m_imsi);
+  i.WriteU8  (m_hasImsi);
 }
 
 uint32_t
@@ -1687,9 +1714,11 @@ EpcX2HandoverPreparationFailureHeader::Deserialize (Buffer::Iterator start)
   m_oldEnbUeX2apId = i.ReadNtohU16 ();
   m_cause = i.ReadNtohU16 ();
   m_criticalityDiagnostics = i.ReadNtohU16 ();
+  m_imsi = i.ReadNtohU64();
+  m_hasImsi = i.ReadU8();
 
-  m_headerLength = 6;
-  m_numberOfIes = 3;
+  m_headerLength = 15;
+  m_numberOfIes = 5;
 
   return GetSerializedSize ();
 }
@@ -1700,6 +1729,8 @@ EpcX2HandoverPreparationFailureHeader::Print (std::ostream &os) const
   os << "OldEnbUeX2apId = " << m_oldEnbUeX2apId;
   os << " Cause = " << m_cause;
   os << " CriticalityDiagnostics = " << m_criticalityDiagnostics;
+  os << " IMSI = " <<m_imsi;
+  os << " has IMSI? = "<<m_hasImsi;
 }
 
 uint16_t
@@ -1750,13 +1781,38 @@ EpcX2HandoverPreparationFailureHeader::GetNumberOfIes () const
   return m_numberOfIes;
 }
 
+//Process8
+uint64_t
+EpcX2HandoverPreparationFailureHeader::GetImsi () const
+{
+  return m_imsi;
+}
+
+void
+EpcX2HandoverPreparationFailureHeader::SetImsi (uint64_t imsi)
+{
+  m_imsi = imsi;
+}
+
+void
+EpcX2HandoverPreparationFailureHeader::SetHasImsi (bool hasImsi)
+{
+  m_hasImsi = hasImsi;
+}
+
+bool
+EpcX2HandoverPreparationFailureHeader::GetHasImsi () const
+{
+  return m_hasImsi;
+}
+
 /////////////////////////////////////////////////////////////////////
 
 NS_OBJECT_ENSURE_REGISTERED (EpcX2SnStatusTransferHeader);
 
 EpcX2SnStatusTransferHeader::EpcX2SnStatusTransferHeader ()
-  : m_numberOfIes (3),
-    m_headerLength (6),
+  : m_numberOfIes (5),
+    m_headerLength (11),
     m_oldEnbUeX2apId (0xfffa),
     m_newEnbUeX2apId (0xfffa)
 {

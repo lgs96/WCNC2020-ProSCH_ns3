@@ -168,6 +168,7 @@ public:
 protected:
   // Interface provided by EpcX2SapProvider
   virtual void DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params);
+  virtual void DoPreSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params);
   virtual void DoSendRlcSetupRequest (EpcX2SapProvider::RlcSetupRequest params);
   virtual void DoSendRlcSetupCompleted (EpcX2SapProvider::UeDataParams);
   virtual void DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams params);

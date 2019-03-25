@@ -846,7 +846,7 @@ main (int argc, char *argv[])
 		*enb_stream->GetStream() << enbPositionAlloc->GetNext() << std::endl;
 	}
 
-	for(!ReadBuilding)
+	if(!ReadBuilding)
 	{
 		std::ostringstream buildingfile;
 		buildingfile <<ExperimentNum<< "_BuildingPosition.txt";

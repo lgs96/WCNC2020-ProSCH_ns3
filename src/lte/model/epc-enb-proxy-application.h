@@ -56,6 +56,8 @@ class EpcEnbS1SapProvider;
  */
 class EpcEnbProxyApplication : public Application
 {
+  friend class MemberEpcEnbS1SapProvider<EpcEnbProxyApplication>;
+
   // inherited from Object
 public:
   static TypeId GetTypeId (void);
@@ -87,6 +89,10 @@ public:
   void RecvFromEnbSocket (Ptr<Socket> socket);
 
   //void RecvFromS1uSocket (Ptr<Socket> socket);
+
+  //Process8
+  void DoProxyForwardingRequest ();
+
 
 private:
 

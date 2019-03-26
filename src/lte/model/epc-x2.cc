@@ -1015,7 +1015,7 @@ EpcX2::DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFa
   x2Header.SetNumberOfIes (x2HoPrepFailHeader.GetNumberOfIes ());
 
   NS_LOG_INFO ("X2 header: " << x2Header);
-  NS_LOG_INFO ("X2 HandoverPrepFail header: " << x2HoPrepFailHeader);
+  NS_LOG_INFO ("X2 HandoverPreperationFailure header: " << x2HoPrepFailHeader);
 
   // Build the X2 packet
   Ptr<Packet> packet = Create <Packet> ();

@@ -169,7 +169,7 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
 	//Set advertise window
 	Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
 	uint32_t awndSize = proxyTxBuffer->Available();
-	NS_LOG_LOGIC("Proxy tcp's Awnd size is "<<awndSize);
+	NS_LOG_LOGIC("Proxy tcp's Awnd size is "<< awndSize);
 
 	//Send Early ACK packet to server, set ack number
 	uint32_t dataSize = packet->GetSize();
@@ -194,5 +194,18 @@ EpcEnbProxyApplication::SendToEnbSocket (Ptr<Packet> packet)
   int sentBytes = m_proxyEnbSocket->Send (packet);
   NS_ASSERT (sentBytes > 0);
 }
+
+//Process8
+void
+EpcEnbProxyApplication::DoProxyForwardingRequest ()
+{
+  NS_LOG_FUNCTION (this);
+  NS_LOG_LOGIC("Handover occured. Forward cached inflight packets.");
+
+  Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
+
+  tempSocket->ProxyBufferRetransmit();
+}
+
 
 }  // namespace ns3

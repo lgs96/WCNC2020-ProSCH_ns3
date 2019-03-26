@@ -489,6 +489,9 @@ public:
    */
   typedef void (* TcpTxRxTracedCallback)(const Ptr<const Packet> packet, const TcpHeader& header,
                                          const Ptr<const TcpSocketBase> socket);
+  
+  //Process8: to forward all tx buffer data
+  void ProxyBufferRetransmit ();
 
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set

@@ -170,6 +170,8 @@ private:
    */
   void DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t bearerId);
 
+  //Process8 just for definition
+  void DoProxyForwardingRequest();
 
   /**
    * Send a packet to the UE via the LTE radio interface of the eNB

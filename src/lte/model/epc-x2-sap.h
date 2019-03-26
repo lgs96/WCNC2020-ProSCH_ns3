@@ -593,7 +593,6 @@ public:
   //
 
   virtual void SendHandoverRequest (HandoverRequestParams params);
-
   //Process8
   virtual void PreSendHandoverRequest (HandoverRequestParams params);
 

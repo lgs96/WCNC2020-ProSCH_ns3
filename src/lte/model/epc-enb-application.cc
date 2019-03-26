@@ -613,6 +613,12 @@ EpcEnbApplication::SendToTunDevice (Ptr<Packet> packet)
   m_tunProxyDevice->Receive (packet, 0x0800, m_tunProxyDevice->GetAddress (), m_tunProxyDevice->GetAddress (), NetDevice::PACKET_HOST);
 }
 
+void
+EpcEnbApplication::DoProxyForwardingRequest()
+{
+	//Do nothing
+}
+
 
 
 

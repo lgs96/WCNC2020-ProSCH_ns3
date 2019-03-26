@@ -1560,7 +1560,7 @@ private:
 
   // Process8
   std::map<uint64_t, double> m_previousSinrMap;
-  EpcX2SapUser::HandoverRequestParams m_prefetchedHoParams;
+  std::map<uint16_t, std::map<uint64_t,EpcX2SapUser::HandoverRequestParams>> m_prefetchedHandoverRequestMap;
   std::map<uint16_t, std::map<uint64_t,bool> > m_isPrefetchedEnbMap;
 
 

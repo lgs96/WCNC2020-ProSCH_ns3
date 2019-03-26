@@ -3367,6 +3367,18 @@ TcpSocketBase::DoRetransmit ()
   NS_LOG_DEBUG ("retxing seq " << m_txBuffer->HeadSequence ());
 }
 
+//Process8: to forward all tx buffer data
+void
+TcpSocketBase::ProxyBufferRetransmit ()
+{
+  NS_LOG_FUNCTION (this);
+  
+  for (SequenceNumber32 seq = m_txBuffer->HeadSequence(); seq < m_txBuffer->TailSequence(); seq = seq + m_tcb->m_segmentSize)
+    {
+      NS_LOG_LOGIC ("Seq: "<< seq <<" is forwarded by proxy tcp");
+      SendDataPacket (seq, m_tcb->m_segmentSize, true);
+    }
+}
 void
 TcpSocketBase::CancelAllTimers ()
 {

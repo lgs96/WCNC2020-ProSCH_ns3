@@ -57,6 +57,9 @@ public:
    */
   virtual void DoSendReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t bearerId) = 0;
 
+  //Process8
+  virtual void DoSendProxyForwardingRequest() = 0;
+
   struct BearerToBeSwitched
   {
     uint8_t epsBearerId;
@@ -148,6 +151,9 @@ public:
   virtual void InitialUeMessage (uint64_t imsi, uint16_t rnti);
   virtual void DoSendReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t bearerId);
 
+  //Process8
+  virtual void DoSendProxyForwardingRequest();
+
   virtual void PathSwitchRequest (PathSwitchRequestParameters params);
   virtual void UeContextRelease (uint16_t rnti);
 
@@ -178,6 +184,12 @@ template <class C>
 void MemberEpcEnbS1SapProvider<C>::DoSendReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t bearerId)
 {
   m_owner->DoReleaseIndication (imsi, rnti, bearerId);
+}
+
+template <class C>
+void MemberEpcEnbS1SapProvider<C>::DoSendProxyForwardingRequest ()
+{
+  m_owner->DoProxyForwardingRequest();
 }
 
 template <class C>

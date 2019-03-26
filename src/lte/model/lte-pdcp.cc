@@ -199,6 +199,13 @@ LtePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   m_rlcSapProvider->TransmitPdcpPdu (params);
 }
 
+// Process8
+void
+LtePdcp::DoTransmitRrcMsgFromLte (Ptr<Packet> p)
+{
+	//Do nothing
+}
+
 void
 LtePdcp::DoReceivePdu (Ptr<Packet> p)
 {

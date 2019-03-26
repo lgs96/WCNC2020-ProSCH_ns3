@@ -254,6 +254,45 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   }
 }
 
+// Process8: Send RRC connection reconfiguration msg of source cell from LTE master cell, this signal's response will be forwarded to target cell
+void
+McEnbPdcp::DoTransmitRrcMsgFromLte (Ptr<Packet> p)
+{
+  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
+
+  LtePdcpHeader pdcpHeader;
+  pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
+
+  m_txSequenceNumber++;
+  if (m_txSequenceNumber > m_maxPdcpSn)
+    {
+      m_txSequenceNumber = 0;
+    }
+
+  pdcpHeader.SetDcBit (LtePdcpHeader::DATA_PDU);
+
+  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
+  p->AddHeader (pdcpHeader);
+
+  LteRlcSapProvider::TransmitPdcpPduParameters params;
+  params.rnti = m_rnti;
+  params.lcid = m_lcid;
+
+  NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink local stack");
+
+  // Sender timestamp. We will use this to measure the delay on top of RLC
+  PdcpTag pdcpTag (Simulator::Now ());
+  p->AddByteTag (pdcpTag);
+  // m_txPdu (m_rnti, m_lcid, p->GetSize ());
+  params.pdcpPdu = p;
+
+  NS_LOG_LOGIC("Params.rnti " << params.rnti);
+  NS_LOG_LOGIC("Params.m_lcid " << params.lcid);
+  NS_LOG_LOGIC("Params.pdcpPdu " << params.pdcpPdu);
+
+  m_rlcSapProvider->TransmitPdcpPdu (params);
+}
+
 void
 McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
 {

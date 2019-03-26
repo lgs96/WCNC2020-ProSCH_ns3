@@ -237,6 +237,14 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   }
 }
 
+// Process8
+void
+McUePdcp::DoTransmitRrcMsgFromLte (Ptr<Packet> p)
+{
+	//Do nothing
+}
+
+
 void
 McUePdcp::DoReceivePdu (Ptr<Packet> p)
 {

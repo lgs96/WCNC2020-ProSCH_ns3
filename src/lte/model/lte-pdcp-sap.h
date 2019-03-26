@@ -45,6 +45,8 @@ public:
     Ptr<Packet> pdcpSdu;  /**< the RRC PDU */
     uint16_t    rnti; /**< the C-RNTI identifying the UE */
     uint8_t     lcid; /**< the logical channel id corresponding to the sending RLC instance */
+    //Process8
+    bool toLte;
   };
 
   /**
@@ -115,10 +117,24 @@ LtePdcpSpecificLtePdcpSapProvider<C>::LtePdcpSpecificLtePdcpSapProvider ()
 {
 }
 
+//Modified by Process8
 template <class C>
 void LtePdcpSpecificLtePdcpSapProvider<C>::TransmitPdcpSdu (TransmitPdcpSduParameters params)
 {
-  m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
+  if(!params.toLte)
+  {
+    std::cout<<"pdcp True "<<params.toLte<<std::endl;
+    m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
+  }
+  else if(params.toLte)
+  {
+	std::cout<<" pdcp False "<<params.toLte<<" m_pdcp "<<m_pdcp<<std::endl;
+	m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
+  }
+  else
+  {
+	NS_ASSERT(1==0);
+  }
 }
 
 ///////////////////////////////////////

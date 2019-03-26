@@ -188,6 +188,9 @@ protected:
   // Interface provided to upper RRC entity
   virtual void DoTransmitPdcpSdu (Ptr<Packet> p);
 
+  // Process8
+  virtual void DoTransmitRrcMsgFromLte (Ptr<Packet> p);
+
   LtePdcpSapUser* m_pdcpSapUser;
   LtePdcpSapProvider* m_pdcpSapProvider;
 

@@ -388,14 +388,14 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//ns3::Packet::EnablePrinting();
-	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
+	LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
-	// LogComponentEnable("LtePdcp", LOG_FUNCTION);
+	LogComponentEnable("LtePdcp", LOG_LEVEL_LOGIC);
 	// LogComponentEnable ("MmWaveSpectrumPhy", LOG_FUNCTION);
 	// LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
@@ -408,14 +408,14 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("UdpServer", LOG_FUNCTION);
 	//LogComponentEnable ("PacketSink", LOG_FUNCTION);
 	//LogComponentEnable("MmWavePropagationLossModel",LOG_LEVEL_ALL);
-	//  LogComponentEnable("LteRrcProtocolReal", LOG_FUNCTION);
+	//LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_FUNCTION);
 	//LogComponentEnable ("EpcMme", LOG_FUNCTION);
 	// LogComponentEnable ("mmWavePhyRxTrace", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
 	// LogComponentEnable("McUeNetDevice", LOG_FUNCTION);
 	//LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcEnbApplication", LOG_LEVEL_LOGIC);
-	LogComponentEnable("EpcEnbProxyApplication",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcEnbProxyApplication",LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveEnbMac", LOG_LOGIC);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
@@ -509,18 +509,19 @@ main (int argc, char *argv[])
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
 	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
-	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
-	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
+	LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteEnbRrcProtocolReal", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteUeRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcX2Header", LOG_FUNCTION);
-        //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
+        LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
 	// LogComponentEnable("EpcMme", LOG_FUNCTION);
-	// LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_ALL);
+	//LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_FUNCTION);
 	//  LogComponentEnable("AntennaArrayModel", LOG_FUNCTION);
 	// LogComponentEnable("UdpServer", LOG_LEVEL_INFO);
@@ -583,7 +584,7 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
+	bool ReadBuilding = true;
 	int BuildingNum = 40;
 	int x2LinkDelay = 10;
 	// Command line arguments

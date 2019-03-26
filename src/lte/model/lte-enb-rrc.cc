@@ -752,6 +752,7 @@ namespace ns3 {
 					break;
 				// Process8
 				case HANDOVER_PREPARATION:
+				case HANDOVER_LEAVING:
 					{
 						NS_LOG_INFO("Handover prefetch signal is already sent, wait for response from LTE cell");
 					}
@@ -927,6 +928,7 @@ namespace ns3 {
 				{
 					NS_LOG_LOGIC("Proxy based handover: Received handover ack, start centralized handover");
 					//#1 Path switching
+
 					for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
 										it != m_drbMap.end (); ++it)
 					{
@@ -971,13 +973,16 @@ namespace ns3 {
 							NS_LOG_INFO("No difference with the MC Bearer already defined"); // TODO consider bearer modifications
 						}
 					}
+
 					//#2 Send handover request ack to source cell
 					params.sourceCellId = m_mmWaveCellId;
 					m_rrc->m_x2SapProvider->SendHandoverRequestAck (params);
+
 					//#3 Send RRC connection reconfiguration msg to user
 					Ptr<Packet> encodedHandoverCommand = params.rrcContext;
 					LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
-					m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration(m_rnti, handoverCommand);
+					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
+
 					//#4 Request buffered TCP packet to send
 					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest();
 					m_rrc->m_isPrefetchedEnbMap.find(m_mmWaveCellId)->second[m_imsi] = false;
@@ -991,8 +996,8 @@ namespace ns3 {
 
 				SwitchToState (HANDOVER_LEAVING);
 				m_handoverLeavingTimeout = Simulator::Schedule (m_rrc->m_handoverLeavingTimeoutDuration,
-						&LteEnbRrc::HandoverLeavingTimeout,
-						m_rrc, m_rnti);
+										&LteEnbRrc::HandoverLeavingTimeout,
+										m_rrc, m_rnti);
 			}
 		}
 
@@ -1224,6 +1229,7 @@ namespace ns3 {
 							pdcpParams.pdcpSdu = rlcSdu;
 							pdcpParams.rnti = m_rnti;
 							pdcpParams.lcid = Bid2Lcid (bid);
+							pdcpParams.toLte = false;
 							mcPdcp->GetLtePdcpSapProvider()->TransmitPdcpSdu(pdcpParams);
 						}
 					}
@@ -1279,6 +1285,7 @@ namespace ns3 {
 						params.rnti = m_rnti;
 						params.lcid = Bid2Lcid (bid);
 						uint8_t drbid = Bid2Drbid (bid);
+						params.toLte = false;
 						//Transmit PDCP sdu only if DRB ID found in drbMap
 						std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.find (drbid);
 						if (it != m_drbMap.end ())

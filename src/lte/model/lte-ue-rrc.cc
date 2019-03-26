@@ -585,6 +585,7 @@ LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
   params.pdcpSdu = packet;
   params.rnti = m_rnti;
   params.lcid = it->second->m_logicalChannelIdentity;
+  params.toLte = false;
 
   NS_LOG_LOGIC (this << " RNTI=" << m_rnti << " sending packet " << packet
                      << " on DRBID " << (uint32_t) drbid
@@ -980,7 +981,7 @@ void
 LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
 {
   NS_LOG_FUNCTION (this << " RNTI " << m_rnti);
-
+ 
   if (msg.haveSib2)
     {
       switch (m_state)
@@ -1635,6 +1636,7 @@ LteUeRrc::CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid)
         pdcpParams.pdcpSdu = rlcSdu;
         pdcpParams.rnti = m_rnti;
         pdcpParams.lcid = lcid;
+        pdcpParams.toLte = false;
         pdcp->GetLtePdcpSapProvider()->TransmitPdcpSdu(pdcpParams);
 
       }

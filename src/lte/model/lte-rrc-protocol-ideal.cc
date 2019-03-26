@@ -387,6 +387,13 @@ LteEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRr
 		       msg);
 }
 
+//Process8
+void 
+LteEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg, bool fromLte)
+{
+  //Do nothing
+}
+
 void 
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {

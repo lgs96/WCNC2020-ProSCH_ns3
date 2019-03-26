@@ -915,7 +915,7 @@ MmWaveUeMac::SendRaPreamble(bool contention)
 void
 MmWaveUeMac::DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask)
 {
-	NS_LOG_FUNCTION (this << " rnti" << rnti);
+	NS_LOG_FUNCTION (this << " rnti" << rnti<<" Preamble id:  "<<preambleId<<" PrachMask: "<<prachMask);
 	NS_ASSERT_MSG (prachMask == 0, "requested PRACH MASK = " << (uint32_t) prachMask << ", but only PRACH MASK = 0 is supported");
 	m_rnti = rnti;
 	m_raPreambleId = preambleId;

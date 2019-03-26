@@ -388,16 +388,16 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//ns3::Packet::EnablePrinting();
-	//LogComponentEnable ("LteUeRrc", LOG_FUNCTION);
+	LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
-	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
 	// LogComponentEnable("LtePdcp", LOG_FUNCTION);
 	// LogComponentEnable ("MmWaveSpectrumPhy", LOG_FUNCTION);
-	// LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
+        LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
 	//LogComponentEnable ("LteUeMac", LOG_FUNCTION);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
@@ -408,7 +408,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("UdpServer", LOG_FUNCTION);
 	//LogComponentEnable ("PacketSink", LOG_FUNCTION);
 	//LogComponentEnable("MmWavePropagationLossModel",LOG_LEVEL_ALL);
-	//  LogComponentEnable("LteRrcProtocolReal", LOG_FUNCTION);
+	LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("EpcMme", LOG_FUNCTION);
 	// LogComponentEnable ("mmWavePhyRxTrace", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);
@@ -507,10 +507,10 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
-	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_FUNCTION);
+	LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcX2Header", LOG_FUNCTION);
         //LogComponentEnable("McEnbPdcp",LOG_LEVEL_INFO);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
@@ -574,7 +574,7 @@ main (int argc, char *argv[])
 	double x2Latency = 10, mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double EnbTxPower =23;
+	double TxPower =23;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
 	uint16_t Velocity = 10;
@@ -907,7 +907,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("30Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("3Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

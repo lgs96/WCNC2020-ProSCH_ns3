@@ -1090,6 +1090,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           }
           else
           {
+        	NS_LOG_LOGIC("Start non contention based RA");
             m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, mci.rachConfigDedicated.raPreambleIndex, mci.rachConfigDedicated.raPrachMaskIndex);
           }
           m_cphySapProvider->SetRnti (m_rnti);

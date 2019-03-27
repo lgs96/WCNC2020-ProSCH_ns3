@@ -419,6 +419,11 @@ namespace ns3 {
 		MmWaveLteUeRrcProtocolReal::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params)
 		{
 			// Get type of message received
+			LtePdcpSapUser::ReceivePdcpSduParameters tempParams;
+			tempParams.pdcpSdu = params.pdcpSdu->Copy();
+			tempParams.rnti = params.rnti;
+			tempParams.lcid = params.lcid;
+
 			RrcDlDcchMessage rrcDlDcchMessage;
 			params.pdcpSdu->PeekHeader (rrcDlDcchMessage);
 
@@ -432,6 +437,7 @@ namespace ns3 {
 			LteRrcSap::RrcConnectionRelease rrcConnectionReleaseMsg;
 			LteRrcSap::RrcConnectionSwitch rrcConnectionSwitchMsg;
 			// Deserialize packet and call member recv function with appropiate structure
+			NS_LOG_LOGIC("Get Pdcp Sdu from Protocol, msg type: "<<rrcDlDcchMessage.GetMessageType());
 			switch ( rrcDlDcchMessage.GetMessageType () )
 			{
 				case 4:
@@ -461,9 +467,8 @@ namespace ns3 {
 								NS_LOG_LOGIC("RRC connection reconfiguration transfer to Mmwave stack");
 								uint64_t tempImsi = tempRrc->GetImsi();
 								std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> tempManager = GetRadioManager();
-								params.pdcpSdu->AddHeader(rrcConnectionReconfigurationHeader);
 								tempManager.find(tempImsi)->second[true]->
-										GetObject<MmWaveLteUeRrcProtocolReal>()->TransferDoReceivePdcpPdu(params);
+										GetObject<MmWaveLteUeRrcProtocolReal>()->TransferDoReceivePdcpPdu(tempParams);
 							}
 						/*}
 						else

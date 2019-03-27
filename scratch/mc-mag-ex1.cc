@@ -397,7 +397,7 @@ main (int argc, char *argv[])
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
 	// LogComponentEnable("LtePdcp", LOG_FUNCTION);
 	// LogComponentEnable ("MmWaveSpectrumPhy", LOG_FUNCTION);
-        LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
+        //LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
 	//LogComponentEnable ("LteUeMac", LOG_FUNCTION);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
@@ -507,7 +507,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
 	// LogComponentEnable ("mmWaveRrcProtocolIdeal", LOG_FUNCTION);
 	LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_LEVEL_LOGIC);

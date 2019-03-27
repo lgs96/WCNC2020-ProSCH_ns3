@@ -50,6 +50,7 @@ MmWaveLteUeRrcProtocolReal::MmWaveLteUeRrcProtocolReal ()
   :  m_ueRrcSapProvider (0),
     m_enbRrcSapProvider (0)
 {
+  NS_LOG_FUNCTION(this);
   m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveLteUeRrcProtocolReal> (this);
   m_completeSetupParameters.srb0SapUser = new LteRlcSpecificLteRlcSapUser<MmWaveLteUeRrcProtocolReal> (this);
   m_completeSetupParameters.srb1SapUser = new LtePdcpSpecificLtePdcpSapUser<MmWaveLteUeRrcProtocolReal> (this);    
@@ -407,6 +408,8 @@ MmWaveLteUeRrcProtocolReal::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduPara
   switch ( rrcDlDcchMessage.GetMessageType () )
     {
     case 4:
+      NS_LOG_FUNCTION(this);
+      NS_LOG_LOGIC("RRC point");
       params.pdcpSdu->RemoveHeader (rrcConnectionReconfigurationHeader);
       rrcConnectionReconfigurationMsg = rrcConnectionReconfigurationHeader.GetMessage ();
       m_ueRrcSapProvider->RecvRrcConnectionReconfiguration (rrcConnectionReconfigurationMsg);

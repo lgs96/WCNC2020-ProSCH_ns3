@@ -408,7 +408,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("UdpServer", LOG_FUNCTION);
 	//LogComponentEnable ("PacketSink", LOG_FUNCTION);
 	//LogComponentEnable("MmWavePropagationLossModel",LOG_LEVEL_ALL);
-	LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("EpcMme", LOG_FUNCTION);
 	// LogComponentEnable ("mmWavePhyRxTrace", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveRrMacScheduler", LOG_FUNCTION);

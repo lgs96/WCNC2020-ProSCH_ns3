@@ -975,12 +975,13 @@ namespace ns3 {
 					}
 
 					//#2 Send handover request ack to source cell
+					Ptr<Packet> encodedHandoverCommand = params.rrcContext->Copy();
+					LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
+
 					params.sourceCellId = m_mmWaveCellId;
 					m_rrc->m_x2SapProvider->SendHandoverRequestAck (params);
 
 					//#3 Send RRC connection reconfiguration msg to user
-					Ptr<Packet> encodedHandoverCommand = params.rrcContext;
-					LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
 					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
 
 					//#4 Request buffered TCP packet to send

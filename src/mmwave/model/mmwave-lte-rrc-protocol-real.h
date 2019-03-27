@@ -71,6 +71,11 @@ public:
 
   void SetUeRrc (Ptr<LteUeRrc> rrc);
 
+  //Process8: get radio manager to manage all radio interface in UE
+  void SetRadioManager (std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> radioManager);
+  Ptr<LteUeRrc> GetUeRrc ();
+  std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> GetRadioManager();
+  void TransferDoReceivePdcpPdu(LtePdcpSapUser::ReceivePdcpSduParameters params);
 
 private:
   // methods forwarded from LteUeRrcSapUser
@@ -95,6 +100,9 @@ private:
 
   LteUeRrcSapUser::SetupParameters m_setupParameters;
   LteUeRrcSapProvider::CompleteSetupParameters m_completeSetupParameters;
+
+  //Process8
+  std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> m_radioManager;
 
 };
 

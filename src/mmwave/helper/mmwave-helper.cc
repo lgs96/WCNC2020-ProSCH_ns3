@@ -649,9 +649,13 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	lteUlPhy->SetAntenna (antenna);
 	lteDlPhy->SetAntenna (antenna);
 
+	// Process8---190327 static callback function of LteUeRrc
 	// ----------------------- mmWave stack -------------
 	Ptr<MmWaveUeMac> mmWaveMac = CreateObject<MmWaveUeMac> ();
 	Ptr<LteUeRrc> mmWaveRrc = CreateObject<LteUeRrc> ();
+
+	//Process8 modified
+	Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol_mmReal = CreateObject<MmWaveLteUeRrcProtocolReal> ();
 
 	mmWaveRrc->SetAttribute("SecondaryRRC", BooleanValue(true));
 	if (m_useIdealRrc)
@@ -664,11 +668,16 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
-		rrcProtocol->SetUeRrc (mmWaveRrc);
-		mmWaveRrc->AggregateObject (rrcProtocol);
-		rrcProtocol->SetLteUeRrcSapProvider (mmWaveRrc->GetLteUeRrcSapProvider ());
-		mmWaveRrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
+		rrcProtocol_mmReal->SetUeRrc (mmWaveRrc);
+		mmWaveRrc->AggregateObject (rrcProtocol_mmReal);
+		rrcProtocol_mmReal->SetLteUeRrcSapProvider (mmWaveRrc->GetLteUeRrcSapProvider ());
+		mmWaveRrc->SetLteUeRrcSapUser (rrcProtocol_mmReal->GetLteUeRrcSapUser ());
+
+		//Process8: implemented on only in real protocol
+		uint64_t currentImsi = imsi;
+		std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>tempPair;
+		tempPair.insert(std::make_pair(true,rrcProtocol_mmReal));
+		m_radioManager.insert(std::make_pair(currentImsi,tempPair));
 	}
 	if (m_epcHelper != 0)
 	{
@@ -710,6 +719,9 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	Ptr<LteUeMac> lteMac = CreateObject<LteUeMac> ();
 	Ptr<LteUeRrc> lteRrc = CreateObject<LteUeRrc> ();
 
+	//Process8 modified
+	Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol_lteReal = CreateObject<MmWaveLteUeRrcProtocolReal> ();
+
 	if (m_useIdealRrc)
 	{
 		Ptr<MmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveUeRrcProtocolIdeal> ();
@@ -720,11 +732,14 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
-		rrcProtocol->SetUeRrc (lteRrc);
-		lteRrc->AggregateObject (rrcProtocol);
-		rrcProtocol->SetLteUeRrcSapProvider (lteRrc->GetLteUeRrcSapProvider ());
-		lteRrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
+		rrcProtocol_lteReal->SetUeRrc (lteRrc);
+		lteRrc->AggregateObject (rrcProtocol_lteReal);
+		rrcProtocol_lteReal->SetLteUeRrcSapProvider (lteRrc->GetLteUeRrcSapProvider ());
+		lteRrc->SetLteUeRrcSapUser (rrcProtocol_lteReal->GetLteUeRrcSapUser ());
+
+		//Process8
+		uint64_t currentImsi = imsi;
+	    m_radioManager.find(currentImsi)->second.insert(std::make_pair(false,rrcProtocol_lteReal));
 	}
 
 	if (m_epcHelper != 0)
@@ -777,6 +792,10 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
 	n->AddDevice(device);
 	device->Initialize();
+
+	// Process8 set radio manager for both connection
+	rrcProtocol_mmReal -> SetRadioManager (m_radioManager);
+	rrcProtocol_lteReal -> SetRadioManager (m_radioManager);
 
 	return device;
 }

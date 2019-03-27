@@ -411,6 +411,13 @@ LteUeRrc::GetCellId () const
   return m_cellId;
 }
 
+bool
+LteUeRrc::GetIsSecondaryRrc () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_isSecondaryRRC;
+}
+
 void 
 LteUeRrc::AddMmWaveCellId(uint16_t cellId)
 {
@@ -444,6 +451,7 @@ LteUeRrc::AddLteCellId(uint16_t cellId)
 bool
 LteUeRrc::SwitchLowerLayerProviders (uint16_t cellId)
 {
+  NS_LOG_FUNCTION(this<<" cellId: "<<cellId);
   if(m_isMmWaveCellMap.find(cellId) != m_isMmWaveCellMap.end())
   {
     if(m_isMmWaveCellMap.find(cellId)->second)

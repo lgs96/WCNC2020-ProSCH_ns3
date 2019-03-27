@@ -50,6 +50,7 @@ namespace ns3 {
 		:  m_ueRrcSapProvider (0),
 		m_enbRrcSapProvider (0)
 	{
+		NS_LOG_FUNCTION(this);
 		m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveLteUeRrcProtocolReal> (this);
 		m_completeSetupParameters.srb0SapUser = new LteRlcSpecificLteRlcSapUser<MmWaveLteUeRrcProtocolReal> (this);
 		m_completeSetupParameters.srb1SapUser = new LtePdcpSpecificLtePdcpSapUser<MmWaveLteUeRrcProtocolReal> (this);    
@@ -331,6 +332,33 @@ namespace ns3 {
 			}
 		}
 
+    //////////////////////////////////////
+	// Process8
+	void
+		MmWaveLteUeRrcProtocolReal::SetRadioManager (std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> radioManager)
+		{
+			m_radioManager = radioManager;
+		}
+
+	Ptr<LteUeRrc>
+		MmWaveLteUeRrcProtocolReal::GetUeRrc ()
+		{
+			return m_rrc;
+		}
+
+	std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>>
+		MmWaveLteUeRrcProtocolReal::GetRadioManager()
+		{
+			return m_radioManager;
+		}
+	void
+		MmWaveLteUeRrcProtocolReal::TransferDoReceivePdcpPdu(LtePdcpSapUser::ReceivePdcpSduParameters params)
+		{
+			NS_LOG_FUNCTION(this);
+			DoReceivePdcpSdu (params);
+		}
+	/////////////////////////////////////
+
 	void
 		MmWaveLteUeRrcProtocolReal::DoReceivePdcpPdu (Ptr<Packet> p)
 		{
@@ -407,9 +435,43 @@ namespace ns3 {
 			switch ( rrcDlDcchMessage.GetMessageType () )
 			{
 				case 4:
+					// Process8
+					//original code
+					NS_LOG_LOGIC(this<<" RrcConnectionReconfig");
 					params.pdcpSdu->RemoveHeader (rrcConnectionReconfigurationHeader);
 					rrcConnectionReconfigurationMsg = rrcConnectionReconfigurationHeader.GetMessage ();
-					m_ueRrcSapProvider->RecvRrcConnectionReconfiguration (rrcConnectionReconfigurationMsg);
+					if(!rrcConnectionReconfigurationMsg.haveMobilityControlInfo)
+						m_ueRrcSapProvider->RecvRrcConnectionReconfiguration (rrcConnectionReconfigurationMsg);
+					else
+					{
+						// New code as signal carrier
+						const LteRrcSap::MobilityControlInfo& mci = rrcConnectionReconfigurationMsg.mobilityControlInfo;
+						NS_LOG_LOGIC("Loop incoming, carrier freq:"<<mci.carrierFreq.dlCarrierFreq);
+
+						//if(mci.carrierFreq.dlCarrierFreq > 10e9) //determine signal targets whether mmwave or not
+						//{
+							Ptr<LteUeRrc> tempRrc = GetUeRrc();
+							if(tempRrc->GetIsSecondaryRrc())
+							{
+								NS_LOG_LOGIC("RRC connection reconfigration signal received by Mmwave stack");
+								m_ueRrcSapProvider->RecvRrcConnectionReconfiguration (rrcConnectionReconfigurationMsg);
+							}
+							else
+							{
+								NS_LOG_LOGIC("RRC connection reconfiguration transfer to Mmwave stack");
+								uint64_t tempImsi = tempRrc->GetImsi();
+								std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> tempManager = GetRadioManager();
+								params.pdcpSdu->AddHeader(rrcConnectionReconfigurationHeader);
+								tempManager.find(tempImsi)->second[true]->
+										GetObject<MmWaveLteUeRrcProtocolReal>()->TransferDoReceivePdcpPdu(params);
+							}
+						/*}
+						else
+						{
+							m_ueRrcSapProvider->RecvRrcConnectionReconfiguration (rrcConnectionReconfigurationMsg);
+						}*/
+					}
+
 					break;
 				case 5:
 					params.pdcpSdu->RemoveHeader (rrcConnectionReleaseHeader);
@@ -889,6 +951,7 @@ namespace ns3 {
 					m_enbRrcSapProvider->RecvMeasurementReport (params.rnti,measurementReportMsg);
 					break;
 				case 2:
+					NS_LOG_LOGIC(this<<" RrcConnectionReconfigComplete");
 					params.pdcpSdu->RemoveHeader (rrcConnectionReconfigurationCompleteHeader);
 					rrcConnectionReconfigurationCompleteMsg = rrcConnectionReconfigurationCompleteHeader.GetMessage ();
 					m_enbRrcSapProvider->RecvRrcConnectionReconfigurationCompleted (params.rnti,rrcConnectionReconfigurationCompleteMsg);
@@ -939,6 +1002,7 @@ namespace ns3 {
 			h.SetMessage (msg);
 			Ptr<Packet> p = Create<Packet> ();
 			p->AddHeader (h);
+			h.Print(std::cout);
 			return p;
 		}
 

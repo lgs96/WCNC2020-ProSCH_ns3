@@ -360,9 +360,9 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 	  NS_LOG_LOGIC ("Recv X2 message: PREFETCHED HANDOVER REQUEST");
 
 	  EpcX2HandoverRequestHeader x2HoReqHeader;
-      packet->RemoveHeader (x2HoReqHeader);
+          packet->RemoveHeader (x2HoReqHeader);
 
-      NS_LOG_INFO ("X2 HandoverRequest header: " << x2HoReqHeader);
+          NS_LOG_INFO ("X2 HandoverRequest header: " << x2HoReqHeader);
 
 	  EpcX2SapUser::HandoverRequestParams params;
 	  params.oldEnbUeX2apId = x2HoReqHeader.GetOldEnbUeX2apId ();

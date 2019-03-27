@@ -744,7 +744,7 @@ namespace ns3 {
 					break;
 
 				case CONNECTION_RECONFIGURATION:
-				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
+//				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
 					{
 						m_queuedHandoverRequestCellId = cellId;
 						NS_LOG_INFO("UeManager is in CONNECTION_RECONFIGURATION, postpone the PrepareHandover command to cell " << m_queuedHandoverRequestCellId);
@@ -753,6 +753,7 @@ namespace ns3 {
 				// Process8
 				case HANDOVER_PREPARATION:
 				case HANDOVER_LEAVING:
+				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
 					{
 						NS_LOG_INFO("Handover prefetch signal is already sent, wait for response from LTE cell");
 					}

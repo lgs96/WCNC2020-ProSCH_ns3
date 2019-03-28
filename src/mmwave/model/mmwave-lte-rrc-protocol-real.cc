@@ -1007,7 +1007,6 @@ namespace ns3 {
 			h.SetMessage (msg);
 			Ptr<Packet> p = Create<Packet> ();
 			p->AddHeader (h);
-			h.Print(std::cout);
 			return p;
 		}
 
@@ -1016,7 +1015,6 @@ namespace ns3 {
 		{
 			RrcConnectionReconfigurationHeader h;
 			p->RemoveHeader (h);
-			h.Print(std::cout);
 			LteRrcSap::RrcConnectionReconfiguration msg = h.GetMessage ();
 			return msg;
 		}

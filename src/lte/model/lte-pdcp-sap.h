@@ -123,12 +123,10 @@ void LtePdcpSpecificLtePdcpSapProvider<C>::TransmitPdcpSdu (TransmitPdcpSduParam
 {
   if(!params.toLte)
   {
-    std::cout<<"pdcp True "<<params.toLte<<std::endl;
     m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
   }
   else if(params.toLte)
   {
-	std::cout<<" pdcp False "<<params.toLte<<" m_pdcp "<<m_pdcp<<std::endl;
 	m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
   }
   else

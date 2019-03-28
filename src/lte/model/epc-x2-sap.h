@@ -1115,7 +1115,6 @@ template <class C>
 void
 EpcX2RlcSpecificUser<C>::SendMcPdcpSdu(UeDataParams params)
 {
-  std::cout<<"WHY?"<<std::endl;
   m_rlc->DoSendMcPdcpSdu(params);
 }
 

@@ -339,31 +339,31 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	AsciiTraceHelper asciiTraceHelper;
 
 	std::ostringstream pathCW;
-	pathCW<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow";
+	pathCW<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/1/CongestionWindow";
 
 	std::ostringstream fileCW;
 	fileCW<<ExNum<<"_tcp_cwnd_ue"<<nodeNum+1<<".txt";
 
 	std::ostringstream pathRTT;
-	pathRTT<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RTT";
+	pathRTT<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/1/RTT";
 
 	std::ostringstream fileRTT;
 	fileRTT<<ExNum<<"_tcp_rtt_ue"<<nodeNum+1<<".txt";
 
 	std::ostringstream pathSST;
-	pathSST<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/SlowStartThreshold";
+	pathSST<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/1/SlowStartThreshold";
 
 	std::ostringstream fileSST;
 	fileSST<<ExNum<<"_tcp_sst_ue"<<nodeNum+1<<".txt";
 
 	std::ostringstream pathRx;
-	pathRx<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/Rx";
+	pathRx<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/1/Rx";
 
 	std::ostringstream fileRx;
 	fileRx<<ExNum<<"_tcp_ack_ue"<<nodeNum+1<<".txt";
 
 	std::ostringstream pathRTO;
-	pathRTO<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RTO";
+	pathRTO<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/1/RTO";
 
 	std::ostringstream fileRTO;
 	fileRTO<<ExNum<<"_tcp_rto_ue"<<nodeNum+1<<".txt";
@@ -388,14 +388,14 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 main (int argc, char *argv[])
 {
 	//ns3::Packet::EnablePrinting();
-	LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
-	LogComponentEnable("LtePdcp", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("LtePdcp", LOG_LEVEL_LOGIC);
 	// LogComponentEnable ("MmWaveSpectrumPhy", LOG_FUNCTION);
 	// LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
@@ -507,16 +507,16 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbPhy", LOG_FUNCTION);
 	//  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_FUNCTION);
 	//  LogComponentEnable("MmWaveHelper",LOG_FUNCTION);
-	LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
+	//LogComponentEnable("EpcX2",LOG_LEVEL_LOGIC);
 	// LogComponentEnable("EpcX2",LOG_LOGIC);
-	LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("MmWaveLteRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteUeRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcX2Header", LOG_FUNCTION);
-        LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
+       // LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
-	LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable("LteRlcUmLowLat", LOG_FUNCTION);
 	//  LogComponentEnable("EpcS1ap", LOG_FUNCTION);
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
@@ -564,7 +564,7 @@ main (int argc, char *argv[])
 
 	uint16_t ExperimentNum = 2;	
 
-	double simTime = 20;
+	double simTime = 20.5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -908,7 +908,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("3Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("100Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

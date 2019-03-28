@@ -525,6 +525,10 @@ private:
    */
   std::vector <EpcX2SapUser::RlcSetupRequest> m_rlcRequestVector;
 
+
+  // Process8
+  std::vector <EpcX2SapUser::RlcSetupRequest> m_tempRlcVector;
+
   /**
    * The `Srb0` attribute. SignalingRadioBearerInfo for SRB0.
    */

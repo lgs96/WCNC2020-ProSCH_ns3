@@ -382,6 +382,10 @@ public:
   uint32_t GetLengthOfIes () const;
   uint32_t GetNumberOfIes () const;
 
+  // Process8
+  void SetImsi (uint64_t imsi);
+  uint64_t GetImsi () const;
+
 private:
   uint32_t          m_numberOfIes;
   uint32_t          m_headerLength;
@@ -390,6 +394,9 @@ private:
   uint16_t          m_newEnbUeX2apId;
   std::vector <EpcX2Sap::ErabAdmittedItem>     m_erabsAdmittedList;
   std::vector <EpcX2Sap::ErabNotAdmittedItem>  m_erabsNotAdmittedList;
+
+  //Process8
+  uint64_t			m_imsi;
 };
 
 

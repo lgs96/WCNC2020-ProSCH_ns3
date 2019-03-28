@@ -694,6 +694,18 @@ namespace ns3 {
 			{
 				case CONNECTED_NORMALLY:
 					{
+						if(m_rlcRequestVector.empty())
+						{
+							for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = m_tempRlcVector.begin();
+																		it != m_tempRlcVector.end ();
+																		++it)
+							{
+								NS_LOG_LOGIC("DEBUG1: "<<(*it).sourceCellId<<" "<<(*it).targetCellId);
+								m_rlcRequestVector.push_back(*it);
+							}
+						}
+						m_tempRlcVector.clear();
+
 						m_targetCellId = cellId;
 						EpcX2SapProvider::HandoverRequestParams params;
 						params.oldEnbUeX2apId = m_rnti;
@@ -705,6 +717,12 @@ namespace ns3 {
 						params.ueAggregateMaxBitRateUplink = 100 * 1000;
 						params.bearers = GetErabList ();
 						params.rlcRequests = m_rlcRequestVector;
+						for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = m_rlcRequestVector.begin();
+											it != m_rlcRequestVector.end ();
+											++it)
+						{
+							m_tempRlcVector.push_back(*it);
+						}
 						// clear the vector to avoid keeping old information
 						// the target eNB will add the rlcRequests in its own vector
 						m_rlcRequestVector.clear();
@@ -957,7 +975,7 @@ namespace ns3 {
 								// Remote RLC already setup
 
 								m_rrc->m_lastMmWaveCell[m_imsi] = params.targetCellId;
-								m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
+								//m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
 								NS_LOG_INFO("Imsi " << m_imsi << " m_mmWaveCellSetupCompleted set to " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi] <<
 										" for cell " <<  m_rrc->m_lastMmWaveCell[m_imsi]);
 								m_rrc->m_imsiUsingLte[m_imsi] = false;
@@ -2051,6 +2069,7 @@ namespace ns3 {
 			}
 			*/
 
+			m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
 			// send ContextRelease to the old mmWave eNB
 			NS_LOG_INFO ("Send UE CONTEXT RELEASE from target eNB to source eNB");
 			EpcX2SapProvider::UeContextReleaseParams ueCtxReleaseParams;
@@ -2968,6 +2987,7 @@ namespace ns3 {
 			}
 			else
 			{
+				NS_LOG_LOGIC("Modify entry in m_imsiRntiMap, for rnti "<<rnti<<" in "<<m_cellId);
 				m_imsiRntiMap.find(imsi)->second = rnti;
 			}
 
@@ -3315,7 +3335,7 @@ namespace ns3 {
 
 		}
 
-	//Process8: TttBasedHandover is modified for Proxy based handover
+	//Process8:  is modified for Proxy based handover
 	void 
 		LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb)
 		{
@@ -3484,11 +3504,13 @@ namespace ns3 {
 
 			if(handoverNeeded)
 			{
-				bool hi = m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi];
-				NS_LOG_LOGIC("Prefetched value: "<<hi);
+				NS_LOG_LOGIC("Last mmwave cell: "<<m_lastMmWaveCell[imsi]);
+				bool isValid = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])!=m_isPrefetchedEnbMap.end());
+				bool haveValue = m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end();
+				bool isFetched = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi]);
+
 				// Did master cell get prefetched signal from source mmwave cell?
-				if((m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end())
-						&&(m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi]== true))
+				if(isValid && haveValue && isFetched)
 				{
 					NS_LOG_DEBUG("handoverNeeded");
 					// compute the TTT
@@ -3525,6 +3547,21 @@ namespace ns3 {
 				else
 				{
 					NS_LOG_LOGIC("No prefetched handover signal.. request handover signal to mmwave cell");
+					EpcX2Sap::HandoverPreparationFailureParams res;
+					res.imsi = imsi;
+					res.sourceCellId = m_lastMmWaveCell[imsi]; //source cell is a forwarding address...
+					res.targetCellId = m_cellId;
+					res.cause = 0;
+					res.criticalityDiagnostics = 0;
+					res.hasImsi = true;
+					m_x2SapProvider->SendHandoverPreparationFailure (res);
+				}
+			}
+			else
+			{
+				if(m_lastMmWaveCell[imsi]!=0)
+				{
+					NS_LOG_LOGIC("Do not need handover");
 					EpcX2Sap::HandoverPreparationFailureParams res;
 					res.imsi = imsi;
 					res.sourceCellId = m_lastMmWaveCell[imsi]; //source cell is a forwarding address...
@@ -4162,7 +4199,7 @@ namespace ns3 {
 			NS_ASSERT (m_configured);
 
 			Ptr<UeManager> ueManager = GetUeManager (rnti);
-			if(ueManager->GetState()!= UeManager::CONNECTION_SETUP)
+			if(ueManager->GetState() == UeManager::CONNECTED_NORMALLY)
 			{
 				NS_LOG_INFO("LteEnbRrc on cell " << m_cellId << " for rnti " << rnti
 						<< " PreSendHandoverRequest at time " << Simulator::Now().GetSeconds() << " to cellId " << cellId);
@@ -4293,6 +4330,9 @@ namespace ns3 {
 			ackParams.sourceCellId = req.sourceCellId;
 			ackParams.targetCellId = req.targetCellId;
 
+			//Process8
+			ackParams.imsi = req.mmeUeS1apId;
+
 			for (std::vector <EpcX2Sap::ErabToBeSetupItem>::iterator it = req.bearers.begin ();
 					it != req.bearers.end ();
 					++it)
@@ -4392,10 +4432,13 @@ namespace ns3 {
 			{
 			  if(m_isPrefetchedEnbMap.find(req.sourceCellId)->second.find(req.imsi)!=m_isPrefetchedEnbMap.find(req.sourceCellId)->second.end())
 			  {
+				NS_LOG_LOGIC("NOT EXIST "<<req.sourceCellId);
+
 			    m_isPrefetchedEnbMap.find(req.sourceCellId)->second[req.imsi] = true;
 			  }
 			  else
 			  {
+				NS_LOG_LOGIC("EXIST "<<req.sourceCellId);
 			    m_isPrefetchedEnbMap.find(req.sourceCellId)->second.insert(std::make_pair(req.imsi,true));
 			  }
 			}
@@ -4420,8 +4463,11 @@ namespace ns3 {
 			NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
 			NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
 			NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+			NS_LOG_LOGIC ("IMSI = "<<params.imsi);
 
 			uint16_t rnti = params.oldEnbUeX2apId;
+			//Process8
+			rnti = GetRntiFromImsi (params.imsi);
 			Ptr<UeManager> ueManager = GetUeManager (rnti);
 			ueManager->RecvHandoverRequestAck (params);
 		}
@@ -4515,6 +4561,7 @@ namespace ns3 {
 				m_imsiUsingLte[GetImsiFromRnti(rnti)] = false;
 			}
 
+			m_imsiRntiMap[GetImsiFromRnti(rnti)] = 0;
 			GetUeManager (rnti)->RecvUeContextRelease (params);
 			RemoveUe (rnti);
 		}

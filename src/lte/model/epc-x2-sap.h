@@ -280,6 +280,9 @@ public:
     std::vector <ErabAdmittedItem> admittedBearers;
     std::vector <ErabNotAdmittedItem> notAdmittedBearers;
     Ptr<Packet>         rrcContext;
+
+    // Process8
+    uint64_t 			imsi;
   };
 
   /**
@@ -1112,6 +1115,7 @@ template <class C>
 void
 EpcX2RlcSpecificUser<C>::SendMcPdcpSdu(UeDataParams params)
 {
+  std::cout<<"WHY?"<<std::endl;
   m_rlc->DoSendMcPdcpSdu(params);
 }
 

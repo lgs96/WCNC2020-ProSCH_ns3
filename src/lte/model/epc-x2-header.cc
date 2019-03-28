@@ -1424,10 +1424,11 @@ EpcX2NotifyCoordinatorHandoverFailedHeader::GetNumberOfIes () const
 NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverRequestAckHeader);
 
 EpcX2HandoverRequestAckHeader::EpcX2HandoverRequestAckHeader ()
-  : m_numberOfIes (1 + 1 + 1 + 1),
-    m_headerLength (2 + 2 + 4 + 4),
+  : m_numberOfIes (1 + 1 + 1 + 1 +1),
+    m_headerLength (2 + 2 + 4 + 4 + 8),
     m_oldEnbUeX2apId (0xfffa),
-    m_newEnbUeX2apId (0xfffa)
+    m_newEnbUeX2apId (0xfffa),
+	m_imsi			 (0xfffffffffffffffa)
 {
 }
 
@@ -1439,6 +1440,7 @@ EpcX2HandoverRequestAckHeader::~EpcX2HandoverRequestAckHeader ()
   m_newEnbUeX2apId = 0xfffb;
   m_erabsAdmittedList.clear ();
   m_erabsNotAdmittedList.clear ();
+  m_imsi = 0xfffffffffffffffb;
 }
 
 TypeId
@@ -1488,6 +1490,7 @@ EpcX2HandoverRequestAckHeader::Serialize (Buffer::Iterator start) const
       i.WriteHtonU16 (m_erabsNotAdmittedList [j].erabId);
       i.WriteHtonU16 (m_erabsNotAdmittedList [j].cause);
     }
+  i.WriteHtonU64 (m_imsi);
 }
 
 uint32_t
@@ -1533,6 +1536,9 @@ EpcX2HandoverRequestAckHeader::Deserialize (Buffer::Iterator start)
       m_erabsNotAdmittedList.push_back (erabItem);
       m_headerLength += 4;
     }
+  m_imsi = i.ReadNtohU64 ();
+  m_headerLength += 8;
+  m_numberOfIes++;
 
   return GetSerializedSize ();
 }
@@ -1643,6 +1649,18 @@ uint32_t
 EpcX2HandoverRequestAckHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
+}
+
+void
+EpcX2HandoverRequestAckHeader::SetImsi (uint64_t imsi)
+{
+  m_imsi = imsi;
+}
+
+uint64_t
+EpcX2HandoverRequestAckHeader::GetImsi () const
+{
+  return m_imsi;
 }
 
 /////////////////////////////////////////////////////////////////////

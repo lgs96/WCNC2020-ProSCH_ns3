@@ -227,8 +227,9 @@ void
 EpcX2::DoRemoveTeidToBeForwarded(uint32_t gtpTeid)
 {
   NS_LOG_FUNCTION(this << " remove and entry from the map of teids to be forwarded: teid " << gtpTeid);
-  NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end(), "TEID not in the map");
-  m_teidToBeForwardedMap.erase(m_teidToBeForwardedMap.find(gtpTeid));
+  NS_LOG_LOGIC(this<<" Do nothing in the Proxy based handover");
+  //NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end(), "TEID not in the map");
+  //m_teidToBeForwardedMap.erase(m_teidToBeForwardedMap.find(gtpTeid));
 }
 
 
@@ -315,6 +316,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
           params.admittedBearers = x2HoReqAckHeader.GetAdmittedBearers ();
           params.notAdmittedBearers = x2HoReqAckHeader.GetNotAdmittedBearers ();
           params.rrcContext     = packet;
+          params.imsi			=x2HoReqAckHeader.GetImsi ();
 
           NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
           NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
@@ -669,6 +671,8 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
       EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
       if(user != 0)
       {
+    	NS_LOG_LOGIC("USER forwarding");
+    	m_x2RlcUserMap.find(params.gtpTeid)->second;
         user -> SendMcPdcpSdu(params);
       }
       else
@@ -932,6 +936,7 @@ EpcX2::DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams para
   NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
   NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
   NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+  NS_LOG_LOGIC ("IMSI = "		  << params.imsi);
 
   NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.sourceCellId) != m_x2InterfaceSockets.end (),
                  "Socket infos not defined for sourceCellId = " << params.sourceCellId);
@@ -950,6 +955,7 @@ EpcX2::DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams para
   x2HoAckHeader.SetNewEnbUeX2apId (params.newEnbUeX2apId);
   x2HoAckHeader.SetAdmittedBearers (params.admittedBearers);
   x2HoAckHeader.SetNotAdmittedBearers (params.notAdmittedBearers);
+  x2HoAckHeader.SetImsi (params.imsi);
 
   EpcX2Header x2Header;
   x2Header.SetMessageType (EpcX2Header::SuccessfulOutcome);
@@ -1079,6 +1085,7 @@ EpcX2::DoNotifyCoordinatorHandoverFailed(EpcX2SapProvider::HandoverFailedParams 
 
   // Send the X2 message through the socket
   localSocket->SendTo (packet, 0, InetSocketAddress (remoteIpAddr, m_x2cUdpPort));
+
 }
 
 
@@ -1359,6 +1366,7 @@ EpcX2::DoReceiveMcPdcpSdu(EpcX2Sap::UeDataParams params)
   NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
   NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
   NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
+  params.ueData->Print(std::cout);
 
   NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
                  "Missing infos for targetCellId = " << params.targetCellId);
@@ -1384,6 +1392,7 @@ EpcX2::DoReceiveMcPdcpSdu(EpcX2Sap::UeDataParams params)
 
   NS_LOG_INFO ("Forward MC UE DATA through X2 interface");
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));  
+
 }
 
 void

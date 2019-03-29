@@ -98,6 +98,7 @@ public:
   virtual Ipv4InterfaceContainer AssignUeIpv4Address (NetDeviceContainer ueDevices);
   virtual Ipv4Address GetUeDefaultGatewayAddress ();
 
+  Ptr <TcpSocketBase> m_traceProxy;
 
 
 private:

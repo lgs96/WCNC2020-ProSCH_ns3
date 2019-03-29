@@ -162,7 +162,7 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    MakeDataRateChecker ())
     .AddAttribute ("S1uLinkDelay", 
                    "The delay to be used for the next S1-U link to be created",
-                   TimeValue (Seconds (0.001)),
+                   TimeValue (Seconds (0.000)),
                    MakeTimeAccessor (&MmWavePointToPointEpcHelper::m_s1uLinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("S1uLinkMtu", 
@@ -290,7 +290,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   enbProxyNodes.Add (m_proxyNode);
   enbProxyNodes.Add (enb);
   PointToPointHelper p2ph_proxy;
-  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate("1000Gb/s")));
+  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate(UINT64_MAX)));
   p2ph_proxy.SetDeviceAttribute ("Mtu", UintegerValue (30000));
   p2ph_proxy.SetChannelAttribute ("Delay", TimeValue(Seconds(0)));
   NetDeviceContainer enbProxyDevices = p2ph.Install (enb, m_proxyNode);
@@ -344,19 +344,6 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);  
   
-  std::pair<Ptr<VirtualNetDevice>,Ipv4Address> tempMap = std::make_pair(m_tunProxyDevice,proxyAddress);
-
-  //Modified by Process7
-  NS_LOG_INFO ("create EpcEnbApplication");
-  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, enbProxyUdpSocket, tempMap);
-  enb->AddApplication (enbApp);
-
-  m_tunProxyDevice->SetSendCallback (MakeCallback (&EpcEnbApplication::RecvFromTunDevice, enbApp));
-
-  NS_ASSERT (enb->GetNApplications () == 1);
-  NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbApplication> () != 0, "cannot retrieve EpcEnbApplication");
-  NS_LOG_LOGIC ("enb: " << enb << ", enb->GetApplication (0): " << enb->GetApplication (0));
-
   //Process7
   NS_LOG_INFO ("create EpcEnbProxyApplication");
   Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (proxyTcpSocket,proxyUdpSocket,proxy_enbAddress); //need to add parameter
@@ -364,6 +351,20 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   NS_ASSERT (m_proxyNode->GetNApplications () == 1);
   NS_ASSERT_MSG (m_proxyNode->GetApplication (0)->GetObject<EpcEnbProxyApplication> () != 0, "cannot retrieve EpcEnbProxyApplication");
   NS_LOG_LOGIC ("proxy: "<<m_proxyNode<<", m_proxyNode->GetApplication (0): "<<enb->GetApplication (0));
+
+  std::pair<Ptr<VirtualNetDevice>,Ipv4Address> tempMap = std::make_pair(m_tunProxyDevice,proxyAddress);
+  std::pair<Ptr<EpcEnbProxyApplication>,Ptr<Socket>> proxyMap =std::make_pair(proxyApp,enbProxyUdpSocket);
+
+  //Modified by Process7
+  NS_LOG_INFO ("create EpcEnbApplication");
+  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId, proxyMap, tempMap);
+  enb->AddApplication (enbApp);
+
+  m_tunProxyDevice->SetSendCallback (MakeCallback (&EpcEnbApplication::RecvFromTunDevice, enbApp));
+
+  NS_ASSERT (enb->GetNApplications () == 1);
+  NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbApplication> () != 0, "cannot retrieve EpcEnbApplication");
+  NS_LOG_LOGIC ("enb: " << enb << ", enb->GetApplication (0): " << enb->GetApplication (0));
   
   NS_LOG_INFO ("Create EpcX2 entity");
   Ptr<EpcX2> x2 = CreateObject<EpcX2> ();
@@ -382,6 +383,9 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   s1apMme->AddS1apInterface (cellId, mme_enbAddress);
   
   m_sgwPgwApp->AddEnb (cellId, enbAddress, sgwAddress);
+
+  if(cellId == 1)
+	  m_traceProxy = proxyTcpSocket->GetObject<TcpSocketBase>();
 }
 
 

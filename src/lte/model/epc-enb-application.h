@@ -43,6 +43,8 @@
 
 //Process5: Added by gsoul
 #include "epc-gtpu-header.h"
+//Process8
+#include "epc-enb-proxy-application.h"
 
 
 namespace ns3 {
@@ -84,7 +86,7 @@ public:
    */
   //Process7 modified
   EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId);
-  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket,std::pair <Ptr<VirtualNetDevice>,Ipv4Address> tempMap);
+  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, std::pair<Ptr<EpcEnbProxyApplication>,Ptr<Socket>> proxyMap,std::pair <Ptr<VirtualNetDevice>,Ipv4Address> tempMap);
 
   /**
    * Destructor
@@ -172,6 +174,7 @@ private:
 
   //Process8 just for definition
   void DoProxyForwardingRequest();
+  void DoProxyHoldRequest();
 
   /**
    * Send a packet to the UE via the LTE radio interface of the eNB
@@ -294,6 +297,9 @@ private:
   uint16_t m_proxyUdpPort;
   Ipv4Address m_proxyAddress;
   Ptr<VirtualNetDevice> m_tunProxyDevice;
+
+  //Process8
+  Ptr<EpcEnbProxyApplication> m_proxyApp;
 
 
 };

@@ -35,6 +35,9 @@
 #include "epc-gtpu-header.h"
 #include "eps-bearer-tag.h"
 
+//Process8
+#include "epc-enb-proxy-application.h"
+
 
 namespace ns3 {
 
@@ -102,7 +105,8 @@ EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSock
 
 
 
-EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId, Ptr<Socket> proxySocket,std::pair<Ptr<VirtualNetDevice>,Ipv4Address> tempMap)
+EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId,
+		std::pair<Ptr<EpcEnbProxyApplication>,Ptr<Socket>> proxyMap, std::pair<Ptr<VirtualNetDevice>,Ipv4Address> tempMap)
   : m_lteSocket (lteSocket),
     m_s1uSocket (s1uSocket),    
     m_enbS1uAddress (enbS1uAddress),
@@ -111,12 +115,13 @@ EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSock
     m_s1SapUser (0),
     m_s1apSapEnbProvider (0),
     m_cellId (cellId),
-	m_proxySocket (proxySocket),
+	m_proxySocket (proxyMap.second),
 	m_proxyUdpPort (8199),
 	m_proxyAddress (tempMap.second),
-	m_tunProxyDevice (tempMap.first)
+	m_tunProxyDevice (tempMap.first),
+	m_proxyApp (proxyMap.first)
 {
-  NS_LOG_FUNCTION (this << lteSocket << s1uSocket << sgwS1uAddress << proxySocket);
+  NS_LOG_FUNCTION (this << lteSocket << s1uSocket << sgwS1uAddress << proxyMap.second);
   m_s1uSocket->SetRecvCallback (MakeCallback (&EpcEnbApplication::RecvFromS1uSocket, this));
   m_lteSocket->SetRecvCallback (MakeCallback (&EpcEnbApplication::RecvFromLteSocket, this));
   //Process7
@@ -613,12 +618,21 @@ EpcEnbApplication::SendToTunDevice (Ptr<Packet> packet)
   m_tunProxyDevice->Receive (packet, 0x0800, m_tunProxyDevice->GetAddress (), m_tunProxyDevice->GetAddress (), NetDevice::PACKET_HOST);
 }
 
+
+// Process8
 void
 EpcEnbApplication::DoProxyForwardingRequest()
 {
-	//Do nothing
+  NS_LOG_FUNCTION(this);
+  m_proxyApp -> ForwardingProxy ();
 }
 
+void
+EpcEnbApplication::DoProxyHoldRequest()
+{
+  NS_LOG_FUNCTION(this);
+  m_proxyApp -> HoldProxyBuffer();
+}
 
 
 

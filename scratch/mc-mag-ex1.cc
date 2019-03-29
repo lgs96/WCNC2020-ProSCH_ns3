@@ -328,6 +328,18 @@ RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> p
 }
 
 	static void
+GetRx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
+{
+	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
+}
+
+	static void
+GetTx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
+{
+	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetSequenceNumber() << std::endl;
+}
+
+	static void
 RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 {
 	*stream->GetStream () <<Simulator::Now().GetSeconds() << "\t" <<oldrto.GetSeconds()<<"\t"<<newrto.GetSeconds()<<std::endl;
@@ -402,7 +414,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteUeMac", LOG_FUNCTION);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
-	////  LogComponentEnable ("MmWaveEnbPhy", LOG_FUNCTION);
+	//	//  LogComponentEnable ("MmWaveEnbPhy", LOG_FUNCTION);
 	//LogComponentEnable ("MmWaveUePhy", LOG_FUNCTION);
 	// LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
 	//LogComponentEnable ("UdpServer", LOG_FUNCTION);
@@ -635,7 +647,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate ("1000Gb/s")));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
-	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(1000)));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
 	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (1024*1024*100));
@@ -908,7 +920,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("100Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 
@@ -993,6 +1005,25 @@ main (int argc, char *argv[])
 			}
 		}
 	}
+	AsciiTraceHelper asciiTraceHelper;
+
+	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
+
+	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("proxyRtt.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream2));
+
+	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("proxySst.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh, stream3));
+
+	Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("proxyRx.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("Rx", MakeBoundCallback (&GetRx, stream4));
+
+	Ptr<OutputStreamWrapper> stream5 = asciiTraceHelper.CreateFileStream ("proxyTx.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("Tx", MakeBoundCallback (&GetTx, stream5));
+
+	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream ("proxyRto.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTO", MakeBoundCallback (&RTOChange, stream6));
 
 	mmwaveHelper -> EnableTraces();
 	// Start applications

@@ -945,7 +945,7 @@ namespace ns3 {
 				//Process8: LTE as a centralized coordinater
 				else
 				{
-					NS_LOG_LOGIC("Proxy based handover: Received handover ack, start centralized handover");
+					std::cout<<Simulator::Now()<<" Proxy based handover: Received handover ack, start centralized handover"<<std::endl;
 					//#1 Path switching
 
 					for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
@@ -999,13 +999,14 @@ namespace ns3 {
 
 					params.sourceCellId = m_mmWaveCellId;
 					m_rrc->m_x2SapProvider->SendHandoverRequestAck (params);
-
 					//#3 Send RRC connection reconfiguration msg to user
 					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
 
 					//#4 Request buffered TCP packet to send
 					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest();
 					m_rrc->m_isPrefetchedEnbMap.find(m_mmWaveCellId)->second[m_imsi] = false;
+
+					m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
 				}
 			}
 			//Process8: when mmwave source cell receives ack signal
@@ -3506,11 +3507,13 @@ namespace ns3 {
 			{
 				NS_LOG_LOGIC("Last mmwave cell: "<<m_lastMmWaveCell[imsi]);
 				bool isValid = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])!=m_isPrefetchedEnbMap.end());
-				bool haveValue = m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end();
-				bool isFetched = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi]);
+				//bool haveValue = m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end();
+				//bool isFetched = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi]);
 
 				// Did master cell get prefetched signal from source mmwave cell?
-				if(isValid && haveValue && isFetched)
+				if(isValid
+				   && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end()
+				   && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi])
 				{
 					NS_LOG_DEBUG("handoverNeeded");
 					// compute the TTT
@@ -3673,6 +3676,9 @@ namespace ns3 {
 
 			// remove the HandoverEvent from the map
 			m_imsiHandoverEventsMap.erase(m_imsiHandoverEventsMap.find(imsi));
+
+			// Process8
+			m_s1SapProvider-> DoSendProxyHoldRequest ();
 		}
 
 	void 
@@ -4432,13 +4438,13 @@ namespace ns3 {
 			{
 			  if(m_isPrefetchedEnbMap.find(req.sourceCellId)->second.find(req.imsi)!=m_isPrefetchedEnbMap.find(req.sourceCellId)->second.end())
 			  {
-				NS_LOG_LOGIC("NOT EXIST "<<req.sourceCellId);
+				NS_LOG_LOGIC("EXIST "<<req.sourceCellId<<" "<<m_isPrefetchedEnbMap.find(req.sourceCellId)->second[req.imsi]);
 
 			    m_isPrefetchedEnbMap.find(req.sourceCellId)->second[req.imsi] = true;
 			  }
 			  else
 			  {
-				NS_LOG_LOGIC("EXIST "<<req.sourceCellId);
+				NS_LOG_LOGIC("NOT EXIST "<<req.sourceCellId<<" "<<m_isPrefetchedEnbMap.find(req.sourceCellId)->second[req.imsi]);
 			    m_isPrefetchedEnbMap.find(req.sourceCellId)->second.insert(std::make_pair(req.imsi,true));
 			  }
 			}
@@ -4561,6 +4567,7 @@ namespace ns3 {
 				m_imsiUsingLte[GetImsiFromRnti(rnti)] = false;
 			}
 
+			//Process8
 			m_imsiRntiMap[GetImsiFromRnti(rnti)] = 0;
 			GetUeManager (rnti)->RecvUeContextRelease (params);
 			RemoveUe (rnti);

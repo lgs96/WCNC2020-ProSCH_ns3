@@ -90,9 +90,10 @@ public:
 
   //void RecvFromS1uSocket (Ptr<Socket> socket);
 
-  //Process8
-  void DoProxyForwardingRequest ();
 
+  //Process8
+  void ForwardingProxy ();
+  void HoldProxyBuffer();
 
 private:
 
@@ -107,6 +108,9 @@ private:
 
   Ipv4Address m_source;
   Ipv4Address m_dest;
+
+  //Process8
+  bool m_holdBuffer;
 };
 
 } //namespace ns3

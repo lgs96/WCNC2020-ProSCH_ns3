@@ -67,7 +67,8 @@ EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<
   : m_proxyTcpSocket (proxyTcpSocket),
 	m_proxyEnbSocket (proxyEnbSocket),
     m_proxyToEnbAddress (proxyToEnbAddress),
-    m_proxyToEnbUdpPort (8434) // fixed by the standard
+    m_proxyToEnbUdpPort (8434),
+	m_holdBuffer (false) // fixed by the standard
 {
   NS_LOG_FUNCTION (this << proxyTcpSocket << proxyEnbSocket << proxyToEnbAddress);
   //m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
@@ -106,88 +107,122 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
   NS_ASSERT (socket == m_proxyEnbSocket);
   Ptr<Packet> packet = socket -> Recv ();
 
-  NS_LOG_LOGIC("Packet size before remove header: "<<packet->GetSize());
-  Ipv4Header tempIpv4Header;
-  TcpHeader tempTcpHeader;
-  packet -> RemoveHeader (tempIpv4Header);
-  packet -> RemoveHeader (tempTcpHeader);
-
-  Ipv4Header newIpv4Header = tempIpv4Header;
-  //Set Ipv4 Header
-  m_source = tempIpv4Header.GetDestination();
-  m_dest = tempIpv4Header.GetSource();
-
-  newIpv4Header.SetDestination(m_dest);
-  newIpv4Header.SetSource(m_source);
-  newIpv4Header.SetProtocol(6);
-  newIpv4Header.SetTtl(64);
-
-  TcpHeader newTcpHeader = tempTcpHeader;
-  //Set TCP ack header
-  SequenceNumber32 dataSeqNum = tempTcpHeader.GetSequenceNumber();
-  uint16_t destPort = tempTcpHeader.GetSourcePort();
-  uint16_t srcPort = tempTcpHeader.GetDestinationPort();
-  newTcpHeader.SetSourcePort(srcPort);
-  newTcpHeader.SetDestinationPort(destPort);
-
-  //#1 classify by tcp header: SYN
-  if(tempTcpHeader.GetFlags()==TcpHeader::SYN)
+  if(packet->GetSize()==0)
   {
-	//Start Proxy TCP communication
-	NS_LOG_LOGIC("First packet from Server");
-	Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
-    m_proxyTcpSocket->Connect(tcpToEnbAddress);
-
-    //Send SYN|ACK packet to server, set SYN|ACK packet
-    SequenceNumber32 dataSeqNum = SequenceNumber32(0);
-    newTcpHeader.SetSequenceNumber(dataSeqNum);
-    newTcpHeader.SetFlags(TcpHeader::SYN|TcpHeader::ACK);
-    newTcpHeader.SetAckNumber(SequenceNumber32(1));
-
-    Ptr<Packet> ackPacket = Create<Packet> ();
-    ackPacket->AddHeader(newTcpHeader);
-    ackPacket->AddHeader(newIpv4Header);
-
-    NS_LOG_LOGIC("Packet size: "<<packet->GetSize());
-    NS_LOG_LOGIC("Ipv4 Header: "<<newIpv4Header);
-    NS_LOG_LOGIC("Tcp Header: "<<newTcpHeader);
-
-    uint32_t flags = 0;
-    m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
+	  NS_LOG_LOGIC("Packet size is 0");
+	  ForwardingProxy ();
   }
-  //#2 ACK after SYN|ACK
-  else if(packet->GetSize() == 0)
-  {
-	//Do nothing.. just wait for data packet
-  }
-  //#3 receive data packet
-  else
-  {
-	//Send data packet from proxy tcp to user
-	m_proxyTcpSocket->Send(packet);
 
-	//Set advertise window
-	Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
-	uint32_t awndSize = proxyTxBuffer->Available();
-	NS_LOG_LOGIC("Proxy tcp's Awnd size is "<< awndSize);
+  else{
+	  NS_LOG_LOGIC("Packet size before remove header: "<<packet->GetSize());
+	  Ipv4Header tempIpv4Header;
+	  TcpHeader tempTcpHeader;
+	  packet -> RemoveHeader (tempIpv4Header);
+	  packet -> RemoveHeader (tempTcpHeader);
 
-	//Send Early ACK packet to server, set ack number
-	uint32_t dataSize = packet->GetSize();
-    SequenceNumber32 AckNum = dataSeqNum + dataSize;
-	newTcpHeader.SetAckNumber(AckNum);
-	newTcpHeader.SetFlags(TcpHeader::ACK);
-	newTcpHeader.SetWindowSize(awndSize);
+	  Ipv4Header newIpv4Header = tempIpv4Header;
+	  //Set Ipv4 Header
+	  m_source = tempIpv4Header.GetDestination();
+	  m_dest = tempIpv4Header.GetSource();
 
-	Ptr<Packet> ackPacket = Create<Packet> ();
-	ackPacket->AddHeader(newTcpHeader);
-	ackPacket->AddHeader(newIpv4Header);
+	  newIpv4Header.SetDestination(m_dest);
+	  newIpv4Header.SetSource(m_source);
+	  newIpv4Header.SetProtocol(6);
+	  newIpv4Header.SetTtl(64);
 
-	uint32_t flags = 0;
-	m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
+	  TcpHeader newTcpHeader = tempTcpHeader;
+	  //Set TCP ack header
+	  SequenceNumber32 dataSeqNum = tempTcpHeader.GetSequenceNumber();
+	  uint16_t destPort = tempTcpHeader.GetSourcePort();
+	  uint16_t srcPort = tempTcpHeader.GetDestinationPort();
+	  newTcpHeader.SetSourcePort(srcPort);
+	  newTcpHeader.SetDestinationPort(destPort);
+
+	  //#1 classify by tcp header: SYN
+	  if(tempTcpHeader.GetFlags()==TcpHeader::SYN)
+	  {
+		//Start Proxy TCP communication
+		NS_LOG_LOGIC("First packet from Server");
+		Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
+		m_proxyTcpSocket->Connect(tcpToEnbAddress);
+
+		//Send SYN|ACK packet to server, set SYN|ACK packet
+		SequenceNumber32 dataSeqNum = SequenceNumber32(0);
+		newTcpHeader.SetSequenceNumber(dataSeqNum);
+		newTcpHeader.SetFlags(TcpHeader::SYN|TcpHeader::ACK);
+		newTcpHeader.SetAckNumber(SequenceNumber32(1));
+
+		Ptr<Packet> ackPacket = Create<Packet> ();
+		ackPacket->AddHeader(newTcpHeader);
+		ackPacket->AddHeader(newIpv4Header);
+
+		NS_LOG_LOGIC("Packet size: "<<packet->GetSize());
+		NS_LOG_LOGIC("Ipv4 Header: "<<newIpv4Header);
+		NS_LOG_LOGIC("Tcp Header: "<<newTcpHeader);
+
+		uint32_t flags = 0;
+		m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
+	  }
+	  //#2 ACK after SYN|ACK
+	  else if(packet->GetSize() == 0)
+	  {
+		//Do nothing.. just wait for data packet
+	  }
+	  //#3 receive data packet
+	  else
+	  {
+		if(m_holdBuffer)
+		{
+			NS_LOG_LOGIC("Hold buffer phase!!");
+			Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
+			bool isIn = proxyTxBuffer->Add(packet);
+			NS_ASSERT(isIn==true);
+
+			uint32_t awndSize = proxyTxBuffer->Available();
+			NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
+
+			//Send Early ACK packet to server, set ack number
+			uint32_t dataSize = packet->GetSize();
+			SequenceNumber32 AckNum = dataSeqNum + dataSize;
+			newTcpHeader.SetAckNumber(AckNum);
+			newTcpHeader.SetFlags(TcpHeader::ACK);
+			newTcpHeader.SetWindowSize(awndSize);
+
+			Ptr<Packet> ackPacket = Create<Packet> ();
+			ackPacket->AddHeader(newTcpHeader);
+			ackPacket->AddHeader(newIpv4Header);
+
+			uint32_t flags = 0;
+			m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
+		}
+		else
+		{
+			//Send data packet from proxy tcp to user
+			m_proxyTcpSocket->Send(packet);
+			//Set advertise window
+			Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
+			uint32_t awndSize = proxyTxBuffer->Available();
+			NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
+
+			//Send Early ACK packet to server, set ack number
+			uint32_t dataSize = packet->GetSize();
+			SequenceNumber32 AckNum = dataSeqNum + dataSize;
+			newTcpHeader.SetAckNumber(AckNum);
+			newTcpHeader.SetFlags(TcpHeader::ACK);
+			newTcpHeader.SetWindowSize(awndSize);
+
+			Ptr<Packet> ackPacket = Create<Packet> ();
+			ackPacket->AddHeader(newTcpHeader);
+			ackPacket->AddHeader(newIpv4Header);
+
+			uint32_t flags = 0;
+			m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
+		}
+	  }
   }
 }
 
-void 
+void
 EpcEnbProxyApplication::SendToEnbSocket (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet << packet->GetSize ());
@@ -197,15 +232,26 @@ EpcEnbProxyApplication::SendToEnbSocket (Ptr<Packet> packet)
 
 //Process8
 void
-EpcEnbProxyApplication::DoProxyForwardingRequest ()
+EpcEnbProxyApplication::ForwardingProxy ()
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_LOGIC("Handover occured. Forward cached inflight packets.");
-
+  m_holdBuffer = false;
+  std::cout << Simulator::Now() <<" Handover occured. Forward cached inflight packets."<<std::endl;
   Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
 
   tempSocket->ProxyBufferRetransmit();
 }
+
+//Process8
+void
+EpcEnbProxyApplication::HoldProxyBuffer()
+{
+  NS_LOG_FUNCTION (this);
+  std::cout << Simulator::Now() <<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
+
+  m_holdBuffer = true;
+}
+
 
 
 }  // namespace ns3

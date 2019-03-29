@@ -162,7 +162,7 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    MakeDataRateChecker ())
     .AddAttribute ("S1uLinkDelay", 
                    "The delay to be used for the next S1-U link to be created",
-                   TimeValue (Seconds (0.001)),
+                   TimeValue (Seconds (0.000)),
                    MakeTimeAccessor (&MmWavePointToPointEpcHelper::m_s1uLinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("S1uLinkMtu", 
@@ -290,7 +290,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   enbProxyNodes.Add (m_proxyNode);
   enbProxyNodes.Add (enb);
   PointToPointHelper p2ph_proxy;
-  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate("1000Gb/s")));
+  p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate(UINT64_MAX)));
   p2ph_proxy.SetDeviceAttribute ("Mtu", UintegerValue (30000));
   p2ph_proxy.SetChannelAttribute ("Delay", TimeValue(Seconds(0)));
   NetDeviceContainer enbProxyDevices = p2ph.Install (enb, m_proxyNode);
@@ -382,6 +382,9 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   s1apMme->AddS1apInterface (cellId, mme_enbAddress);
   
   m_sgwPgwApp->AddEnb (cellId, enbAddress, sgwAddress);
+
+  if(cellId == 1)
+	  m_traceProxy = proxyTcpSocket->GetObject<TcpSocketBase>();
 }
 
 

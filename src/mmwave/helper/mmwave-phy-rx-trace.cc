@@ -189,14 +189,14 @@ MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::
 			NS_FATAL_ERROR ("Could not open tracefile");
 		}
 	}
-	m_rxPacketTraceFile << "DL\t" <<Simulator::Now()<< "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
+	m_rxPacketTraceFile << "DL\t" <<Simulator::Now().GetSeconds()<< "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 			<< "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
 			<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
 			<< 10*std::log10(params.m_sinr) << "\t" << " \t" << params.m_corrupt << "\t" <<  params.m_tbler << std::endl;
 
 	if (params.m_corrupt)
 	{
-		NS_LOG_DEBUG ("DL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
+		NS_LOG_DEBUG ("DL TB error\t" <<Simulator::Now().GetSeconds()<<"\t"<< params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 		    << "\t" << (unsigned)params.m_numSym
 				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
 				<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt);
@@ -215,14 +215,14 @@ MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std:
 			NS_FATAL_ERROR ("Could not open tracefile");
 		}
 	}
-	m_rxPacketTraceFile << "UL\t" << Simulator::Now() << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
+	m_rxPacketTraceFile << "UL\t" << Simulator::Now().GetSeconds() << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 				<< "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
 				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
 				<< 10*std::log10(params.m_sinr) << " \t" << params.m_corrupt << "\t" << params.m_tbler << std::endl;
 
 		if (params.m_corrupt)
 		{
-			NS_LOG_DEBUG ("UL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
+			NS_LOG_DEBUG ("UL TB error\t" <<Simulator::Now().GetSeconds()<<"\t"<< params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 			    << "\t" << (unsigned)params.m_numSym
 					<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
 					<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);

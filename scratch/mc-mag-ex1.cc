@@ -576,7 +576,7 @@ main (int argc, char *argv[])
 
 	uint16_t ExperimentNum = 2;	
 
-	double simTime = 20.5;
+	double simTime = 10.5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -587,7 +587,8 @@ main (int argc, char *argv[])
 	double x2Latency = 10, mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double TxPower = 15;
+	double EnbTxPower = 30;
+	double UeTxPower = 20;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
 	uint16_t Velocity = 10;
@@ -622,8 +623,8 @@ main (int argc, char *argv[])
 	//	Config::SetDefault("ns3::McEnbPdcp::EnableDuplication", BooleanValue(isDuplication));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
-	Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower",DoubleValue(TxPower));
-	Config::SetDefault ("ns3::MmWaveUePhy::TxPower",DoubleValue(TxPower));
+	Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower",DoubleValue(EnbTxPower));
+	Config::SetDefault ("ns3::MmWaveUePhy::TxPower",DoubleValue(UeTxPower));
 	//	Config::SetDefault ("ns3::MmWaveSpectrumPhy::DisableInterference",BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
@@ -650,8 +651,8 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
 	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (24*1024*1024));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (24*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (20*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (20*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
@@ -931,6 +932,7 @@ main (int argc, char *argv[])
 				fileName<<ExperimentNum<<"_tcp_data_ue_gsoul"<<u+1<<".txt";
 				AsciiTraceHelper asciiTraceHelper;
 				Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
+
 				serverApps.Get(u)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream,u));
 
 				std::ostringstream fileName_2;

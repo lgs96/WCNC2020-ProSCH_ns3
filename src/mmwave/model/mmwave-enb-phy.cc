@@ -1267,6 +1267,13 @@ MmWaveEnbPhy::StartSlot (void)
 		if(pktBurst && pktBurst->GetNPackets() > 0)
 		{
 			std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
+			
+ 			//for(std::list<Ptr<Packet>>::iterator iter = pkts.begin();iter!=pkts.end();iter++)
+			//{
+			//	iter->Print(std::cout);
+			//	std::cout<<std::endl;
+			//}
+
 			MmWaveMacPduTag macTag;
 			pkts.front ()->PeekPacketTag (macTag);
 			NS_ASSERT ((macTag.GetSfn().m_sfNum == m_sfNum) && (macTag.GetSfn().m_slotNum == currSlot.m_dci.m_symStart));

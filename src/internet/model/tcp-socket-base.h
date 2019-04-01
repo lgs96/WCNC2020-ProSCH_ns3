@@ -167,6 +167,8 @@ public:
   uint32_t               m_rcvTimestampValue;     //!< Receiver Timestamp value 
   uint32_t               m_rcvTimestampEchoReply; //!< Sender Timestamp echoed by the receiver
 
+
+
   /**
    * \brief Get cwnd in segments rather than bytes
    *
@@ -491,8 +493,8 @@ public:
                                          const Ptr<const TcpSocketBase> socket);
   
   //Process8: to forward all tx buffer data
-  void ProxyBufferRetransmit ();
-
+  void ProxyBufferRetransmit (SequenceNumber32 seq,bool isFirst);
+  bool m_proxyHoldBuffer;
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
@@ -1143,6 +1145,9 @@ protected:
 
   EventId m_sendPendingDataEvent; //!< micro-delay event to send pending data
 
+    // Process8
+  EventId m_sendProxyDataEvent;
+
   // Fast Retransmit and Recovery
   SequenceNumber32       m_recover;      //!< Previous highest Tx seqnum for fast recovery
   uint32_t               m_retxThresh;   //!< Fast Retransmit threshold
@@ -1161,6 +1166,11 @@ protected:
 
   TracedCallback<Ptr<const Packet>, const TcpHeader&,
                  Ptr<const TcpSocketBase> > m_rxTrace; //!< Trace of received packets
+
+  // Process8
+  SequenceNumber32 m_proxyStart;
+  SequenceNumber32 m_proxyFin;
+
 };
 
 /**

@@ -664,6 +664,10 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   {
     if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
     {
+       //packet->Print(std::cout);
+       //std::cout<<"TargetCell: "<<params.targetCellId<<std::endl;
+
+
       // add PdcpTag
       PdcpTag pdcpTag (Simulator::Now ());
       params.ueData->AddByteTag (pdcpTag);
@@ -1366,7 +1370,7 @@ EpcX2::DoReceiveMcPdcpSdu(EpcX2Sap::UeDataParams params)
   NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
   NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
   NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
-  params.ueData->Print(std::cout);
+  //params.ueData->Print(std::cout);
 
   NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
                  "Missing infos for targetCellId = " << params.targetCellId);

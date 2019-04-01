@@ -165,12 +165,12 @@ namespace ns3 {
 			//#3 receive data packet
 			else
 			{
-				if(m_holdBuffer)
+				if(m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer)
 				{
 					NS_LOG_LOGIC("Hold buffer phase!!");
 					Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
 					bool isIn = proxyTxBuffer->Add(packet);
-					NS_ASSERT(isIn==true);
+					NS_ASSERT(isIn==true);				
 
 					uint32_t awndSize = proxyTxBuffer->Available();
 					NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
@@ -186,6 +186,8 @@ namespace ns3 {
 					ackPacket->AddHeader(newTcpHeader);
 					ackPacket->AddHeader(newIpv4Header);
 
+                                        //std::cout<<"When hold buffer operating.. Seq " << AckNum << " is arrived, Tail sequence: "<< proxyTxBuffer->TailSequence() << std::endl;
+ 
 					uint32_t flags = 0;
 					m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
 				}
@@ -197,6 +199,8 @@ namespace ns3 {
 					Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
 					uint32_t awndSize = proxyTxBuffer->Available();
 					NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
+
+					//std::cout<<"Tail Sequence: "<<proxyTxBuffer->TailSequence() << std::endl;
 
 					//Send Early ACK packet to server, set ack number
 					uint32_t dataSize = packet->GetSize();
@@ -229,11 +233,11 @@ namespace ns3 {
 		EpcEnbProxyApplication::ForwardingProxy ()
 		{
 			NS_LOG_FUNCTION (this);
-			m_holdBuffer = false;
-			std::cout << Simulator::Now() <<" Handover occured. Forward cached inflight packets."<<std::endl;
+			//std::cout << Simulator::Now() <<" Handover occured. Forward cached inflight packets."<<std::endl;
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
+			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket->GetTxBuffer();
 
-			tempSocket->ProxyBufferRetransmit();
+			tempSocket->ProxyBufferRetransmit(proxyTxBuffer->HeadSequence(),true);
 		}
 
 	//Process8
@@ -241,9 +245,9 @@ namespace ns3 {
 		EpcEnbProxyApplication::HoldProxyBuffer()
 		{
 			NS_LOG_FUNCTION (this);
-			std::cout << Simulator::Now() <<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
+			//std::cout << Simulator::Now() <<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
 
-			m_holdBuffer = true;
+			m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = true;
 		}
 
 

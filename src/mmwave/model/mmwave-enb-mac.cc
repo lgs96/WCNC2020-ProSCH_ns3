@@ -776,6 +776,9 @@ MmWaveEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamet
 void
 MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 {
+	//std::cout<<this<<std::endl;
+	//params.pdu->Print(std::cout);
+	//std::cout<<std::endl;
 	// TB UID passed back along with RLC data as HARQ process ID
 	uint32_t tbMapKey = ((params.rnti & 0xFFFF) << 8) | (params.harqProcessId & 0xFF);
 	NS_LOG_LOGIC("Tx RLC PDU for rnti " << params.rnti << " lcid " << (uint32_t) params.lcid);

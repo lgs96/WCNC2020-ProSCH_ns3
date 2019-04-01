@@ -250,6 +250,9 @@ McUePdcp::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
+  //p->Print(std::cout);
+  //std::cout<<std::endl;
+
   NS_LOG_INFO(this << " McUePdcp received dowlink Pdu");
   // Receiver timestamp
   PdcpTag pdcpTag;

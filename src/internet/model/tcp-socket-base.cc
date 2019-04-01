@@ -327,14 +327,23 @@ TcpSocketBase::TcpSocketBase (void)
     m_timestampEnabled (true),
     m_timestampToEcho (0),
     m_sendPendingDataEvent (),
+    //Process8
+    m_sendProxyDataEvent (),
     // Set m_recover to the initial sequence number
     m_recover (0),
     m_retxThresh (3),
     m_limitedTx (false),
     m_congestionControl (0),
-    m_isFirstPartialAck (true)
+    m_isFirstPartialAck (true),
+    //Process8
+    m_proxyStart (0),
+    m_proxyFin (0)
 {
   NS_LOG_FUNCTION (this);
+
+  // Process8
+  m_proxyHoldBuffer = false;
+
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
   m_txBuffer = CreateObject<TcpTxBuffer> ();
   m_tcb      = CreateObject<TcpSocketState> ();
@@ -1235,6 +1244,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Acknowledgement should be sent for all unacceptable packets (RFC793, p.69)
       if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
         {
+	 // Process8
           SendEmptyPacket (TcpHeader::ACK);
         }
       return;
@@ -1679,10 +1689,12 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
   // If the incoming ACK is a cumulative acknowledgment, the TCP MUST
   // reset DupAcks to zero.
   uint32_t oldDupAckCount = m_dupAckCount; // remember the old value
+  
   if (ackNumber > m_txBuffer->HeadSequence ())
     {
       m_dupAckCount = 0;
     }
+ 
 
   m_tcb->m_lastAckedSeq = ackNumber; // Update lastAckedSeq
 
@@ -1714,7 +1726,14 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
                     " we are ready to process the dupAck");
       // loss recovery check is done inside this function thanks to
       // the congestion state machine
-      DupAck ();
+       
+      // Process8
+      if(!(m_proxyStart < ackNumber && ackNumber < m_proxyFin)) 
+      {
+        DupAck ();
+      }
+      else
+	NS_LOG_LOGIC("Dup ack is incoming.. but it's for proxy fowarding");
     }
 
   if (ackNumber == m_txBuffer->HeadSequence ()
@@ -1735,9 +1754,9 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
     }
   else if (ackNumber == m_txBuffer->HeadSequence ())
     {
-      // DupAck. Artificially call PktsAcked: after all, one segment has been ACKed.
-      NS_LOG_INFO ("ACK of " << ackNumber << ", PktsAcked called (ACK already managed in DupAck)");
-      m_congestionControl->PktsAcked (m_tcb, 1, m_lastRtt);
+        // DupAck. Artificially call PktsAcked: after all, one segment has been ACKed.
+        NS_LOG_INFO ("ACK of " << ackNumber << ", PktsAcked called (ACK already managed in DupAck)");
+        m_congestionControl->PktsAcked (m_tcb, 1, m_lastRtt);
     }
   else if (ackNumber > m_txBuffer->HeadSequence ())
     {
@@ -3369,15 +3388,38 @@ TcpSocketBase::DoRetransmit ()
 
 //Process8: to forward all tx buffer data
 void
-TcpSocketBase::ProxyBufferRetransmit ()
+TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this);  
+  //std::cout<<"Proxy forwarding start"<<std::endl;
+    
+  if(isFirst)
+  {
+    m_proxyStart = seq;
+    //std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<std::endl;
+  }
+
+  SequenceNumber32 tempSeq = seq;
   
-  for (SequenceNumber32 seq = m_txBuffer->HeadSequence(); seq < m_txBuffer->TailSequence(); seq = seq + m_tcb->m_segmentSize)
-    {
-      NS_LOG_LOGIC ("Seq: "<< seq <<" is forwarded by proxy tcp");
-      SendDataPacket (seq, m_tcb->m_segmentSize, true);
-    }
+  while(seq < tempSeq + 200 * (m_tcb->m_segmentSize)){
+ 	 if(AvailableWindow() > 0 && seq < m_txBuffer -> TailSequence()) 
+  	{	
+    		//std::cout << Simulator::Now() << "Seq: " << seq << " tailSequence: " << m_txBuffer -> TailSequence()  << std::endl;
+    		SendDataPacket (seq, m_tcb->m_segmentSize, true);
+		seq = seq + m_tcb->m_segmentSize;
+  	}
+  	else
+  	{
+    		//std::cout<<Simulator::Now()<<"Proxy forwarding is completed"<<std::endl;
+    		NS_LOG_LOGIC ("Proxy forwaridng is completed");
+		m_proxyFin = m_txBuffer->TailSequence();
+                //std::cout<<Simulator::Now()<<"Proxy FIN: "<<m_proxyFin<<std::endl;
+   	 	m_proxyHoldBuffer = false;
+   	 	break;
+  	}
+  }
+  if(!m_sendProxyDataEvent.IsRunning () && m_proxyHoldBuffer == true)
+    	m_sendProxyDataEvent = Simulator::Schedule (TimeStep (0), &TcpSocketBase::ProxyBufferRetransmit, this, seq, false);
 }
 void
 TcpSocketBase::CancelAllTimers ()
@@ -3388,6 +3430,9 @@ TcpSocketBase::CancelAllTimers ()
   m_lastAckEvent.Cancel ();
   m_timewaitEvent.Cancel ();
   m_sendPendingDataEvent.Cancel ();
+
+  // Process8
+  m_sendProxyDataEvent.Cancel ();
 }
 
 /* Move TCP to Time_Wait state and schedule a transition to Closed state */

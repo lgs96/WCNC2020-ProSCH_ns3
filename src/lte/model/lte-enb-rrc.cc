@@ -50,7 +50,8 @@
 #include <ns3/mc-enb-pdcp.h>
 #include "ns3/lte-pdcp-tag.h"
 #include <ns3/lte-rlc-sap.h>
-
+#include <ns3/tcp-header.h>
+#include <ns3/ipv4-header.h>
 
 
 namespace ns3 {
@@ -1303,6 +1304,17 @@ namespace ns3 {
 						NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
 						LtePdcpSapProvider::TransmitPdcpSduParameters params;
 						params.pdcpSdu = p;
+						/*
+						Ipv4Header tempIpv4;
+						TcpHeader tempTcp;
+						p->RemoveHeader(tempIpv4);
+						p->RemoveHeader(tempTcp);
+						tempTcp.Print(std::cout);
+						std::cout<<std::endl;
+						p->AddHeader(tempTcp);
+						p->AddHeader(tempIpv4);
+						*/
+				
 						params.rnti = m_rnti;
 						params.lcid = Bid2Lcid (bid);
 						uint8_t drbid = Bid2Drbid (bid);
@@ -2249,6 +2261,7 @@ namespace ns3 {
 				tag.SetRnti (params.rnti);
 				tag.SetBid (Lcid2Bid (params.lcid));
 				params.pdcpSdu->AddPacketTag (tag);
+				
 				m_rrc->m_forwardUpCallback (params.pdcpSdu);
 			}
 		}

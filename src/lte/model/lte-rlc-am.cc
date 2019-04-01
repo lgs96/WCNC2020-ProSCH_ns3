@@ -33,6 +33,8 @@
 #include "ns3/lte-rlc-tag.h"
 #include "ns3/ipv4-queue-disc-item.h"
 #include "ns3/ipv4-packet-filter.h"
+#include <ns3/tcp-header.h>
+
 
 namespace ns3 {
 

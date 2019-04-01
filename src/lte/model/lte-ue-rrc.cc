@@ -651,6 +651,8 @@ void
 LteUeRrc::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params)
 {
   NS_LOG_FUNCTION (this);
+ // params.pdcpSdu->Print(std::cout);
+ // std::cout<<std::endl;
   m_asSapUser->RecvData (params.pdcpSdu);
 }
 

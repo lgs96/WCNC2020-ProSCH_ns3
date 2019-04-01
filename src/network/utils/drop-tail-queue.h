@@ -40,7 +40,7 @@ public:
   /**
    * \brief DropTailQueue Constructor
    *
-   * Creates a droptail queue with a maximum size of 100 packets by default
+    Creates a droptail queue with a maximum size of 100 packets by default
    */
   DropTailQueue ();
 

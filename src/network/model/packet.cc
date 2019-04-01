@@ -438,7 +438,9 @@ Packet::Print (std::ostream &os) const
             case PacketMetadata::Item::TRAILER:
               os << item.tid.GetName () << " (";
               {
-                NS_ASSERT (item.tid.HasConstructor ());
+                //NS_ASSERT (item.tid.HasConstructor ());
+		if(!item.tid.HasConstructor())
+			break;
                 Callback<ObjectBase *> constructor = item.tid.GetConstructor ();
                 NS_ASSERT (!constructor.IsNull ());
                 ObjectBase *instance = constructor ();

@@ -231,14 +231,14 @@ namespace ns3 {
 
 	//Process8
 	void
-		EpcEnbProxyApplication::ForwardingProxy ()
+		EpcEnbProxyApplication::ForwardingProxy (uint32_t seq)
 		{
 			NS_LOG_FUNCTION (this);
 			//std::cout << Simulator::Now() <<" Handover occured. Forward cached inflight packets."<<std::endl;
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket->GetTxBuffer();
 
-			tempSocket->ProxyBufferRetransmit(proxyTxBuffer->HeadSequence(),true);
+			tempSocket->ProxyBufferRetransmit(SequenceNumber32(seq),true);
 		}
 
 	//Process8

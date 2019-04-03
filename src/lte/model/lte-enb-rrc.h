@@ -1567,6 +1567,9 @@ private:
   std::map<uint16_t, std::map<uint64_t,EpcX2SapUser::HandoverRequestParams>> m_prefetchedHandoverRequestMap;
   std::map<uint16_t, std::map<uint64_t,bool> > m_isPrefetchedEnbMap;
 
+  // Process9
+  std::map<uint16_t, std::map<uint64_t,uint32_t> > m_seqMap;
+  uint32_t m_bottleneckBw;
 
 }; // end of `class LteEnbRrc`
 

@@ -92,7 +92,7 @@ public:
 
 
   //Process8
-  void ForwardingProxy ();
+  void ForwardingProxy (uint32_t seq);
   void HoldProxyBuffer();
 
 private:

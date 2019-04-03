@@ -535,11 +535,22 @@ public:
   uint32_t GetLengthOfIes () const;
   uint32_t GetNumberOfIes () const;
 
+  // Process9
+  uint32_t			GetTcpSeq () const;
+  void				SetTcpSeq (uint32_t seq);
+
+  uint64_t			GetImsi   () const;
+  void				SetImsi   (uint64_t imsi);
+
 private:
   uint32_t          m_numberOfIes;
   uint32_t          m_headerLength;
 
   std::vector <EpcX2Sap::CellInformationItem> m_cellInformationList;
+
+  // Process9
+  uint32_t			m_tcpSeq;
+  uint64_t			m_imsi;
 };
 
 

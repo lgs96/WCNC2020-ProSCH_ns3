@@ -70,6 +70,9 @@ public:
   std::vector < Ptr<Packet> > GetTxBuffer();
   uint32_t GetTxBufferSize();
   
+  // Process9
+  std::vector < Ptr<Packet>> GetTxOnBuffer();
+
   std::vector < RetxPdu > GetTxedBuffer();
   uint32_t GetTxedBufferSize();
 

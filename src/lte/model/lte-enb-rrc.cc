@@ -769,8 +769,39 @@ namespace ns3 {
 						NS_LOG_INFO("UeManager is in CONNECTION_RECONFIGURATION, postpone the PrepareHandover command to cell " << m_queuedHandoverRequestCellId);
 					}
 					break;
-				// Process8
+				// Process9
 				case HANDOVER_PREPARATION:
+					{
+						EpcX2Sap::LoadInformationParams loadParams;
+
+						loadParams.targetCellId = cellId;
+						EpcX2Sap::CellInformationItem cellInfo;
+						cellInfo.sourceCellId = m_rrc->cellId;
+						loadParams.CellInformationItem->insert(cellInfo);
+						loadParams.imsi = m_imsi;
+
+
+						for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+														rlcIt != m_rlcMap.end ();
+														++rlcIt)
+						{
+							Ptr<Packet> rlcHead = rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxOnBuffer().at(1);
+
+							LtePdcpHeader tempPdcp;
+							Ipv4Header    tempIpv4;
+							TcpHeader	  tempTcp;
+
+							Ptr<Packet> tempP = rlcHead -> Copy();
+							tempP->removeHeader(tempPdcp);
+							tempP->removeHeader(tempIpv4);
+							tempP->removeHeader(tempTcp);
+						}
+						loadParams.tcpSeq = tempTcp.GetSequenceNumber().GetValue();
+
+						NS_LOG_LOGIC ("Head sequence is: "<<loadParams.tcpSeq);
+
+						DoSendLoadInformation(loadParams);
+					}
 				case HANDOVER_LEAVING:
 				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
 					{
@@ -1003,11 +1034,24 @@ namespace ns3 {
 					//#3 Send RRC connection reconfiguration msg to user
 					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
 
+					uint32_t newSeq
+
+					if(m_bottleneckBw!=UINT32_MAX)
+					{
+					  newSeq = m_prevSeq + m_bottleneckBw;
+					}
+					else
+					  newSeq = m_prevSeq;
+
 					//#4 Request buffered TCP packet to send
-					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest();
+					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq);
 					m_rrc->m_isPrefetchedEnbMap.find(m_mmWaveCellId)->second[m_imsi] = false;
 
 					m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
+
+					//Process9 reset bottlenck bandwidth
+					m_bottleneckBw = UINT32_MAX;
+
 				}
 			}
 			//Process8: when mmwave source cell receives ack signal
@@ -2580,6 +2624,7 @@ namespace ns3 {
 		m_x2_received_cnt = 0;
 		m_switchEnabled = true;
 		m_lteCellId = 0;
+		m_bottleneckBw = UINT32_MAX;
 	}
 
 
@@ -3585,6 +3630,7 @@ namespace ns3 {
 					res.cause = 0;
 					res.criticalityDiagnostics = 0;
 					res.hasImsi = true;
+					m_bottleneckBw = UINT32_MAX;
 					m_x2SapProvider->SendHandoverPreparationFailure (res);
 				}
 			}
@@ -4625,6 +4671,7 @@ namespace ns3 {
 		}
 
 
+	// Process9
 	void
 		LteEnbRrc::DoRecvLoadInformation (EpcX2SapUser::LoadInformationParams params)
 		{
@@ -4634,7 +4681,45 @@ namespace ns3 {
 
 			NS_LOG_LOGIC ("Number of cellInformationItems = " << params.cellInformationList.size ());
 
-			m_ffrRrcSapProvider->RecvLoadInformation(params);
+			uint64_t imsi = params.imsi;
+			uint32_t tcpSeq = params.tcpSeq;
+			uint16_t sourceCellId = params.cellInformationList.at(0).sourceCellId
+
+			if(m_bottleneckBw == UINT32_MAX)
+			{
+
+			}
+			else
+			{
+				uint32_t tempBw = ((tcpSeq-m_prevSeq)/(params.now-m_prevTime))*2*(params.delay);
+				if(tempBw < m_bottleneckBw)
+				{
+					m_bottleneckBw = tempBw;
+				}
+				std::cout<<"Bottleneck Bandwidth is "<<m_bottleneckBw<<std::endl;
+			}
+
+			m_prevTime = params.now;
+			m_prevSeq = tcpSeq;
+
+			/*
+			if(m_seqMap.find(sourceCellId)!=m_BwMap.end())
+			{
+			  if(m_seqMap.find(sourceCellId)->second.find(imsi)!=m_seqMap.find(sourceCellId)->second.end())
+			  {
+				m_seqMap.find(sourceCellId)->second[imsi] = tcpSeq;
+			  }
+			  else
+			  {
+				m_seqMap.find(sourceCellId)->second.insert(std::make_pair(imsi,tcpSeq));
+			  }
+			}
+			else
+			{
+			  tempPair.insert(std::make_pair(imsi,tcpSeq));
+			  m_seqMap.insert(std::make_pair(sourceCellId,tempPair));
+			}
+			*/
 		}
 
 	void

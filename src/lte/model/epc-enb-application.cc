@@ -621,10 +621,10 @@ EpcEnbApplication::SendToTunDevice (Ptr<Packet> packet)
 
 // Process8
 void
-EpcEnbApplication::DoProxyForwardingRequest()
+EpcEnbApplication::DoProxyForwardingRequest(uint32_t seq)
 {
   NS_LOG_FUNCTION(this);
-  m_proxyApp -> ForwardingProxy ();
+  m_proxyApp -> ForwardingProxy (seq);
 }
 
 void

@@ -2130,8 +2130,8 @@ EpcX2UeContextReleaseHeader::GetNumberOfIes () const
 NS_OBJECT_ENSURE_REGISTERED (EpcX2LoadInformationHeader);
 
 EpcX2LoadInformationHeader::EpcX2LoadInformationHeader ()
-  : m_numberOfIes (1),
-    m_headerLength (6)
+  : m_numberOfIes (1 + 1+ 1),
+    m_headerLength (6 + 4 + 8)
 {
   m_cellInformationList.clear ();
 }
@@ -2223,6 +2223,9 @@ EpcX2LoadInformationHeader::Serialize (Buffer::Iterator start) const
       i.WriteHtonU16 (m_cellInformationList [j].relativeNarrowbandTxBand.pB);
       i.WriteHtonU16 (m_cellInformationList [j].relativeNarrowbandTxBand.pdcchInterferenceImpact);
     }
+
+  i.WriteHtonU32(m_tcpSeq);
+  i.WriteHtonU64(m_imsi);
 }
 
 uint32_t
@@ -2291,6 +2294,9 @@ EpcX2LoadInformationHeader::Deserialize (Buffer::Iterator start)
       m_cellInformationList.push_back (cellInfoItem);
     }
 
+  m_tcpSeq = i.ReadNtohU32();
+  m_imsi = i.ReadNtohU64();
+
   return GetSerializedSize ();
 }
 
@@ -2348,6 +2354,30 @@ uint32_t
 EpcX2LoadInformationHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
+}
+
+// Process9
+uint32_t
+EpcX2LoadInformationHeader::GetTcpSeq () const
+{
+  return m_tcpSeq;
+}
+
+void
+EpcX2LoadInformationHeader::SetTcpSeq (uint32_t seq)
+{
+  m_tcpSeq = seq;
+}
+
+uint64_t
+EpcX2LoadInformationHeader::GetImsi   () const
+{
+  return m_imsi;
+}
+void
+EpcX2LoadInformationHeader::SetImsi   (uint64_t imsi)
+{
+  m_imsi = imsi;
 }
 
 ////////////////

@@ -190,9 +190,9 @@ void MemberEpcEnbS1SapProvider<C>::DoSendReleaseIndication (uint64_t imsi, uint1
 
 // Process8 //
 template <class C>
-void MemberEpcEnbS1SapProvider<C>::DoSendProxyForwardingRequest ()
+void MemberEpcEnbS1SapProvider<C>::DoSendProxyForwardingRequest (uint32_t seq)
 {
-  m_owner->DoProxyForwardingRequest();
+  m_owner->DoProxyForwardingRequest(seq);
 }
 
 template <class C>

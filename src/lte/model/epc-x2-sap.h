@@ -339,6 +339,13 @@ public:
   {
     uint16_t            targetCellId;
     std::vector <CellInformationItem> cellInformationList;
+
+    // Process9
+    double				now;
+    double				delay;
+    uint32_t			tcpSeq;
+    uint64_t			imsi;
+
   };
 
   /**

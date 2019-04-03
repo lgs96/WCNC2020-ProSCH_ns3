@@ -1113,6 +1113,14 @@ LteRlcAm::GetTxBuffer()
   }
   return toBeReturned;
 }
+
+// Process9
+std::vector < Ptr<Packet> >
+LteRlcAm::GetTxOnBuffer()
+{
+  return m_txonBuffer;
+}
+
 uint32_t LteRlcAm::GetTxBufferSize()
 {
   return m_txonBufferSize + m_txonQueue->GetNBytes();

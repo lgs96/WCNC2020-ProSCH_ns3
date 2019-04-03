@@ -495,11 +495,12 @@ public:
   //Process8: to forward all tx buffer data
   void ProxyBufferRetransmit (SequenceNumber32 seq,bool isFirst);
   bool m_proxyHoldBuffer;
+  virtual void     SetSndBufSize (uint32_t size);
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
 
-  virtual void     SetSndBufSize (uint32_t size);
+  //virtual void     SetSndBufSize (uint32_t size);
   virtual uint32_t GetSndBufSize (void) const;
   virtual void     SetRcvBufSize (uint32_t size);
   virtual uint32_t GetRcvBufSize (void) const;

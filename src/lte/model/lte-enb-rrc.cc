@@ -776,7 +776,7 @@ namespace ns3 {
 
 						loadParams.targetCellId = cellId;
 						EpcX2Sap::CellInformationItem cellInfo;
-						cellInfo.sourceCellId = m_rrc->cellId;
+						cellInfo.sourceCellId = m_rrc->m_cellId;
 						loadParams.CellInformationItem->insert(cellInfo);
 						loadParams.imsi = m_imsi;
 
@@ -792,15 +792,15 @@ namespace ns3 {
 							TcpHeader	  tempTcp;
 
 							Ptr<Packet> tempP = rlcHead -> Copy();
-							tempP->removeHeader(tempPdcp);
-							tempP->removeHeader(tempIpv4);
-							tempP->removeHeader(tempTcp);
+							tempP->RemoveHeader(tempPdcp);
+							tempP->RemoveHeader(tempIpv4);
+							tempP->RemoveHeader(tempTcp);
 						}
 						loadParams.tcpSeq = tempTcp.GetSequenceNumber().GetValue();
 
 						NS_LOG_LOGIC ("Head sequence is: "<<loadParams.tcpSeq);
 
-						DoSendLoadInformation(loadParams);
+						m_rrc->DoSendLoadInformation(loadParams);
 					}
 				case HANDOVER_LEAVING:
 				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
@@ -1034,7 +1034,7 @@ namespace ns3 {
 					//#3 Send RRC connection reconfiguration msg to user
 					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
 
-					uint32_t newSeq
+					uint32_t newSeq;
 
 					if(m_bottleneckBw!=UINT32_MAX)
 					{

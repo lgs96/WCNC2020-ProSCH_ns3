@@ -409,8 +409,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
           params.cellInformationList = x2LoadInfoHeader.GetCellInformationList ();
           params.tcpSeq = x2LoadInfoHeader.GetTcpSeq ();
           params.imsi = x2LoadInfoHeader.GetImsi ();
-          params.now = Simulator::Now().GetSeconds().GetDouble();
-          params.delay = delay.GetSeconds().GetDouble();
+          params.now = Simulator::Now().GetDouble();
+          params.delay = delay.GetDouble();
 
           NS_LOG_LOGIC ("cellInformationList size = " << params.cellInformationList.size ());
 

@@ -1205,6 +1205,9 @@ public:
    */
   void SetCsgId (uint32_t csgId, bool csgIndication);
 
+  // Process9
+  uint32_t m_bottleneckBw;
+
 private:
 
   /** 
@@ -1569,7 +1572,6 @@ private:
 
   // Process9
   std::map<uint16_t, std::map<uint64_t,uint32_t> > m_seqMap;
-  uint32_t m_bottleneckBw;
 
 }; // end of `class LteEnbRrc`
 

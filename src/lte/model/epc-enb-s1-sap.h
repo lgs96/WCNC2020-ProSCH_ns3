@@ -158,7 +158,7 @@ public:
 
   virtual void PathSwitchRequest (PathSwitchRequestParameters params);
   virtual void UeContextRelease (uint16_t rnti);
-vi
+
 private:
   MemberEpcEnbS1SapProvider ();
   C* m_owner;

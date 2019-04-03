@@ -777,7 +777,7 @@ namespace ns3 {
 						loadParams.targetCellId = cellId;
 						EpcX2Sap::CellInformationItem cellInfo;
 						cellInfo.sourceCellId = m_rrc->m_cellId;
-						loadParams.CellInformationItem->insert(cellInfo);
+						loadParams.cellInformationList->insert(cellInfo);
 						loadParams.imsi = m_imsi;
 
 
@@ -1036,9 +1036,9 @@ namespace ns3 {
 
 					uint32_t newSeq;
 
-					if(m_bottleneckBw!=UINT32_MAX)
+					if(m_rrc->m_bottleneckBw!=UINT32_MAX)
 					{
-					  newSeq = m_prevSeq + m_bottleneckBw;
+					  newSeq = m_prevSeq + m_rrc->m_bottleneckBw;
 					}
 					else
 					  newSeq = m_prevSeq;

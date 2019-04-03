@@ -777,7 +777,7 @@ namespace ns3 {
 						loadParams.targetCellId = cellId;
 						EpcX2Sap::CellInformationItem cellInfo;
 						cellInfo.sourceCellId = m_rrc->m_cellId;
-						loadParams.cellInformationList->insert(cellInfo);
+						loadParams.cellInformationList.insert(cellInfo);
 						loadParams.imsi = m_imsi;
 
 
@@ -795,8 +795,9 @@ namespace ns3 {
 							tempP->RemoveHeader(tempPdcp);
 							tempP->RemoveHeader(tempIpv4);
 							tempP->RemoveHeader(tempTcp);
-						}
+
 						loadParams.tcpSeq = tempTcp.GetSequenceNumber().GetValue();
+						}
 
 						NS_LOG_LOGIC ("Head sequence is: "<<loadParams.tcpSeq);
 
@@ -1050,7 +1051,7 @@ namespace ns3 {
 					m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
 
 					//Process9 reset bottlenck bandwidth
-					m_bottleneckBw = UINT32_MAX;
+					m_rrc->m_bottleneckBw = UINT32_MAX;
 
 				}
 			}
@@ -4681,15 +4682,11 @@ namespace ns3 {
 
 			NS_LOG_LOGIC ("Number of cellInformationItems = " << params.cellInformationList.size ());
 
-			uint64_t imsi = params.imsi;
+			//uint64_t imsi = params.imsi;
 			uint32_t tcpSeq = params.tcpSeq;
-			uint16_t sourceCellId = params.cellInformationList.at(0).sourceCellId
+			//uint16_t sourceCellId = params.cellInformationList.at(0).sourceCellId;
 
-			if(m_bottleneckBw == UINT32_MAX)
-			{
-
-			}
-			else
+			if(m_bottleneckBw != UINT32_MAX)
 			{
 				uint32_t tempBw = ((tcpSeq-m_prevSeq)/(params.now-m_prevTime))*2*(params.delay);
 				if(tempBw < m_bottleneckBw)

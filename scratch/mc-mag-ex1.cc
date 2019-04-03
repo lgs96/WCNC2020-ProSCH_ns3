@@ -863,7 +863,7 @@ main (int argc, char *argv[])
 	if(!ReadBuilding)
 	{
 		std::ostringstream buildingfile;
-		buildingfile <<ExperimentNum<< "_BuildingPosition.txt";
+		buildingfile <<"BuildingPosition.txt";
 		AsciiTraceHelper asciiTraceHelper_build;
 		Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());
 
@@ -921,7 +921,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1000Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

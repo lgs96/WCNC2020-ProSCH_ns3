@@ -72,6 +72,7 @@ EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<
   NS_LOG_FUNCTION (this << proxyTcpSocket << proxyEnbSocket << proxyToEnbAddress);
   //m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
   m_proxyEnbSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromEnbSocket, this));
+  m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(24*1024*1024);
 }
 
 

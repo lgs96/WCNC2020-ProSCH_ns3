@@ -599,7 +599,7 @@ main (int argc, char *argv[])
 	bool isRandom = true; //gsoul 180910 for random traffic generate
 	bool ReadBuilding = true;
 	int BuildingNum = 40;
-	int x2LinkDelay = 10;
+	int x2LinkDelay = 5;
 	// Command line arguments
 	CommandLine cmd;
 	// cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", nodeNum);
@@ -658,7 +658,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (32 *1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));
@@ -921,7 +921,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1500Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 
@@ -947,7 +947,11 @@ main (int argc, char *argv[])
 				Ptr<OutputStreamWrapper> stream_3 = asciiTraceHelper_3.CreateFileStream(fileName_3.str().c_str());
 				Simulator::Schedule (Seconds (ueStartTime+u*ueGapTime),&Reset_ack,stream_3,u);
 
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u,ExperimentNum);
+				std::ostringstream fileName_4;
+				fileName_4<<"PacketRxTrace" << u+1 <<".txt";
+				AsciiTraceHelper asciiTraceHelper_4;
+				Ptr<OutputStreamWrapper> stream_4 = asciiTraceHelper_4.CreateFileStream(fileName_4.str().c_str());
+				serverApps->TraceConnectWithoutContext ("Rx",MakeBoundCallback (&Rx, stream4,u));
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));

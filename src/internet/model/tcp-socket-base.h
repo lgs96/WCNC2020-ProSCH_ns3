@@ -490,11 +490,14 @@ public:
   typedef void (* TcpTxRxTracedCallback)(const Ptr<const Packet> packet, const TcpHeader& header,
                                          const Ptr<const TcpSocketBase> socket);
 
+
+  virtual void     SetSndBufSize (uint32_t size);
+
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
 
-  virtual void     SetSndBufSize (uint32_t size);
+  //virtual void     SetSndBufSize (uint32_t size);
   virtual uint32_t GetSndBufSize (void) const;
   virtual void     SetRcvBufSize (uint32_t size);
   virtual uint32_t GetRcvBufSize (void) const;

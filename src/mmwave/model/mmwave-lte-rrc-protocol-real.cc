@@ -928,7 +928,7 @@ MmWaveLteEnbRrcProtocolReal::DoDecodeHandoverCommand (Ptr<Packet> p)
 {
   RrcConnectionReconfigurationHeader h;
   p->RemoveHeader (h);
-  h.Print(std::cout);
+  //h.Print(std::cout);
   LteRrcSap::RrcConnectionReconfiguration msg = h.GetMessage ();
   return msg;
 }

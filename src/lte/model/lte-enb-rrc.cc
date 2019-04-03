@@ -777,7 +777,7 @@ namespace ns3 {
 						loadParams.targetCellId = cellId;
 						EpcX2Sap::CellInformationItem cellInfo;
 						cellInfo.sourceCellId = m_rrc->m_cellId;
-						loadParams.cellInformationList.insert(cellInfo);
+						loadParams.cellInformationList.push_back(cellInfo);
 						loadParams.imsi = m_imsi;
 
 
@@ -1039,10 +1039,10 @@ namespace ns3 {
 
 					if(m_rrc->m_bottleneckBw!=UINT32_MAX)
 					{
-					  newSeq = m_prevSeq + m_rrc->m_bottleneckBw;
+					  newSeq = m_rrc->m_prevSeq + 0.5 * m_rrc->m_bottleneckBw;
 					}
 					else
-					  newSeq = m_prevSeq;
+					  newSeq = m_rrc->m_prevSeq;
 
 					//#4 Request buffered TCP packet to send
 					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq);

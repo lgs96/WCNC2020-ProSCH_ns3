@@ -1207,6 +1207,7 @@ public:
 
   // Process9
   uint32_t m_bottleneckBw;
+  uint32_t m_prevSeq;
 
 private:
 
@@ -1572,7 +1573,6 @@ private:
 
   // Process9
   std::map<uint16_t, std::map<uint64_t,uint32_t> > m_seqMap;
-  uint32_t m_prevSeq;
   double m_prevTime;
 
 }; // end of `class LteEnbRrc`

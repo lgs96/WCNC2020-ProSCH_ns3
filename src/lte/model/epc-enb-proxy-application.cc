@@ -238,7 +238,14 @@ namespace ns3 {
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket->GetTxBuffer();
 
-			tempSocket->ProxyBufferRetransmit(SequenceNumber32(seq),true);
+			uint32_t newSeq = seq;
+
+			if(proxyTxBuffer->HeadSequence().GetValue()>seq)
+			{
+				newSeq = proxyTxBuffer->HeadSequence().GetValue();
+			}
+
+			tempSocket->ProxyBufferRetransmit(SequenceNumber32(newSeq),true);
 		}
 
 	//Process8

@@ -947,11 +947,7 @@ main (int argc, char *argv[])
 				Ptr<OutputStreamWrapper> stream_3 = asciiTraceHelper_3.CreateFileStream(fileName_3.str().c_str());
 				Simulator::Schedule (Seconds (ueStartTime+u*ueGapTime),&Reset_ack,stream_3,u);
 
-				std::ostringstream fileName_4;
-				fileName_4<<"PacketRxTrace" << u+1 <<".txt";
-				AsciiTraceHelper asciiTraceHelper_4;
-				Ptr<OutputStreamWrapper> stream_4 = asciiTraceHelper_4.CreateFileStream(fileName_4.str().c_str());
-				serverApps->TraceConnectWithoutContext ("Rx",MakeBoundCallback (&Rx, stream4,u));
+				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u,ExperimentNum);
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));

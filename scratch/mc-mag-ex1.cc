@@ -396,6 +396,7 @@ Traces(uint16_t nodeNum,uint16_t ExNum)
 	Config::ConnectWithoutContext (pathRTO.str ().c_str (), MakeBoundCallback(&RTOChange, stream6));
 }
 
+
 	int
 main (int argc, char *argv[])
 {
@@ -599,7 +600,7 @@ main (int argc, char *argv[])
 	bool isRandom = true; //gsoul 180910 for random traffic generate
 	bool ReadBuilding = true;
 	int BuildingNum = 40;
-	int x2LinkDelay = 5;
+	int x2LinkDelay = 1;
 	// Command line arguments
 	CommandLine cmd;
 	// cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", nodeNum);
@@ -921,7 +922,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1500Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 
@@ -948,6 +949,8 @@ main (int argc, char *argv[])
 				Simulator::Schedule (Seconds (ueStartTime+u*ueGapTime),&Reset_ack,stream_3,u);
 
 				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u,ExperimentNum);
+				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8,ExperimentNum);
+
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));

@@ -394,6 +394,8 @@ public:
    */
   void RecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params);
 
+  void SendRlcHead(uint16_t cellId,bool isLeaving);
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -1102,6 +1104,11 @@ private:
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
   void DoRecvMcHandoverRequest(EpcX2SapUser::SecondaryHandoverParams params);
+
+  // Process9
+  void SelfLeaving (uint16_t rnti);
+
+
   void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::SecondaryHandoverParams params);
   void DoRecvConnectionSwitchToMmWave (EpcX2SapUser::SwitchConnectionParams params);
   void DoRecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params);

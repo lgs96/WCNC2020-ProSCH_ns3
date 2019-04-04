@@ -3393,25 +3393,36 @@ TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
   NS_LOG_FUNCTION (this);  
   //std::cout<<"Proxy forwarding start"<<std::endl;
     
+  SequenceNumber32 tempSeq;
+
   if(isFirst)
   {
-    m_proxyStart = seq;
-    //std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<std::endl;
-  }
 
-  SequenceNumber32 tempSeq = seq;
+    m_proxyStart = m_txBuffer->TailSequence()-SequenceNumber32((uint32_t)seq.GetValue()*1.2);
+    if(m_proxyStart < m_txBuffer->HeadSequence())
+    {
+    	m_proxyStart = m_txBuffer->HeadSequence();
+    	std::cout<<"It's head sequence"<<std::endl;
+    }
+    std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<std::endl;
+    tempSeq = m_proxyStart;
+  }
+  else{
+    tempSeq = seq;
+  }
   
-  while(seq < tempSeq + 200 * (m_tcb->m_segmentSize)){
- 	 if(AvailableWindow() > 0 && seq < m_txBuffer -> TailSequence()) 
+  while(tempSeq < tempSeq + 200 * (m_tcb->m_segmentSize))
+  {
+ 	if(tempSeq < m_txBuffer -> TailSequence())
   	{	
     		//std::cout << Simulator::Now() << "Seq: " << seq << " tailSequence: " << m_txBuffer -> TailSequence()  << std::endl;
-    		SendDataPacket (seq, m_tcb->m_segmentSize, true);
-		seq = seq + m_tcb->m_segmentSize;
+    	SendDataPacket (tempSeq, m_tcb->m_segmentSize, true);
+    	tempSeq = tempSeq + m_tcb->m_segmentSize;
   	}
   	else
   	{
     		//std::cout<<Simulator::Now()<<"Proxy forwarding is completed"<<std::endl;
-    		NS_LOG_LOGIC ("Proxy forwaridng is completed");
+    	NS_LOG_LOGIC ("Proxy forwaridng is completed");
 		m_proxyFin = m_txBuffer->TailSequence();
                 //std::cout<<Simulator::Now()<<"Proxy FIN: "<<m_proxyFin<<std::endl;
    	 	m_proxyHoldBuffer = false;
@@ -3419,7 +3430,7 @@ TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
   	}
   }
   if(!m_sendProxyDataEvent.IsRunning () && m_proxyHoldBuffer == true)
-    	m_sendProxyDataEvent = Simulator::Schedule (TimeStep (0), &TcpSocketBase::ProxyBufferRetransmit, this, seq, false);
+    	m_sendProxyDataEvent = Simulator::Schedule (TimeStep (1), &TcpSocketBase::ProxyBufferRetransmit, this, tempSeq, false);
 }
 void
 TcpSocketBase::CancelAllTimers ()

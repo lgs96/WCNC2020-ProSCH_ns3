@@ -599,7 +599,7 @@ main (int argc, char *argv[])
 	bool isRandom = true; //gsoul 180910 for random traffic generate
 	bool ReadBuilding = true;
 	int BuildingNum = 40;
-	int x2LinkDelay = 10;
+	int x2LinkDelay = 5;
 	// Command line arguments
 	CommandLine cmd;
 	// cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", nodeNum);
@@ -921,7 +921,7 @@ main (int argc, char *argv[])
 				Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (u), TcpSocketFactory::GetTypeId ());
 				Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
 
-				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("2000Mbps"),isRandom);
+				app->Setup (ns3TcpSocket, sinkAddress, 1400, 0xffffffff, DataRate ("1500Mbps"),isRandom);
 
 				remoteHostContainer.Get (u)->AddApplication (app);
 

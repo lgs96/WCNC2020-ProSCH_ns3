@@ -691,6 +691,7 @@ namespace ns3 {
 		UeManager::PrePrepareHandover (uint16_t cellId)
 		{
 			NS_LOG_FUNCTION (this << cellId);
+			std::cout<<Simulator::Now()<<" prepre "<<m_state<<std::endl;
 			switch (m_state)
 			{
 				case CONNECTED_NORMALLY:
@@ -771,38 +772,6 @@ namespace ns3 {
 					break;
 				// Process9
 				case HANDOVER_PREPARATION:
-					{
-						EpcX2Sap::LoadInformationParams loadParams;
-
-						loadParams.targetCellId = cellId;
-						EpcX2Sap::CellInformationItem cellInfo;
-						cellInfo.sourceCellId = m_rrc->m_cellId;
-						loadParams.cellInformationList.push_back(cellInfo);
-						loadParams.imsi = m_imsi;
-
-
-						for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
-														rlcIt != m_rlcMap.end ();
-														++rlcIt)
-						{
-							Ptr<Packet> rlcHead = rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxOnBuffer().at(1);
-
-							LtePdcpHeader tempPdcp;
-							Ipv4Header    tempIpv4;
-							TcpHeader	  tempTcp;
-
-							Ptr<Packet> tempP = rlcHead -> Copy();
-							tempP->RemoveHeader(tempPdcp);
-							tempP->RemoveHeader(tempIpv4);
-							tempP->RemoveHeader(tempTcp);
-
-						loadParams.tcpSeq = tempTcp.GetSequenceNumber().GetValue();
-						}
-
-						NS_LOG_LOGIC ("Head sequence is: "<<loadParams.tcpSeq);
-
-						m_rrc->DoSendLoadInformation(loadParams);
-					}
 				case HANDOVER_LEAVING:
 				case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
 					{
@@ -811,11 +780,61 @@ namespace ns3 {
 					break;
 
 				default:
-					NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
+					//NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
 					break;
 			}
 
 		}
+
+
+	// Process9
+	void
+	UeManager::SendRlcHead(uint16_t cellId,bool isLeaving)
+	{
+		if(!isLeaving)
+		{
+			EpcX2Sap::LoadInformationParams loadParams;
+
+			loadParams.targetCellId = cellId;
+			EpcX2Sap::CellInformationItem cellInfo;
+			cellInfo.sourceCellId = m_rrc->m_cellId;
+			loadParams.cellInformationList.push_back(cellInfo);
+			loadParams.imsi = m_imsi;
+
+			for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+											rlcIt != m_rlcMap.end ();
+											++rlcIt)
+			{
+
+				if(!(rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxOnBuffer().empty())&&rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()>2800)
+				{
+					Ptr<Packet> rlcHead = rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxOnBuffer()[1];
+
+					loadParams.tcpSeq =
+							rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()
+							+rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxedBufferSize()
+							+rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetRetxBufferSize();
+
+					std::cout<< "Sent head sequence is: "<<loadParams.tcpSeq<<std::endl;
+					m_rrc->DoSendLoadInformation(loadParams);
+				}
+			}
+		}
+		else
+		{
+			SwitchToState(HANDOVER_LEAVING);
+			for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+														rlcIt != m_rlcMap.end ();
+														++rlcIt)
+			{
+
+				if(!(rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxOnBuffer().empty())&&rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()>2800)
+				{
+					rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBuffer();
+				}
+			}
+		}
+	}
 
 	/*
 	 * Merge 2 buffers of RlcAmPdus into 1 vector with increment order of Pdus
@@ -1036,13 +1055,15 @@ namespace ns3 {
 					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
 
 					uint32_t newSeq;
-
+/*
 					if(m_rrc->m_bottleneckBw!=UINT32_MAX)
 					{
-					  newSeq = m_rrc->m_prevSeq + 0.5 * m_rrc->m_bottleneckBw;
+					  newSeq = m_rrc->m_prevSeq + 0.1 * m_rrc->m_bottleneckBw;
 					}
-					else
+					else*/
 					  newSeq = m_rrc->m_prevSeq;
+
+					std::cout<<"Forward from seq: "<<newSeq<<std::endl;
 
 					//#4 Request buffered TCP packet to send
 					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq);
@@ -1473,6 +1494,7 @@ namespace ns3 {
 				case HANDOVER_PREPARATION:
 					NS_ASSERT (cellId == m_targetCellId);
 					NS_LOG_INFO ("target eNB sent HO preparation failure, aborting HO");
+					std::cout<<"prefail"<<std::endl;
 					SwitchToState (CONNECTED_NORMALLY);
 					break;
 
@@ -3562,17 +3584,18 @@ namespace ns3 {
 				}
 			}
 
+			bool isValid = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])!=m_isPrefetchedEnbMap.end());
+
 			if(handoverNeeded)
 			{
 				NS_LOG_LOGIC("Last mmwave cell: "<<m_lastMmWaveCell[imsi]);
-				bool isValid = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])!=m_isPrefetchedEnbMap.end());
 				//bool haveValue = m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end();
 				//bool isFetched = (m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi]);
 
 				// Did master cell get prefetched signal from source mmwave cell?
 				if(isValid
-				   && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end()
-				   && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi])
+				   && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end())
+				//   && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi])
 				{
 					NS_LOG_DEBUG("handoverNeeded");
 					// compute the TTT
@@ -3621,18 +3644,24 @@ namespace ns3 {
 			}
 			else
 			{
-				if(m_lastMmWaveCell[imsi]!=0)
+				if(isValid
+				&& m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)!=m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second.end()
+			    && m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi])
 				{
-					NS_LOG_LOGIC("Do not need handover");
-					EpcX2Sap::HandoverPreparationFailureParams res;
-					res.imsi = imsi;
-					res.sourceCellId = m_lastMmWaveCell[imsi]; //source cell is a forwarding address...
-					res.targetCellId = m_cellId;
-					res.cause = 0;
-					res.criticalityDiagnostics = 0;
-					res.hasImsi = true;
-					m_bottleneckBw = UINT32_MAX;
-					m_x2SapProvider->SendHandoverPreparationFailure (res);
+					if(m_lastMmWaveCell[imsi]!=0)
+					{
+						NS_LOG_LOGIC("Do not need handover");
+						EpcX2Sap::HandoverPreparationFailureParams res;
+						res.imsi = imsi;
+						res.sourceCellId = m_lastMmWaveCell[imsi]; //source cell is a forwarding address...
+						res.targetCellId = m_cellId;
+						res.cause = 0;
+						res.criticalityDiagnostics = 0;
+						res.hasImsi = true;
+						m_bottleneckBw = UINT32_MAX;
+						m_isPrefetchedEnbMap.find(m_lastMmWaveCell[imsi])->second[imsi] = false;
+						m_x2SapProvider->SendHandoverPreparationFailure (res);
+					}
 				}
 			}
 
@@ -3702,14 +3731,15 @@ namespace ns3 {
 					// The new secondary cell HO procedure does not require to switch to LTE
 					NS_LOG_INFO("PerformHandover ----- handover from " << m_lastMmWaveCell[imsi] << " to " << handoverInfo.targetCellId << " at time " << Simulator::Now().GetSeconds());
 
-					/*
+
+					// Process9: estimation helper
 					// trigger ho via X2
 					EpcX2SapProvider::SecondaryHandoverParams params;
 					params.imsi = imsi;
 					params.targetCellId = handoverInfo.targetCellId;
 					params.oldCellId = m_lastMmWaveCell[imsi];
 					m_x2SapProvider->SendMcHandoverRequest(params);
-					*/
+
 
 					//Process8: send prefetched handover signal
 					NS_LOG_LOGIC("Send prefetched handover signal");
@@ -4159,7 +4189,16 @@ namespace ns3 {
 			// retrieve RNTI
 			uint16_t rnti = GetRntiFromImsi(params.imsi);
 			NS_LOG_LOGIC("Rnti " << rnti);
-			SendHandoverRequest(rnti, params.targetCellId);
+			//SendHandoverRequest(rnti, params.targetCellId);
+			std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
+			Simulator::Schedule(NanoSeconds(params.delay/2),&LteEnbRrc::SelfLeaving,this,rnti);
+		}
+
+	void
+		LteEnbRrc::SelfLeaving(uint16_t rnti)
+		{
+			std::cout<<Simulator::Now()<<" Self leaving"<<std::endl;
+			GetUeManager(rnti)->SendRlcHead(0,true);
 		}
 
 	bool
@@ -4265,12 +4304,18 @@ namespace ns3 {
 			NS_ASSERT (m_configured);
 
 			Ptr<UeManager> ueManager = GetUeManager (rnti);
-			if(ueManager->GetState() == UeManager::CONNECTED_NORMALLY)
+
+			if(ueManager->GetState()==UeManager::CONNECTED_NORMALLY)
 			{
 				NS_LOG_INFO("LteEnbRrc on cell " << m_cellId << " for rnti " << rnti
 						<< " PreSendHandoverRequest at time " << Simulator::Now().GetSeconds() << " to cellId " << cellId);
 				ueManager->PrePrepareHandover(cellId);
 			}
+			else if(ueManager->GetState()==UeManager::HANDOVER_PREPARATION)
+			{
+				ueManager->SendRlcHead(cellId,false);
+			}
+
 		}
 
 	void 
@@ -4546,6 +4591,8 @@ namespace ns3 {
 			NS_ASSERT_MSG(!m_ismmWave, "Only the LTE cell (coordinator) can receive a SecondaryCellHandoverCompleted message");
 			NS_LOG_LOGIC ("Recv X2 message: SECONDARY CELL HANDOVER COMPLETED");
 
+			m_bottleneckBw = UINT32_MAX;
+
 			// get the RNTI from IMSI
 			Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(params.imsi));
 			ueMan->RecvSecondaryCellHandoverCompleted(params);
@@ -4672,7 +4719,7 @@ namespace ns3 {
 		}
 
 
-	// Process9
+	// Process9 you should know that this function only consider single user. You can fix it with given parameters
 	void
 		LteEnbRrc::DoRecvLoadInformation (EpcX2SapUser::LoadInformationParams params)
 		{
@@ -4682,22 +4729,19 @@ namespace ns3 {
 
 			NS_LOG_LOGIC ("Number of cellInformationItems = " << params.cellInformationList.size ());
 
+
 			//uint64_t imsi = params.imsi;
-			uint32_t tcpSeq = params.tcpSeq;
+			m_prevSeq = params.tcpSeq;
 			//uint16_t sourceCellId = params.cellInformationList.at(0).sourceCellId;
+			//uint32_t tempBw = ((tcpSeq-m_prevSeq)/(params.now-m_prevTime))*2*(params.delay);
+			//if(tempBw < m_bottleneckBw)
+			//{
+			//	m_bottleneckBw = tempBw;
+			//}
+			//std::cout<<"Bottleneck Bandwidth is "<<m_bottleneckBw<<std::endl;
 
-			if(m_bottleneckBw != UINT32_MAX)
-			{
-				uint32_t tempBw = ((tcpSeq-m_prevSeq)/(params.now-m_prevTime))*2*(params.delay);
-				if(tempBw < m_bottleneckBw)
-				{
-					m_bottleneckBw = tempBw;
-				}
-				std::cout<<"Bottleneck Bandwidth is "<<m_bottleneckBw<<std::endl;
-			}
 
-			m_prevTime = params.now;
-			m_prevSeq = tcpSeq;
+			//m_prevTime = params.now;
 
 			/*
 			if(m_seqMap.find(sourceCellId)!=m_BwMap.end())

@@ -380,6 +380,9 @@ public:
     uint64_t imsi;
     uint16_t oldCellId;
     uint16_t targetCellId;
+
+    // Process9
+    double delay;
   };
 
   struct SecondaryHandoverCompletedParams

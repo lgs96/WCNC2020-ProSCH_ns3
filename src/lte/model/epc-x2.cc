@@ -566,6 +566,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
       params.targetCellId = x2mcHeader.GetTargetCellId();
       params.imsi = x2mcHeader.GetImsi();
       params.oldCellId = x2mcHeader.GetOldCellId();
+      params.delay = delay.GetDouble();
 
       m_x2SapUser->RecvMcHandoverRequest(params);  
     }

@@ -239,12 +239,12 @@ namespace ns3 {
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket->GetTxBuffer();
 
 			uint32_t newSeq = seq;
-
+/*
 			if(proxyTxBuffer->HeadSequence().GetValue()>seq)
 			{
 				newSeq = proxyTxBuffer->HeadSequence().GetValue();
 			}
-
+*/
 			tempSocket->ProxyBufferRetransmit(SequenceNumber32(newSeq),true);
 		}
 

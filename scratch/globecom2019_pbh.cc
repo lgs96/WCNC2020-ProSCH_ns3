@@ -617,7 +617,7 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
+	bool ReadBuilding = true;
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 40;
@@ -831,7 +831,6 @@ main (int argc, char *argv[])
 
 			building1 = Create<Building>();
 			building1->SetBoundaries(Box(xcoordinate, xcoordinate + xlength, ycoordinate, ycoordinate + ylength,0,35));
-
 			//		file<<xcoordinate<<"\t"<<xcoordinate + xlength<<"\t"<<ycoordinate<<"\t"<<ycoordinate + ylength<<std::endl;
 		}
 	}
@@ -844,10 +843,11 @@ main (int argc, char *argv[])
 		//      double d = 0.5;
 		std::ifstream inFile;
 		inFile.open(buildingTopology.c_str());
+		int count = 0;
 		if (inFile.fail())
 			cout<< "NO file" <<endl;
 		char inputString[100];
-		while(!inFile.eof()){
+		while(count < BuildingNum){
 			inFile.getline(inputString, 100);
 			string a(inputString);
 			string b = a.substr(a.find(':')+1);
@@ -858,11 +858,12 @@ main (int argc, char *argv[])
 			uint16_t x_d = atoi(b.c_str());
 			uint16_t y= atoi(c.c_str());
 			uint16_t y_d = atoi(d.c_str());
-			building = Create<Building>();
+			std::cout<<x<<" "<<x_d<<" "<<y<<" "<<y_d<<std::endl;
+			count++;
 			if (x!=0)
 				building ->SetBoundaries(Box(x,x_d, y, y_d, 0, 35));
 		}
-
+		std::cout<<"Read "<<count<<" buildings"<<std::endl;
 		inFile.close();
 	}
 	//	BuildingsHelper::Install (mmWaveEnbNodes_73G);

@@ -1218,6 +1218,9 @@ public:
   double m_loadInfoRecvTime;
   double m_delayX2;
 
+  // Process10
+  std::ofstream m_currentSinrFile;
+
 private:
 
   /** 

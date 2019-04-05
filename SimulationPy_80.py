@@ -37,7 +37,7 @@ def start_simulation(data):
 #		params.append([run, j+1, homes])
 #	run += 1
 
-buildingNumSet = ['60','80']
+buildingNumSet = ['80']
 x2DelaySet = ['1', '5', '10' ,'20']
 throughputSet = ['1500Mbps']
 schemeSet = ['X2','Proxy','PBH']

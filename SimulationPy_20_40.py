@@ -37,11 +37,11 @@ def start_simulation(data):
 #		params.append([run, j+1, homes])
 #	run += 1
 
-buildingNumSet = ['20','40','60','80']
+buildingNumSet = ['20','40']
 x2DelaySet = ['1', '5', '10' ,'20']
 throughputSet = ['1500Mbps']
 schemeSet = ['X2','Proxy','PBH']
-whichScheme = 2
+whichScheme = 1
 paramsSet = []
 for  i in range(0,10,1):
 	index = i+1
@@ -54,11 +54,10 @@ for  i in range(0,10,1):
 			params = [index,x2Delay,buildingNum,throughput,scheme]
 			paramsSet.append(params)
 
-# run
-#pool = Pool(processes=3)
-#for i in range(len(paramsSet)):
-#	pool.map(start_simulation, paramsSet[i])
-start_simulation(paramsSet[0])
+# run)
+for i in range(len(paramsSet)):
+	start_simulation(paramsSet[i])
+#start_simulation(paramsSet[0])
 
 
 

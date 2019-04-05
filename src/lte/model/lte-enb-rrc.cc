@@ -3453,6 +3453,13 @@ namespace ns3 {
 			{
 				currentSinrDb = 10*std::log10(m_imsiCellSinrMap.find(imsi)->second[m_lastMmWaveCell[imsi]]);
 				NS_LOG_DEBUG("Current SINR " << currentSinrDb);
+				// Process10
+				std::string fileName = "CurrentSinr.txt";
+				if(!m_currentSinrFile.is_open())
+				{
+				  m_currentSinrFile.open(fileName.c_str(), std::ofstream::app);
+				}
+				m_currentSinrFile << Simulator::Now().GetSeconds()-0.5<<" "<<currentSinrDb<<std::endl;
 			}
 
 			// Process8: yes, this is for from outage to recovery situation

@@ -73,6 +73,15 @@ EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<
   //m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
   m_proxyEnbSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromEnbSocket, this));
   m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(24*1024*1024);
+  m_totalRx = 0;
+  m_lastTotalRx = 0;
+  m_currentAvailable = 0;
+  m_lastAvailable = 0;
+  m_count = 0;
+  m_count_dep = 0;
+  //Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
+  Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate,this);
+  m_delay = 0.02;
 }
 
 
@@ -166,15 +175,24 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
   {
 	//Send data packet from proxy tcp to user
 	m_proxyTcpSocket->Send(packet);
-
 	//Set advertise window
 	Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
-	uint32_t awndSize = proxyTxBuffer->Available();
-	NS_LOG_LOGIC("Proxy tcp's Awnd size is "<<awndSize);
+
+	uint32_t awndSize = proxyTxBuffer->Available()-m_delay*m_departureRate;
+
+	if(proxyTxBuffer->Available() < m_delay*m_departureRate)
+	{
+		awndSize =1400;
+	}
+
+	NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
+	//std::cout<<"awndSize = "<<awndSize<<std::endl;
+
+	//std::cout<<"Tail Sequence: "<<proxyTxBuffer->TailSequence() << std::endl;
 
 	//Send Early ACK packet to server, set ack number
 	uint32_t dataSize = packet->GetSize();
-    SequenceNumber32 AckNum = dataSeqNum + dataSize;
+	SequenceNumber32 AckNum = dataSeqNum + dataSize;
 	newTcpHeader.SetAckNumber(AckNum);
 	newTcpHeader.SetFlags(TcpHeader::ACK);
 	newTcpHeader.SetWindowSize(awndSize);
@@ -183,9 +201,40 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
 	ackPacket->AddHeader(newTcpHeader);
 	ackPacket->AddHeader(newIpv4Header);
 
+	m_totalRx += dataSize;
+
 	uint32_t flags = 0;
 	m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
   }
+}
+
+
+
+void
+EpcEnbProxyApplication::GetArrivalRate ()
+{
+	NS_LOG_FUNCTION (this);
+	m_arrivalRate = (m_totalRx - m_lastTotalRx)/(double)(0.1);
+	m_count++;
+	m_lastTotalRx = m_totalRx;
+	//std::cout<<"Arrival rate is "<<m_arrivalRate<<std::endl;
+	Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetArrivalRate,this);
+}
+
+void
+EpcEnbProxyApplication::GetDepartureRate ()
+{
+	NS_LOG_FUNCTION (this);
+	m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
+	m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.1);
+	if(m_currentAvailable < m_lastAvailable)
+	{
+		m_departureRate = 0;
+	}
+	m_count_dep++;
+	m_lastAvailable = m_currentAvailable;
+	//std::cout<<"Departure rate is "<<m_departureRate<<std::endl;
+	Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetDepartureRate,this);
 }
 
 void 

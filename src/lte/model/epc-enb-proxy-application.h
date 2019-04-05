@@ -88,6 +88,9 @@ public:
 
   //void RecvFromS1uSocket (Ptr<Socket> socket);
 
+  void GetArrivalRate ();
+  void GetDepartureRate ();
+
 private:
 
   void SendToEnbSocket (Ptr<Packet> packet);
@@ -101,6 +104,17 @@ private:
 
   Ipv4Address m_source;
   Ipv4Address m_dest;
+
+  //Process9
+  uint64_t m_totalRx;
+  uint64_t m_lastTotalRx;
+  uint16_t m_count;
+  uint16_t m_count_dep;
+  uint32_t m_arrivalRate;
+  uint32_t m_departureRate;
+  uint32_t m_currentAvailable;
+  uint32_t m_lastAvailable;
+  uint32_t m_delay;
 };
 
 } //namespace ns3

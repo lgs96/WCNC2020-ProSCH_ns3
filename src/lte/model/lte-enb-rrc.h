@@ -1053,6 +1053,8 @@ public:
 
   void SetInterRatHoMode ();
   
+  std::ofstream m_currentSinrFile;
+
 private:
 
 

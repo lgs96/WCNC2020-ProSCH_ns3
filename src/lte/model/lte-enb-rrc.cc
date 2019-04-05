@@ -2942,11 +2942,15 @@ void LteEnbRrc::TttBasedHandover(
 	double currentSinrDb = 0;
 	if (alreadyAssociatedImsi
 			&& m_lastMmWaveCell.find(imsi) != m_lastMmWaveCell.end()) {
-		currentSinrDb =
-				10
-						* std::log10(
-								m_imsiCellSinrMap.find(imsi)->second[m_lastMmWaveCell[imsi]]);
+		currentSinrDb = 10* std::log10(m_imsiCellSinrMap.find(imsi)->second[m_lastMmWaveCell[imsi]]);
 		NS_LOG_DEBUG("Current SINR " << currentSinrDb);
+		// Process10
+		std::string fileName = "CurrentSinr.txt";
+		if(!m_currentSinrFile.is_open())
+		{
+		  m_currentSinrFile.open(fileName.c_str(), std::ofstream::app);
+		}
+		m_currentSinrFile << Simulator::Now().GetSeconds()-0.5<<" "<<currentSinrDb<<std::endl;
 	}
 
 	// the UE was in outage, now a mmWave eNB is available. It may be the one to which the UE is already attached or
@@ -3547,6 +3551,7 @@ void LteEnbRrc::UpdateUeHandoverAssociation() {
 					* std::log10((long double) currentSinr);
 			NS_LOG_INFO(
 					"MaxSinr " << maxSinrDb << " in cell " << maxSinrCellId << " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << currentSinrDb << " sinrDifference " << sinrDifference);
+
 			// check if MmWave cells are in outage. In this case the UE should handover to LTE cell
 			if (maxSinrDb < m_outageThreshold
 					|| (m_imsiUsingLte[imsi]

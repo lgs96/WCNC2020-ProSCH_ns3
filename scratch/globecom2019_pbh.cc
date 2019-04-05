@@ -860,8 +860,11 @@ main (int argc, char *argv[])
 			uint16_t y_d = atoi(d.c_str());
 			std::cout<<x<<" "<<x_d<<" "<<y<<" "<<y_d<<std::endl;
 			count++;
+			building = Create<Building>();
 			if (x!=0)
+			{
 				building ->SetBoundaries(Box(x,x_d, y, y_d, 0, 35));
+			}
 		}
 		std::cout<<"Read "<<count<<" buildings"<<std::endl;
 		inFile.close();

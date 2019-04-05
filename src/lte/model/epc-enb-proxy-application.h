@@ -95,6 +95,7 @@ public:
   void ForwardingProxy (uint32_t seq, double delay, double interval);
   void HoldProxyBuffer();
   void GetArrivalRate ();
+  void GetDepartureRate ();
 
 private:
 
@@ -116,7 +117,12 @@ private:
   uint64_t m_totalRx;
   uint64_t m_lastTotalRx;
   uint16_t m_count;
+  uint16_t m_count_dep;
   uint32_t m_arrivalRate;
+  uint32_t m_departureRate;
+  uint32_t m_currentAvailable;
+  uint32_t m_lastAvailable;
+  uint32_t m_delay;
 };
 
 } //namespace ns3

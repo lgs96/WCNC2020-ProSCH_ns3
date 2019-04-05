@@ -39,6 +39,8 @@
 #include "ns3/tcp-tx-buffer.h"
 #include "epc-gtpu-header.h"
 #include "eps-bearer-tag.h"
+#include "ns3/tcp-option.h"
+#include "ns3/tcp-option-ts.h"
 
 
 namespace ns3 {
@@ -76,8 +78,13 @@ namespace ns3 {
 		m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(24*1024*1024);
 		m_totalRx = 0;
 		m_lastTotalRx = 0;
+		m_currentAvailable = 0;
+		m_lastAvailable = 0;
 		m_count = 0;
+		m_count_dep = 0;
 		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
+		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate,this);
+		m_delay = 0.01;
 	}
 
 
@@ -177,7 +184,13 @@ namespace ns3 {
 					bool isIn = proxyTxBuffer->Add(packet);
 					NS_ASSERT(isIn==true);				
 
-					uint32_t awndSize = proxyTxBuffer->Available();
+					uint32_t awndSize = proxyTxBuffer->Available()-m_delay*m_arrivalRate;
+
+					if(proxyTxBuffer->Available() < m_delay*m_arrivalRate)
+					{
+						awndSize = 1400;
+					}
+
 					NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
 
 					//Send Early ACK packet to server, set ack number
@@ -204,8 +217,16 @@ namespace ns3 {
 					m_proxyTcpSocket->Send(packet);
 					//Set advertise window
 					Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
-					uint32_t awndSize = proxyTxBuffer->Available();
+
+					uint32_t awndSize = proxyTxBuffer->Available()-m_delay*m_departureRate;
+
+					if(proxyTxBuffer->Available() < m_delay*m_departureRate)
+					{
+						awndSize =1400;
+					}
+
 					NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
+					std::cout<<"awndSize = "<<awndSize<<std::endl;
 
 					//std::cout<<"Tail Sequence: "<<proxyTxBuffer->TailSequence() << std::endl;
 
@@ -241,6 +262,22 @@ namespace ns3 {
 		}
 
 	void
+		EpcEnbProxyApplication::GetDepartureRate ()
+		{
+			NS_LOG_FUNCTION (this);
+			m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
+			m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.1);
+			if(m_currentAvailable < m_lastAvailable)
+			{
+				m_departureRate = 0;
+			}
+			m_count_dep++;
+			m_lastAvailable = m_currentAvailable;
+			std::cout<<"Departure rate is "<<m_departureRate<<std::endl;
+			Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetDepartureRate,this);
+		}
+
+	void
 		EpcEnbProxyApplication::SendToEnbSocket (Ptr<Packet> packet)
 		{
 			NS_LOG_FUNCTION (this << packet << packet->GetSize ());
@@ -248,7 +285,7 @@ namespace ns3 {
 			NS_ASSERT (sentBytes > 0);
 		}
 
-	//Process8
+	//Process8vi Th
 	void
 		EpcEnbProxyApplication::ForwardingProxy (uint32_t seq, double delay, double interval)
 		{

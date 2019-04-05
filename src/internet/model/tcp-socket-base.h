@@ -496,6 +496,14 @@ public:
   void ProxyBufferRetransmit (SequenceNumber32 seq,bool isFirst);
   bool m_proxyHoldBuffer;
   virtual void     SetSndBufSize (uint32_t size);
+  /** \brief Add options to TcpHeader
+     *
+     * Test each option, and if it is enabled on our side, add it
+     * to the header
+     *
+     * \param tcpHeader TcpHeader to add options to
+     */
+    void AddOptions (TcpHeader& tcpHeader);
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
@@ -955,15 +963,6 @@ protected:
    * \brief Retransmit the oldest packet
    */
   virtual void DoRetransmit (void);
-
-  /** \brief Add options to TcpHeader
-   *
-   * Test each option, and if it is enabled on our side, add it
-   * to the header
-   *
-   * \param tcpHeader TcpHeader to add options to
-   */
-  void AddOptions (TcpHeader& tcpHeader);
 
   /**
    * \brief Read TCP options begore Ack processing

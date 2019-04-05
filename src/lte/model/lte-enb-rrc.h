@@ -1215,6 +1215,8 @@ public:
   // Process9
   uint32_t m_bottleneckBw;
   uint32_t m_prevSeq;
+  double m_loadInfoRecvTime;
+  double m_delayX2;
 
 private:
 

@@ -92,8 +92,9 @@ public:
 
 
   //Process8
-  void ForwardingProxy (uint32_t seq);
+  void ForwardingProxy (uint32_t seq, double delay, double interval);
   void HoldProxyBuffer();
+  void GetArrivalRate ();
 
 private:
 
@@ -111,6 +112,11 @@ private:
 
   //Process8
   bool m_holdBuffer;
+  //Process9
+  uint64_t m_totalRx;
+  uint64_t m_lastTotalRx;
+  uint16_t m_count;
+  uint32_t m_arrivalRate;
 };
 
 } //namespace ns3

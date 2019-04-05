@@ -1055,18 +1055,23 @@ namespace ns3 {
 					m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti, handoverCommand);
 
 					uint32_t newSeq;
-/*
+					double newDelay;
+					double newInterval;
+
+					/*
 					if(m_rrc->m_bottleneckBw!=UINT32_MAX)
 					{
 					  newSeq = m_rrc->m_prevSeq + 0.1 * m_rrc->m_bottleneckBw;
 					}
 					else*/
-					  newSeq = m_rrc->m_prevSeq;
+					newSeq = m_rrc->m_prevSeq;
+					newDelay = m_rrc->m_delayX2/(1e10);
+					newInterval = (Simulator::Now().GetDouble() - m_rrc->m_loadInfoRecvTime)/(1e10);
 
-					std::cout<<"Forward from seq: "<<newSeq<<std::endl;
+					std::cout<<"Forward from seq: "<<newSeq<<" delay: "<<newDelay<<" interval: "<<newInterval<<std::endl;
 
 					//#4 Request buffered TCP packet to send
-					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq);
+					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq, newDelay, newInterval);
 					m_rrc->m_isPrefetchedEnbMap.find(m_mmWaveCellId)->second[m_imsi] = false;
 
 					m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
@@ -4729,9 +4734,10 @@ namespace ns3 {
 
 			NS_LOG_LOGIC ("Number of cellInformationItems = " << params.cellInformationList.size ());
 
-
 			//uint64_t imsi = params.imsi;
 			m_prevSeq = params.tcpSeq;
+			m_loadInfoRecvTime = params.now;
+			m_delayX2 = params.delay;
 			//uint16_t sourceCellId = params.cellInformationList.at(0).sourceCellId;
 			//uint32_t tempBw = ((tcpSeq-m_prevSeq)/(params.now-m_prevTime))*2*(params.delay);
 			//if(tempBw < m_bottleneckBw)

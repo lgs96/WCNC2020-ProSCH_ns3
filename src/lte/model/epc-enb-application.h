@@ -173,7 +173,7 @@ private:
   void DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t bearerId);
 
   //Process8 just for definition
-  void DoProxyForwardingRequest(uint32_t seq);
+  void DoProxyForwardingRequest(uint32_t seq, double delay, double interval);
   void DoProxyHoldRequest();
 
   /**

@@ -74,6 +74,10 @@ namespace ns3 {
 		//m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
 		m_proxyEnbSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromEnbSocket, this));
 		m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(24*1024*1024);
+		m_totalRx = 0;
+		m_lastTotalRx = 0;
+		m_count = 0;
+		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
 	}
 
 
@@ -189,6 +193,8 @@ namespace ns3 {
 
                                         //std::cout<<"When hold buffer operating.. Seq " << AckNum << " is arrived, Tail sequence: "<< proxyTxBuffer->TailSequence() << std::endl;
  
+					m_totalRx += dataSize;
+
 					uint32_t flags = 0;
 					m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
 				}
@@ -214,11 +220,24 @@ namespace ns3 {
 					ackPacket->AddHeader(newTcpHeader);
 					ackPacket->AddHeader(newIpv4Header);
 
+					m_totalRx += dataSize;
+
 					uint32_t flags = 0;
 					m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
 				}
 			}
 
+		}
+
+	void
+		EpcEnbProxyApplication::GetArrivalRate ()
+		{
+			NS_LOG_FUNCTION (this);
+			m_arrivalRate = (m_totalRx - m_lastTotalRx)/(double)(0.1);
+			m_count++;
+			m_lastTotalRx = m_totalRx;
+			std::cout<<"Arrival rate is "<<m_arrivalRate<<std::endl;
+			Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetArrivalRate,this);
 		}
 
 	void
@@ -231,20 +250,22 @@ namespace ns3 {
 
 	//Process8
 	void
-		EpcEnbProxyApplication::ForwardingProxy (uint32_t seq)
+		EpcEnbProxyApplication::ForwardingProxy (uint32_t seq, double delay, double interval)
 		{
 			NS_LOG_FUNCTION (this);
 			//std::cout << Simulator::Now() <<" Handover occured. Forward cached inflight packets."<<std::endl;
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket->GetTxBuffer();
 
-			uint32_t newSeq = seq;
-/*
+			uint32_t newSeq = seq + (delay) * m_arrivalRate + (interval + delay) * m_arrivalRate;
+
+			std::cout<<"Head seq: "<<proxyTxBuffer->HeadSequence()<<std::endl;
+			/*
 			if(proxyTxBuffer->HeadSequence().GetValue()>seq)
 			{
 				newSeq = proxyTxBuffer->HeadSequence().GetValue();
 			}
-*/
+			*/
 			tempSocket->ProxyBufferRetransmit(SequenceNumber32(newSeq),true);
 		}
 

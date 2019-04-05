@@ -3397,15 +3397,19 @@ TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
 
   if(isFirst)
   {
-
     m_proxyStart = m_txBuffer->TailSequence()-SequenceNumber32((uint32_t)seq.GetValue()*1.2);
+    std::cout<<"Before control: "<<m_proxyStart<<" remain: " <<SequenceNumber32(m_proxyStart.GetValue()%m_tcb->m_segmentSize)<<std::endl;
+    m_proxyStart = m_proxyStart - SequenceNumber32(m_proxyStart.GetValue()%m_tcb->m_segmentSize) + 1;
+
     if(m_proxyStart < m_txBuffer->HeadSequence())
     {
     	m_proxyStart = m_txBuffer->HeadSequence();
     	std::cout<<"It's head sequence"<<std::endl;
     }
+
     std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<std::endl;
     tempSeq = m_proxyStart;
+    m_proxyStart = m_txBuffer->HeadSequence();
   }
   else{
     tempSeq = seq;

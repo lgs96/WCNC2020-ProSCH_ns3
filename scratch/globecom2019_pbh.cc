@@ -604,7 +604,8 @@ main (int argc, char *argv[])
 	unsigned symPerSf = 24;
 	double sfPeriod = 100.0;
 	bool tcp = true, dl= true, ul=false;
-	double x2Latency = 10, mmeLatency=15.0;
+	//double x2Latency = 10;
+	double  mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
 	double EnbTxPower = 30;
@@ -621,7 +622,7 @@ main (int argc, char *argv[])
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 40;
-	int x2LinkDelay = 5;
+	int x2Latency = 5;
 	string BuildingIndex = "2";	
 	string sourceRateString = "1500Mbps";
 
@@ -641,7 +642,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("nPacket", "number of packets" , nPacket);
 	
 	//Command for Proxy based handover
-	cmd.AddValue("X2LinkDelay" , "X2 link delay", x2LinkDelay);
+	cmd.AddValue("X2LinkDelay" , "X2 link delay", x2Latency);
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
@@ -690,7 +691,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
-	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
+	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));

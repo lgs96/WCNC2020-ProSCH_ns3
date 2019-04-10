@@ -691,7 +691,7 @@ namespace ns3 {
 		UeManager::PrePrepareHandover (uint16_t cellId)
 		{
 			NS_LOG_FUNCTION (this << cellId);
-			std::cout<<Simulator::Now()<<" prepre "<<m_state<<std::endl;
+			//std::cout<<Simulator::Now()<<" prepre "<<m_state<<std::endl;
 			switch (m_state)
 			{
 				case CONNECTED_NORMALLY:
@@ -815,7 +815,7 @@ namespace ns3 {
 							+rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxedBufferSize()
 							+rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetRetxBufferSize();
 
-					std::cout<< "Sent head sequence is: "<<loadParams.tcpSeq<<std::endl;
+					//std::cout<< "Sent head sequence is: "<<loadParams.tcpSeq<<std::endl;
 					m_rrc->DoSendLoadInformation(loadParams);
 				}
 			}
@@ -997,7 +997,7 @@ namespace ns3 {
 				//Process8: LTE as a centralized coordinater
 				else
 				{
-					std::cout<<Simulator::Now()<<" Proxy based handover: Received handover ack, start centralized handover"<<std::endl;
+					//std::cout<<Simulator::Now()<<" Proxy based handover: Received handover ack, start centralized handover"<<std::endl;
 					//#1 Path switching
 
 					for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
@@ -1499,7 +1499,7 @@ namespace ns3 {
 				case HANDOVER_PREPARATION:
 					NS_ASSERT (cellId == m_targetCellId);
 					NS_LOG_INFO ("target eNB sent HO preparation failure, aborting HO");
-					std::cout<<"prefail"<<std::endl;
+					//std::cout<<"prefail"<<std::endl;
 					SwitchToState (CONNECTED_NORMALLY);
 					break;
 
@@ -1509,7 +1509,7 @@ namespace ns3 {
 					break;
 
 				default:
-					NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
+					//NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
 					break;
 			}
 		}
@@ -4202,8 +4202,8 @@ namespace ns3 {
 			uint16_t rnti = GetRntiFromImsi(params.imsi);
 			NS_LOG_LOGIC("Rnti " << rnti);
 			//SendHandoverRequest(rnti, params.targetCellId);
-			std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
-			Simulator::Schedule(NanoSeconds(params.delay/2),&LteEnbRrc::SelfLeaving,this,rnti);
+			//std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
+			//Simulator::Schedule(NanoSeconds(params.delay/2),&LteEnbRrc::SelfLeaving,this,rnti);
 		}
 
 	void

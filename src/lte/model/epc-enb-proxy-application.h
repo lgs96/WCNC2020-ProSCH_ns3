@@ -43,11 +43,13 @@
 #include <ns3/epc-s1ap-sap.h>
 #include <map>
 #include "ns3/internet-module.h"
+//#include "ns3/lte-module.h"
+#include <ns3/epc-enb-application.h>
 
 namespace ns3 {
 class EpcEnbS1SapUser;
 class EpcEnbS1SapProvider;
-
+class EpcEnbApplication;
 
 /**
  * \ingroup lte
@@ -64,9 +66,7 @@ public:
 protected:
   void DoDispose (void);
 
-public:
-  
-  
+public: 
 
   /** 
    * Constructor
@@ -96,6 +96,9 @@ public:
   void HoldProxyBuffer();
   void GetArrivalRate ();
   void GetDepartureRate ();
+	
+  //Process_last
+  void AddEnbApp (Ptr<EpcEnbApplication>epcApp);
 
 private:
 
@@ -123,6 +126,8 @@ private:
   uint32_t m_currentAvailable;
   uint32_t m_lastAvailable;
   uint32_t m_delay;
+  Ptr<EpcEnbApplication>m_enbApp;
+  Ipv4Header m_Ipv4Header;
 };
 
 } //namespace ns3

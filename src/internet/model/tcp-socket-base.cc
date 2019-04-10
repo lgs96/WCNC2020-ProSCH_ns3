@@ -2777,6 +2777,108 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
   return sz;
 }
 
+Ptr<Packet>
+TcpSocketBase::GetProxyPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
+{
+  NS_LOG_FUNCTION (this << seq << maxSize << withAck);
+
+  bool isRetransmission = false;
+  if (seq != m_tcb->m_highTxMark)
+    {
+      isRetransmission = true;
+    }
+
+  Ptr<Packet> p = m_txBuffer->CopyFromSequence (maxSize, seq);
+  uint32_t sz = p->GetSize (); // Size of packet
+  uint8_t flags = withAck ? TcpHeader::ACK : 0;
+  uint32_t remainingData = m_txBuffer->SizeFromSequence (seq + SequenceNumber32 (sz));
+
+  if (withAck)
+    {
+      m_delAckEvent.Cancel ();
+      m_delAckCount = 0;
+    }
+
+  /*
+   * Add tags for each socket option.
+   * Note that currently the socket adds both IPv4 tag and IPv6 tag
+   * if both options are set. Once the packet got to layer three, only
+   * the corresponding tags will be read.
+   */
+  if (GetIpTos ())
+    {
+      SocketIpTosTag ipTosTag;
+      ipTosTag.SetTos (GetIpTos ());
+      p->AddPacketTag (ipTosTag);
+    }
+
+  if (IsManualIpv6Tclass ())
+    {
+      SocketIpv6TclassTag ipTclassTag;
+      ipTclassTag.SetTclass (GetIpv6Tclass ());
+      p->AddPacketTag (ipTclassTag);
+    }
+
+  if (IsManualIpTtl ())
+    {
+      SocketIpTtlTag ipTtlTag;
+      ipTtlTag.SetTtl (GetIpTtl ());
+      p->AddPacketTag (ipTtlTag);
+    }
+
+  if (IsManualIpv6HopLimit ())
+    {
+      SocketIpv6HopLimitTag ipHopLimitTag;
+      ipHopLimitTag.SetHopLimit (GetIpv6HopLimit ());
+      p->AddPacketTag (ipHopLimitTag);
+    }
+
+  uint8_t priority = GetPriority ();
+  if (priority)
+    {
+      SocketPriorityTag priorityTag;
+      priorityTag.SetPriority (priority);
+      p->ReplacePacketTag (priorityTag);
+    }
+
+  if (m_closeOnEmpty && (remainingData == 0))
+    {
+      flags |= TcpHeader::FIN;
+      if (m_state == ESTABLISHED)
+        { // On active close: I am the first one to send FIN
+          NS_LOG_DEBUG ("ESTABLISHED -> FIN_WAIT_1");
+          m_state = FIN_WAIT_1;
+        }
+      else if (m_state == CLOSE_WAIT)
+        { // On passive close: Peer sent me FIN already
+          NS_LOG_DEBUG ("CLOSE_WAIT -> LAST_ACK");
+          m_state = LAST_ACK;
+        }
+    }
+  TcpHeader header;
+  header.SetFlags (flags);
+  header.SetSequenceNumber (seq);
+  header.SetAckNumber (m_rxBuffer->NextRxSequence ());
+  if (m_endPoint)
+    {
+      header.SetSourcePort (m_endPoint->GetLocalPort ());
+      header.SetDestinationPort (m_endPoint->GetPeerPort ());
+    }
+  else
+    {
+      header.SetSourcePort (m_endPoint6->GetLocalPort ());
+      header.SetDestinationPort (m_endPoint6->GetPeerPort ());
+    }
+  header.SetWindowSize (AdvertisedWindowSize ());
+  AddOptions (header);
+  m_txTrace (p, header, this);
+  UpdateRttHistory (seq, sz, isRetransmission);
+
+  p->AddHeader(header);
+
+  return p;
+}
+
 void
 TcpSocketBase::UpdateRttHistory (const SequenceNumber32 &seq, uint32_t sz,
                                  bool isRetransmission)
@@ -3387,6 +3489,7 @@ TcpSocketBase::DoRetransmit ()
 }
 
 //Process8: to forward all tx buffer data
+/*
 void
 TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
 {
@@ -3397,45 +3500,93 @@ TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
 
   if(isFirst)
   {
-    m_proxyStart = m_txBuffer->TailSequence()-SequenceNumber32((uint32_t)seq.GetValue()*1.2);
+    m_proxyStart = m_tcb->m_nextTxSequence-SequenceNumber32((uint32_t)seq.GetValue());
     std::cout<<"Before control: "<<m_proxyStart<<" remain: " <<SequenceNumber32(m_proxyStart.GetValue()%m_tcb->m_segmentSize)<<std::endl;
     m_proxyStart = m_proxyStart - SequenceNumber32(m_proxyStart.GetValue()%m_tcb->m_segmentSize) + 1;
 
-    if(m_proxyStart < m_txBuffer->HeadSequence())
+    if(m_proxyStart < m_txBuffer->HeadSequence()|| m_proxyStart > m_tcb->m_nextTxSequence||m_proxyStart > m_txBuffer->TailSequence()) 
     {
     	m_proxyStart = m_txBuffer->HeadSequence();
     	std::cout<<"It's head sequence"<<std::endl;
     }
 
-    std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<std::endl;
+    std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<" Next Seq: "<<m_tcb->m_nextTxSequence<<std::endl;
     tempSeq = m_proxyStart;
-    m_proxyStart = m_txBuffer->HeadSequence();
+    //m_proxyStart = m_txBuffer->HeadSequence();
   }
   else{
     tempSeq = seq;
   }
   
-  while(tempSeq < tempSeq + 200 * (m_tcb->m_segmentSize))
+  while(tempSeq < tempSeq + 10 * (m_tcb->m_segmentSize))
   {
- 	if(tempSeq < m_txBuffer -> TailSequence())
+ 	if(tempSeq < m_tcb->m_nextTxSequence)
   	{	
-    		//std::cout << Simulator::Now() << "Seq: " << seq << " tailSequence: " << m_txBuffer -> TailSequence()  << std::endl;
-    	SendDataPacket (tempSeq, m_tcb->m_segmentSize, true);
-    	tempSeq = tempSeq + m_tcb->m_segmentSize;
+    		//std::cout << Simulator::Now() << "Seq: " << tempSeq << " tailSequence: " << m_txBuffer -> TailSequence()  << std::endl;
+    		SendDataPacket (tempSeq, m_tcb->m_segmentSize, true);
+    		tempSeq = tempSeq + m_tcb->m_segmentSize;
   	}
   	else
   	{
     		//std::cout<<Simulator::Now()<<"Proxy forwarding is completed"<<std::endl;
     	NS_LOG_LOGIC ("Proxy forwaridng is completed");
-		m_proxyFin = m_txBuffer->TailSequence();
+		m_proxyFin = m_tcb->m_nextTxSequence;
                 //std::cout<<Simulator::Now()<<"Proxy FIN: "<<m_proxyFin<<std::endl;
    	 	m_proxyHoldBuffer = false;
    	 	break;
   	}
   }
   if(!m_sendProxyDataEvent.IsRunning () && m_proxyHoldBuffer == true)
-    	m_sendProxyDataEvent = Simulator::Schedule (TimeStep (1), &TcpSocketBase::ProxyBufferRetransmit, this, tempSeq, false);
+    	m_sendProxyDataEvent = Simulator::Schedule (TimeStep (100000), &TcpSocketBase::ProxyBufferRetransmit, this, tempSeq, false);
 }
+*/
+
+void
+TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
+{
+  NS_LOG_FUNCTION (this);  
+  //std::cout<<"Proxy forwarding start"<<std::endl;
+    
+    m_proxyStart = m_tcb->m_nextTxSequence-SequenceNumber32((uint32_t)seq.GetValue());
+    std::cout<<"Before control: "<<m_proxyStart<<" remain: " <<SequenceNumber32(m_proxyStart.GetValue()%m_tcb->m_segmentSize)<<std::endl;
+    m_proxyStart = m_proxyStart - SequenceNumber32(m_proxyStart.GetValue()%m_tcb->m_segmentSize) + 1;
+
+    if(m_proxyStart < m_txBuffer->HeadSequence()|| m_proxyStart > m_tcb->m_nextTxSequence||m_proxyStart > m_txBuffer->TailSequence()) 
+    {
+    	m_proxyStart = m_txBuffer->HeadSequence();
+    	std::cout<<"It's head sequence"<<std::endl;
+    }
+
+  /*  std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<" Next Seq: "<<m_tcb->m_nextTxSequence<<std::endl;
+    tempSeq = m_proxyStart;
+    //m_proxyStart = m_txBuffer->HeadSequence();
+  }
+  else{
+    tempSeq = seq;
+  }*/
+  /*
+  while(tempSeq < tempSeq + 10 * (m_tcb->m_segmentSize))
+  {
+ 	if(tempSeq < m_tcb->m_nextTxSequence)
+  	{	
+   		//std::cout << Simulator::Now() << "Seq: " << tempSeq << " tailSequence: " << m_txBuffer -> TailSequence()  << std::endl;
+     		SendDataPacket (tempSeq, m_tcb->m_segmentSize, true);
+    		tempSeq = tempSeq + m_tcb->m_segmentSize;
+  	}
+  	else
+  	{
+    		//std::cout<<Simulator::Now()<<"Proxy forwarding is completed"<<std::endl;
+  */  	        NS_LOG_LOGIC ("Proxy forwaridng is completed");
+		m_proxyFin = m_tcb->m_nextTxSequence;
+                //std::cout<<Simulator::Now()<<"Proxy FIN: "<<m_proxyFin<<std::endl;
+   	 	m_proxyHoldBuffer = false;
+  /* 	 	break;
+  	}
+  }
+  if(!m_sendProxyDataEvent.IsRunning () && m_proxyHoldBuffer == true)
+    	m_sendProxyDataEvent = Simulator::Schedule (TimeStep (100000), &TcpSocketBase::ProxyBufferRetransmit, this, tempSeq, false);*/
+}
+
 void
 TcpSocketBase::CancelAllTimers ()
 {

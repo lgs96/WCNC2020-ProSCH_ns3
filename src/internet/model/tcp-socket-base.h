@@ -494,6 +494,7 @@ public:
   
   //Process8: to forward all tx buffer data
   void ProxyBufferRetransmit (SequenceNumber32 seq,bool isFirst);
+  Ptr<Packet> GetProxyPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
   bool m_proxyHoldBuffer;
   virtual void     SetSndBufSize (uint32_t size);
   /** \brief Add options to TcpHeader
@@ -503,7 +504,11 @@ public:
      *
      * \param tcpHeader TcpHeader to add options to
      */
-    void AddOptions (TcpHeader& tcpHeader);
+  void AddOptions (TcpHeader& tcpHeader);
+
+  // Process_last, for easy access from proxy
+  Ptr<TcpSocketState>    m_tcb;               //!< Congestion control informations
+
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
@@ -1154,7 +1159,7 @@ protected:
   bool                   m_limitedTx;    //!< perform limited transmit
 
   // Transmission Control Block
-  Ptr<TcpSocketState>    m_tcb;               //!< Congestion control informations
+  //Ptr<TcpSocketState>    m_tcb;               //!< Congestion control informations
   Ptr<TcpCongestionOps>  m_congestionControl; //!< Congestion control
 
   // Guesses over the other connection end

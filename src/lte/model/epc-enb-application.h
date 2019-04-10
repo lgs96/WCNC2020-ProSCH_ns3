@@ -50,7 +50,7 @@
 namespace ns3 {
 class EpcEnbS1SapUser;
 class EpcEnbS1SapProvider;
-
+class EpcEnbProxyApplication;
 
 /**
  * \ingroup lte

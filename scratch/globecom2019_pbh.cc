@@ -604,7 +604,8 @@ main (int argc, char *argv[])
 	unsigned symPerSf = 24;
 	double sfPeriod = 100.0;
 	bool tcp = true, dl= true, ul=false;
-	double x2Latency = 10, mmeLatency=15.0;
+	//double x2Latency = 10
+	double  mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
 	double EnbTxPower = 30;
@@ -620,8 +621,8 @@ main (int argc, char *argv[])
 	bool ReadBuilding = true;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 40;
-	int x2LinkDelay = 5;
+	int BuildingNum = 80;
+	double x2Latency= 1;
 	int BuildingIndex = 1;	
 	string sourceRateString = "1500Mbps";
 
@@ -641,7 +642,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("nPacket", "number of packets" , nPacket);
 	
 	//Command for Proxy based handover
-	cmd.AddValue("X2LinkDelay" , "X2 link delay", x2LinkDelay);
+	cmd.AddValue("X2LinkDelay" , "X2 link delay", x2Latency);
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
@@ -676,7 +677,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
-	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate ("100Gb/s")));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate ("10Gb/s")));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
@@ -690,7 +691,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
-	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2LinkDelay)));
+	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
@@ -716,7 +717,7 @@ main (int argc, char *argv[])
 	//string sourceRateString = "1500Mbps";
 
 	std::cout<<"Building number: "<<BuildingNum<<std::endl;
-	std::cout<<"x2LinkDelay: "<<x2LinkDelay<<std::endl;
+	std::cout<<"x2LinkDelay: "<<x2Latency<<std::endl;
 	std::cout<<"Building Index: "<<BuildingIndex<<std::endl;
 	std::cout<<"Source rate: "<<sourceRateString<<std::endl;
 
@@ -739,7 +740,7 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
+		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.020)));
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 		//		p2ph.EnablePcapAll("Tcp_highspeed");		
 

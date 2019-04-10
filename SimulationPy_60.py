@@ -5,6 +5,8 @@ import os
 import subprocess
 from multiprocessing import Pool
 	
+	
+
 def start_simulation(data):
 	buildingIndex =data[0]
 	x2_delay = data[1]
@@ -16,7 +18,7 @@ def start_simulation(data):
 	subprocess.check_call('cp %s %s/%s'%(str(buildingIndex)+"_BuildingPosition.txt",location,str(buildingIndex)+"_BuildingPosition.txt"),shell=True)
 	subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s --BuildingNum=%s --SourceRate=%s" --run globecom2019_pbh' % (location,buildingIndex, x2_delay, buildingNum, throughput),shell=True)
 
-#if len(sys.argv) != 5:
+##if len(sys.argv) != 5:
 #	print "usage: ./parallel [max_homes] [step] [sub_runs] [processes]"
 #	sys.exit(0)
 
@@ -46,10 +48,10 @@ whichScheme = 1
 paramsSet = []
 for  i in range(0,10,1):
 	index = i+1
-	for i in range(len(buildingNumSet)):
-		buildingNum = buildingNumSet[i]
-		for i in range(len(x2DelaySet)):
-			x2Delay = x2DelaySet[i]
+	for j in range(len(buildingNumSet)):
+		buildingNum = buildingNumSet[j]
+		for k in range(len(x2DelaySet)):
+			x2Delay = x2DelaySet[k]
 			throughput = throughputSet[0]
 			scheme = schemeSet[whichScheme]
 			params = [index,x2Delay,buildingNum,throughput,scheme]

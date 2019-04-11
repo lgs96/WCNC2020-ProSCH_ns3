@@ -334,15 +334,14 @@ TcpSocketBase::TcpSocketBase (void)
     m_retxThresh (3),
     m_limitedTx (false),
     m_congestionControl (0),
-    m_isFirstPartialAck (true),
-    //Process8
-    m_proxyStart (0),
-    m_proxyFin (0)
+    m_isFirstPartialAck (true)
 {
   NS_LOG_FUNCTION (this);
 
   // Process8
   m_proxyHoldBuffer = false;
+  m_proxyStart = 0;
+  m_proxyFin = 0;
 
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
   m_txBuffer = CreateObject<TcpTxBuffer> ();
@@ -1246,6 +1245,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
         {
 	 // Process8
           SendEmptyPacket (TcpHeader::ACK);
+	 // m_rxTrace(packet,tcpHeader,this);
         }
       return;
     }
@@ -1728,7 +1728,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
       // the congestion state machine
        
       // Process8
-      if(!(m_proxyStart < ackNumber && ackNumber < m_proxyFin)) 
+      if(!(m_proxyStart<ackNumber&&ackNumber < m_proxyFin)) 
       {
         DupAck ();
       }
@@ -2653,6 +2653,12 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
 
   Ptr<Packet> p = m_txBuffer->CopyFromSequence (maxSize, seq);
   uint32_t sz = p->GetSize (); // Size of packet
+  
+  if(sz == 0)
+  {
+	return 0;
+  }
+
   uint8_t flags = withAck ? TcpHeader::ACK : 0;
   uint32_t remainingData = m_txBuffer->SizeFromSequence (seq + SequenceNumber32 (sz));
 
@@ -2985,7 +2991,7 @@ TcpSocketBase::SendPendingData (bool withAck)
             }
 
           uint32_t sz = SendDataPacket (m_tcb->m_nextTxSequence, s, withAck);
-          m_tcb->m_nextTxSequence += sz;
+          m_tcb->m_nextTxSequence += sz; 
 
           NS_LOG_LOGIC (" rxwin " << m_rWnd <<
                         " segsize " << m_tcb->m_segmentSize <<
@@ -3007,6 +3013,137 @@ TcpSocketBase::SendPendingData (bool withAck)
       //
       // Done in BytesInFlight, inside AvailableWindow.
       availableWindow = AvailableWindow ();
+
+      // (C.5) If cwnd - pipe >= 1 SMSS, return to (C.1)
+      // loop again!
+    }
+
+  if (nPacketsSent > 0)
+    {
+      NS_LOG_DEBUG ("SendPendingData sent " << nPacketsSent << " segments");
+    }
+  return nPacketsSent;
+}
+
+// Note that this function did not implement the PSH flag
+uint32_t
+TcpSocketBase::SendPendingProxyData (bool withAck)
+{
+  NS_LOG_FUNCTION (this << withAck);
+  if (m_txBuffer->Size () == 0)
+    {
+      return false;                           // Nothing to send
+    }
+  if (m_endPoint == 0 && m_endPoint6 == 0)
+    {
+      NS_LOG_INFO ("TcpSocketBase::SendPendingProxyData: No endpoint; m_shutdownSend=" << m_shutdownSend);
+      return false; // Is this the right way to handle this condition?
+    }
+  
+  uint32_t nPacketsSent = 0;
+  //uint32_t availableWindow = AvailableWindow ();
+
+  AvailableWindow ();
+
+  // RFC 6675, Section (C)
+  // If cwnd - pipe >= 1 SMSS, the sender SHOULD transmit one or more
+  // segments as follows:
+  // (NOTE: We check > 0, and do the checks for segmentSize in the following
+  // else branch to control silly window syndrome and Nagle)
+  //std::cout<<Simulator::Now()<<" Seq: " <<seq<<" Fin: "<<m_proxyFin<<" window: "<<availableWindow<<std::endl; 
+  SequenceNumber32 endPoint =  m_tcb->m_nextTxSequence + 7*m_tcb->m_segmentSize;
+  while (m_tcb->m_nextTxSequence < endPoint||m_tcb->m_nextTxSequence < m_proxyFin)
+    {
+      if (m_tcb->m_congState == TcpSocketState::CA_OPEN
+          && m_state == TcpSocket::FIN_WAIT_1)
+        {
+          NS_LOG_INFO ("FIN_WAIT and OPEN state; no data to transmit");
+          break;
+        }
+      // (C.1) The scoreboard MUST be queried via NextSeg () for the
+      //       sequence number range of the next segment to transmit (if
+      //       any), and the given segment sent.  If NextSeg () returns
+      //       failure (no data to send), return without sending anything
+      //       (i.e., terminate steps C.1 -- C.5).
+      SequenceNumber32 next;
+      if (!m_txBuffer->NextSeg (&next, m_retxThresh, m_tcb->m_segmentSize,
+                                m_tcb->m_congState == TcpSocketState::CA_RECOVERY))
+        {
+          NS_LOG_INFO ("no valid seq to transmit, or no data available");
+          break;
+        }
+      
+        {
+          // It's time to transmit, but before do silly window and Nagle's check
+          //uint32_t availableData = m_txBuffer->SizeFromSequence (next);
+	/*
+          // Stop sending if we need to wait for a larger Tx window (prevent silly window syndrome)
+          if (availableWindow < m_tcb->m_segmentSize &&  availableData > availableWindow)
+            {
+              NS_LOG_LOGIC ("Preventing Silly Window Syndrome. Wait to send.");
+              break; // No more
+            }
+          // Nagle's algorithm (RFC896): Hold off sending if there is unacked data
+          // in the buffer and the amount of data to send is less than one segment
+          if (!m_noDelay && UnAckDataCount () > 0 && availableData < m_tcb->m_segmentSize)
+            {
+              NS_LOG_DEBUG ("Invoking Nagle's algorithm for seq " << next <<
+                            ", SFS: " << m_txBuffer->SizeFromSequence (next) <<
+                            ". Wait to send.");
+              break;
+            }
+	*/
+          uint32_t s = m_tcb->m_segmentSize;
+
+          // (C.2) If any of the data octets sent in (C.1) are below HighData,
+          //       HighRxt MUST be set to the highest sequence number of the
+          //       retransmitted segment unless NextSeg () rule (4) was
+          //       invoked for this retransmission.
+          // (C.3) If any of the data octets sent in (C.1) are above HighData,
+          //       HighData must be updated to reflect the transmission of
+          //       previously unsent data.
+          //
+          // These steps are done in m_txBuffer with the tags.
+          /*
+	  if (m_tcb->m_nextTxSequence != next)
+            {
+              m_tcb->m_nextTxSequence = next;
+            }
+	  */
+
+          uint32_t sz = SendDataPacket (m_tcb->m_nextTxSequence, s, withAck);
+   
+          if(sz == 0)
+          {
+		m_tcb->m_nextTxSequence += m_tcb->m_segmentSize;
+          }
+          else
+          	m_tcb->m_nextTxSequence += sz;
+  
+
+//	  std::cout<<"Forward seq: "<<m_tcb->m_nextTxSequence<<" Size: "<<sz<<" Segment size: "<<s<< std::endl;
+
+          NS_LOG_LOGIC (" rxwin " << m_rWnd <<
+                        " segsize " << m_tcb->m_segmentSize <<
+                        " highestRxAck " << m_txBuffer->HeadSequence () <<
+                        " pd->Size " << m_txBuffer->Size () <<
+                        " pd->SFS " << m_txBuffer->SizeFromSequence (m_tcb->m_nextTxSequence));
+
+          NS_LOG_DEBUG ("cWnd: " << m_tcb->m_cWnd <<
+                        " total unAck: " << UnAckDataCount () <<
+                        " sent seq " << m_tcb->m_nextTxSequence <<
+                        " size " << sz);
+
+          ++nPacketsSent;
+        }
+
+      // (C.4) The estimate of the amount of data outstanding in the
+      //       network must be updated by incrementing pipe by the number
+      //       of octets transmitted in (C.1).
+      //
+      // Done in BytesInFlight, inside AvailableWindow.
+      //availableWindow = 
+	AvailableWindow ();
 
       // (C.5) If cwnd - pipe >= 1 SMSS, return to (C.1)
       // loop again!
@@ -3556,7 +3693,7 @@ TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
     	m_proxyStart = m_txBuffer->HeadSequence();
     	std::cout<<"It's head sequence"<<std::endl;
     }
-
+    
   /*  std::cout<<Simulator::Now()<<"Proxy Start: "<<m_proxyStart<<" Next Seq: "<<m_tcb->m_nextTxSequence<<std::endl;
     tempSeq = m_proxyStart;
     //m_proxyStart = m_txBuffer->HeadSequence();
@@ -3578,8 +3715,9 @@ TcpSocketBase::ProxyBufferRetransmit (SequenceNumber32 seq, bool isFirst)
     		//std::cout<<Simulator::Now()<<"Proxy forwarding is completed"<<std::endl;
   */  	        NS_LOG_LOGIC ("Proxy forwaridng is completed");
 		m_proxyFin = m_tcb->m_nextTxSequence;
+      		std::cout<<"Proxy fin: "<<m_proxyFin<<" Tail: "<<m_txBuffer->TailSequence()<<std::endl;
                 //std::cout<<Simulator::Now()<<"Proxy FIN: "<<m_proxyFin<<std::endl;
-   	 	m_proxyHoldBuffer = false;
+   	 	//m_proxyHoldBuffer = false;
   /* 	 	break;
   	}
   }

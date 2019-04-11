@@ -128,6 +128,9 @@ private:
   uint32_t m_delay;
   Ptr<EpcEnbApplication>m_enbApp;
   Ipv4Header m_Ipv4Header;
+  bool m_forwardMode;
+  SequenceNumber32 m_startPoint;
+  int m_holdBufferCount;
 };
 
 } //namespace ns3

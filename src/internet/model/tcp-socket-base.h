@@ -509,6 +509,20 @@ public:
   // Process_last, for easy access from proxy
   Ptr<TcpSocketState>    m_tcb;               //!< Congestion control informations
 
+  // Process8
+  /**
+   * \brief Return unfilled portion of window
+   * \return unfilled portion of window
+   */
+  virtual uint32_t AvailableWindow (void) const;
+
+
+  SequenceNumber32 m_proxyStart;
+  SequenceNumber32 m_proxyFin;
+
+  uint32_t SendPendingProxyData (bool withAck = false);
+
+
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
@@ -845,13 +859,6 @@ protected:
    * \returns the max possible number of unacked bytes
    */
   virtual uint32_t Window (void) const;
-
-  /**
-   * \brief Return unfilled portion of window
-   * \return unfilled portion of window
-   */
-  virtual uint32_t AvailableWindow (void) const;
-
   /**
    * \brief The amount of Rx window announced to the peer
    * \param scale indicate if the window should be scaled. True for
@@ -1171,11 +1178,6 @@ protected:
 
   TracedCallback<Ptr<const Packet>, const TcpHeader&,
                  Ptr<const TcpSocketBase> > m_rxTrace; //!< Trace of received packets
-
-  // Process8
-  SequenceNumber32 m_proxyStart;
-  SequenceNumber32 m_proxyFin;
-
 };
 
 /**

@@ -1065,8 +1065,8 @@ namespace ns3 {
 					}
 					else*/
 					newSeq = m_rrc->m_prevSeq;
-					newDelay = m_rrc->m_delayX2/(1e10);
-					newInterval = (Simulator::Now().GetDouble() - m_rrc->m_loadInfoRecvTime)/(1e10);
+					newDelay = m_rrc->m_delayX2/(1e9);
+					newInterval = (Simulator::Now().GetDouble() - m_rrc->m_loadInfoRecvTime + m_rrc->m_delayX2)/(1e9);
 
 					std::cout<<"Forward from seq: "<<newSeq<<" delay: "<<newDelay<<" interval: "<<newInterval<<std::endl;
 

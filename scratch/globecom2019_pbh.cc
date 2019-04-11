@@ -426,7 +426,7 @@ Traces(uint16_t nodeNum)
 	int
 main (int argc, char *argv[])
 {
-	ns3::Packet::EnablePrinting();
+	//ns3::Packet::EnablePrinting();
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
@@ -622,9 +622,9 @@ main (int argc, char *argv[])
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 80;
-	double x2Latency= 10;
+	double x2Latency= 20;
 	int BuildingIndex = 1;	
-	string sourceRateString = "1500Mbps";
+	string sourceRateString = "200Mbps";
 
 	// Command line arguments
 	CommandLine cmd;

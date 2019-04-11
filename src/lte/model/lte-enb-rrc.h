@@ -655,6 +655,7 @@ public:
   virtual ~LteEnbRrc ();
 
 
+  //bool m_recvRelease;
   // inherited from Object
 protected:
   virtual void DoDispose (void);
@@ -1561,6 +1562,7 @@ private:
 
   //Process4 - judge whether end marker packet arrived or not
   bool m_isEnd;
+  bool m_isSecond;
   EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
 }; // end of `class LteEnbRrc`
 

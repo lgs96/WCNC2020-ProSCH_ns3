@@ -2229,7 +2229,9 @@ LteEnbRrc::LteEnbRrc() :
 	m_x2_received_cnt = 0;
 	m_switchEnabled = true;
 	m_lteCellId = 0;
-	m_isEnd = true;
+	m_isEnd = false;
+	m_isSecond = false;
+	//m_recvRelease = false;
 }
 
 LteEnbRrc::~LteEnbRrc() {
@@ -3973,9 +3975,12 @@ void LteEnbRrc::DoRecvUeContextRelease(
 
 		GetUeManager(rnti)->RecvUeContextRelease(params);
 		RemoveUe(rnti);
+		m_isSecond = false;
 	}
 	else{
 		NS_LOG_FUNCTION(this);
+
+		m_isSecond = true;
 
 		NS_LOG_LOGIC("Recv X2 message: UE CONTEXT RELEASE, BUT END MARKER NOT ARRIVED YET");
 
@@ -4100,7 +4105,9 @@ void LteEnbRrc::DoRecvUeData(EpcX2SapUser::UeDataParams params) {
 void LteEnbRrc::DoRecvEndMarker(){
 	NS_LOG_LOGIC("Received end marker, release context");
 	m_isEnd = true;
-	DoRecvUeContextRelease(TempContextReleaseParams);
+
+	if(m_isSecond)
+		DoRecvUeContextRelease(TempContextReleaseParams);
 }
 
 uint16_t LteEnbRrc::DoAllocateTemporaryCellRnti() {

@@ -598,7 +598,7 @@ main (int argc, char *argv[])
 
 	double simTime = 10.5;
 	double interPacketInterval = 20;  // 500 microseconds
-	bool harqEnabled = false;
+	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
 	bool fixedTti = false;
 	unsigned symPerSf = 24;
@@ -621,8 +621,8 @@ main (int argc, char *argv[])
 	bool ReadBuilding = true;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 80;
-	double x2Latency= 1;
+	int BuildingNum = 40;
+	double x2Latency= 5;
 	int BuildingIndex = 1;	
 	string sourceRateString = "1500Mbps";
 
@@ -696,7 +696,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);

@@ -241,8 +241,8 @@ protected:
 private:
   TracedValue<uint32_t> m_nBytes;               //!< Number of bytes in the queue
   uint32_t m_nTotalReceivedBytes;               //!< Total received bytes
-  TracedValue<uint32_t> m_nPackets;             //!< Number of packets in the queue
-  uint32_t m_nTotalReceivedPackets;             //!< Total received packets
+  TracedValue<uint64_t> m_nPackets;             //!< Number of packets in the queue
+  uint64_t m_nTotalReceivedPackets;             //!< Total received packets
   uint32_t m_nTotalDroppedBytes;                //!< Total dropped bytes
   uint32_t m_nTotalDroppedBytesBeforeEnqueue;   //!< Total dropped bytes before enqueue
   uint32_t m_nTotalDroppedBytesAfterDequeue;    //!< Total dropped bytes after dequeue
@@ -483,14 +483,14 @@ bool
 Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item)
 {
   QUEUE_LOG (LOG_LOGIC, "Queue:DoEnqueue(" << this << ", " << item << ")");
-
+/*
   if (m_mode == QUEUE_MODE_PACKETS && (m_nPackets.Get () >= m_maxPackets))
     {
       QUEUE_LOG (LOG_LOGIC, "Queue full (at max packets) -- dropping pkt");
       DropBeforeEnqueue (item);
       return false;
     }
-
+*/
   if (m_mode == QUEUE_MODE_BYTES && (m_nBytes.Get () + item->GetSize () > m_maxBytes))
     {
       QUEUE_LOG (LOG_LOGIC, "Queue full (packet would exceed max bytes) -- dropping pkt");

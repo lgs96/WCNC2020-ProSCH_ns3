@@ -826,13 +826,7 @@ namespace ns3 {
 			for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
 														rlcIt != m_rlcMap.end ();
 														++rlcIt)
-			{
-
-				if(!(rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxOnBuffer().empty())&&rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()>2800)
-				{
-					rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBuffer();
-				}
-			}
+			ForwardRlcBuffers(rlcIt->second->m_rlc, 0, rlcIt->second->gtpTeid, 0, 1, 0);
 		}
 	}
 
@@ -1292,7 +1286,7 @@ namespace ns3 {
 								rlcSdu->RemoveHeader(pdcpHeader); //remove pdcp header
 
 								NS_LOG_INFO("Forward to target cell in HO");
-								m_rrc->m_x2SapProvider->SendUeData (params);
+								//m_rrc->m_x2SapProvider->SendUeData (params);
 								NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
 								NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
 								NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
@@ -1302,7 +1296,7 @@ namespace ns3 {
 							else
 							{
 								NS_LOG_INFO("Forward to target cell RLC in HO");
-								m_rrc->m_x2SapProvider->ForwardRlcPdu (params);
+								//m_rrc->m_x2SapProvider->ForwardRlcPdu (params);
 								NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
 								NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
 								NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
@@ -1323,7 +1317,7 @@ namespace ns3 {
 							pdcpParams.rnti = m_rnti;
 							pdcpParams.lcid = Bid2Lcid (bid);
 							pdcpParams.toLte = false;
-							mcPdcp->GetLtePdcpSapProvider()->TransmitPdcpSdu(pdcpParams);
+							//mcPdcp->GetLtePdcpSapProvider()->TransmitPdcpSdu(pdcpParams);
 						}
 					}
 				}
@@ -4202,8 +4196,8 @@ namespace ns3 {
 			uint16_t rnti = GetRntiFromImsi(params.imsi);
 			NS_LOG_LOGIC("Rnti " << rnti);
 			//SendHandoverRequest(rnti, params.targetCellId);
-			//std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
-			//Simulator::Schedule(NanoSeconds(params.delay/2),&LteEnbRrc::SelfLeaving,this,rnti);
+			std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
+			Simulator::Schedule(NanoSeconds(0),&LteEnbRrc::SelfLeaving,this,rnti);
 		}
 
 	void

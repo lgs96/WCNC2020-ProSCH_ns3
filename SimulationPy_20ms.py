@@ -41,7 +41,7 @@ def start_simulation(data):
 
 buildingNumSet = ['20','40','60''80']
 x2DelaySet = ['20']
-throughputSet = ['1500Mbps']
+throughputSet = ['500Mbps']
 schemeSet = ['X2','Proxy','PBH']
 whichScheme = 2
 paramsSet = []

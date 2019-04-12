@@ -613,18 +613,18 @@ main (int argc, char *argv[])
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
 	uint16_t Velocity = 10;
-	std::string scheduler ="MmWaveFlexTtiMacScheduler";
+	std::string scheduler ="MmWaveFlexTtiPfMacScheduler";
 	std::string pathLossModel = "BuildingsObstaclePropagationLossModel";
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
-	bool isRandom = true; //gsoul 180910 for random traffic generate
+	bool isRandom = false; //gsoul 180910 for random traffic generate
 	bool ReadBuilding = true;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 80;
+	int BuildingNum = 20;
 	double x2Latency= 20;
-	int BuildingIndex = 1;	
-	string sourceRateString = "200Mbps";
+	int BuildingIndex =1 ;	
+	string sourceRateString = "500Mbps";
 
 	// Command line arguments
 	CommandLine cmd;

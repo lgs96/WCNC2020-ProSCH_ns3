@@ -284,11 +284,11 @@ namespace ns3 {
 		EpcEnbProxyApplication::GetArrivalRate ()
 		{
 			NS_LOG_FUNCTION (this);
-			m_arrivalRate = (m_totalRx - m_lastTotalRx)/(double)(0.01);
+			m_arrivalRate = (m_totalRx - m_lastTotalRx)/(double)(0.05);
 			m_count++;
 			m_lastTotalRx = m_totalRx;
 			//std::cout<<"Arrival rate is "<<m_arrivalRate<<std::endl;
-			Simulator::Schedule(MilliSeconds(10),&EpcEnbProxyApplication::GetArrivalRate,this);
+			Simulator::Schedule(MilliSeconds(50),&EpcEnbProxyApplication::GetArrivalRate,this);
 		}
 
 	void
@@ -296,7 +296,7 @@ namespace ns3 {
 		{
 			NS_LOG_FUNCTION (this);
 			m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
-			m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.01);
+			m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.05);
 			if(m_currentAvailable < m_lastAvailable)
 			{
 				m_departureRate = 0;
@@ -304,7 +304,7 @@ namespace ns3 {
 			m_count_dep++;
 			m_lastAvailable = m_currentAvailable;
 			//std::cout<<"Departure rate is "<<m_departureRate<<std::endl;
-			Simulator::Schedule(MilliSeconds(10),&EpcEnbProxyApplication::GetDepartureRate,this);
+			Simulator::Schedule(MilliSeconds(50),&EpcEnbProxyApplication::GetDepartureRate,this);
 		}
 
 	void
@@ -357,7 +357,8 @@ namespace ns3 {
 			m_startPoint = m_tcb->m_nextTxSequence - SequenceNumber32(newSeq);
 			m_startPoint = m_startPoint - SequenceNumber32(m_startPoint.GetValue()%m_tcb->m_segmentSize) + 1;
 			
-			//if(proxyTxBuffer->TailSequence() > SequenceNumber32(2*proxyTxBuffer->HeadSequence().GetValue())) 
+			if(proxyTxBuffer->TailSequence() > SequenceNumber32(2*proxyTxBuffer->HeadSequence().GetValue())) 
+				m_startPoint = proxyTxBuffer->HeadSequence();
 			//	m_startPoint = proxyTxBuffer->HeadSequence();
 
 			if((m_startPoint < proxyTxBuffer->HeadSequence()|| m_startPoint > m_tcb->m_nextTxSequence||m_startPoint > proxyTxBuffer->TailSequence()))

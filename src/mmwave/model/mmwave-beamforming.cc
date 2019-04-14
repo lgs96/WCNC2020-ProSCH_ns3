@@ -196,7 +196,7 @@ MmWaveBeamforming::LoadFile()
 void
 MmWaveBeamforming::LoadSmallScaleFading ()
 {
-	std::string filename = "src/mmwave/model/BeamFormingMatrix/SmallScaleFading.txt";
+	std::string filename = "/home/gslee2/ns3-mmwave/src/mmwave/model/BeamFormingMatrix/SmallScaleFading.txt";
 	NS_LOG_FUNCTION (this << "Loading SmallScaleFading file " << filename);
 	std::ifstream singlefile;
 	singlefile.open (filename.c_str (), std::ifstream::in);
@@ -224,7 +224,7 @@ MmWaveBeamforming::LoadSmallScaleFading ()
 void
 MmWaveBeamforming::LoadEnbAntenna ()
 {
-	std::string filename = "src/mmwave/model/BeamFormingMatrix/TxAntenna.txt";
+	std::string filename = "/home/gslee2/ns3-mmwave/src/mmwave/model/BeamFormingMatrix/TxAntenna.txt";
 	NS_LOG_FUNCTION (this << "Loading TxAntenna file " << filename);
 	std::ifstream singlefile;
 	std::complex<double> complexVar;
@@ -252,7 +252,7 @@ MmWaveBeamforming::LoadEnbAntenna ()
 void
 MmWaveBeamforming::LoadUeAntenna ()
 {
-	std::string filename = "src/mmwave/model/BeamFormingMatrix/RxAntenna.txt";
+	std::string filename = "/home/gslee2/ns3-mmwave/src/mmwave/model/BeamFormingMatrix/RxAntenna.txt";
 	NS_LOG_FUNCTION (this << "Loading RxAntenna file " << filename);
 	std::ifstream singlefile;
 	std::complex<double> complexVar;
@@ -280,7 +280,7 @@ MmWaveBeamforming::LoadUeAntenna ()
 void
 MmWaveBeamforming::LoadEnbSpatialSignature ()
 {
-	std::string filename = "src/mmwave/model/BeamFormingMatrix/TxSpatialSigniture.txt";
+	std::string filename = "/home/gslee2/ns3-mmwave/src/mmwave/model/BeamFormingMatrix/TxSpatialSigniture.txt";
 	NS_LOG_FUNCTION (this << "Loading TxspatialSigniture file " << filename);
 	std::ifstream singlefile;
 	std::string line;
@@ -316,7 +316,7 @@ MmWaveBeamforming::LoadEnbSpatialSignature ()
 void
 MmWaveBeamforming::LoadUeSpatialSignature ()
 {
-	std::string strFilename = "src/mmwave/model/BeamFormingMatrix/RxSpatialSigniture.txt";
+	std::string strFilename = "/home/gslee2/ns3-mmwave/src/mmwave/model/BeamFormingMatrix/RxSpatialSigniture.txt";
 	NS_LOG_FUNCTION (this << "Loading RxspatialSigniture file " << strFilename);
 	std::ifstream singlefile;
 	std::complex<double> complexVar;
@@ -406,7 +406,7 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 {
 	key_t key = std::make_pair(ueDevice,enbDevice);
 	int randomInstance = m_uniformRV->GetValue (0, g_numInstance-1);
-	NS_LOG_UNCOND ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
+	//NS_LOG_UNCOND ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
 
 	Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
 	bfParams->m_enbW = g_enbAntennaInstance.at (randomInstance);

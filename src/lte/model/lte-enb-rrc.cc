@@ -3400,8 +3400,12 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 				} else if (m_handoverMode == FIXED_TTT
 						|| m_handoverMode == DYNAMIC_TTT) {
 					m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
-					TttBasedHandover(imsiIter, sinrDifference, maxSinrCellId,
-							maxSinrDb);
+					if(Simulator::Now().GetSeconds()>0.6)
+					{
+						//std::cout<<Simulator::Now().GetSeconds()<<std::endl;
+						TttBasedHandover(imsiIter, sinrDifference, maxSinrCellId,
+								maxSinrDb);
+					}
 				} else {
 					NS_FATAL_ERROR("Unsupported HO mode");
 				}

@@ -255,11 +255,10 @@ double instantPacketSize[100], packetRxTime[100], lastPacketRxTime[100];
 double sumPacketSize[100];
 
 static void
-Rx (Ptr<OutputStreamWrapper> stream, uint16_t i, Ptr<const Packet> packet, const Address &from){
+Rx (Ptr<OutputStreamWrapper> stream, uint16_t i, uint32_t downloadSize, Ptr<const Packet> packet, const Address &from){
 	packetRxTime[i] = Simulator::Now().GetSeconds();
 	if (lastPacketRxTime[i] == packetRxTime[i]){
 		instantPacketSize[i] += packet->GetSize();
-		return;
 	}
 	else{
 		sumPacketSize[i] += instantPacketSize[i];
@@ -268,6 +267,15 @@ Rx (Ptr<OutputStreamWrapper> stream, uint16_t i, Ptr<const Packet> packet, const
 		lastPacketRxTime[i] =  packetRxTime[i];
 		instantPacketSize[i] = packet->GetSize();
 	}
+	// FTP
+	if (sumPacketSize[i] >= downloadSize*1024*1024)
+	{
+		*stream->GetStream () << lastPacketRxTime[i] << "\t" << instantPacketSize[i] << "\t" << sumPacketSize[i]
+			<< std::endl;
+		std::cout<<Simulator::Now()<<" FTP finished"<<std::endl;
+		Simulator::Stop();
+		Simulator::Destroy();
+	}	
 }
 
 uint64_t lastTotalRx[100];
@@ -608,7 +616,7 @@ main (int argc, char *argv[])
 	double  mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double EnbTxPower = 30;
+	double EnbTxPower = 32;
 	double UeTxPower = 25;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
@@ -624,7 +632,8 @@ main (int argc, char *argv[])
 	int BuildingNum = 40;
 	double x2Latency= 10;
 	int BuildingIndex = 1;	
-	string sourceRateString = "500Mbps";
+	string sourceRateString = "1500Mbps";
+	uint32_t downloadSize = 10;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -646,6 +655,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
+	cmd.AddValue("downloadSize","download size (MB)",downloadSize);
 
 	cmd.Parse(argc, argv);
 	// Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
@@ -696,7 +706,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -740,7 +750,7 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
+		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.020)));
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 		//		p2ph.EnablePcapAll("Tcp_highspeed");		
 
@@ -982,7 +992,7 @@ main (int argc, char *argv[])
 				fileName<<"UserData"<<u+1<<".txt";
 				AsciiTraceHelper asciiTraceHelper;
 				Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
-				serverApps.Get(u)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream,u));
+				serverApps.Get(u)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream,u,downloadSize));
 
 				std::ostringstream fileName_2;
 				fileName_2<<"Throughput" << u+1 <<".txt";
@@ -991,8 +1001,8 @@ main (int argc, char *argv[])
 				Simulator::Schedule (Seconds (ueStartTime+u*ueGapTime), &CalculateThroughput,stream_2,serverApps.Get(u)->GetObject<PacketSink>(),u);
 
 				//TCP server/user tracing for single user
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
+				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
+				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));
@@ -1029,7 +1039,7 @@ main (int argc, char *argv[])
 				fileName<<"udp_data_ue_gsoul_no_dupl"<<u+1<<".txt";
 				AsciiTraceHelper asciiTraceHelper;
 				Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
-				serverApps.Get(u)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream,u));
+				serverApps.Get(u)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream,u,downloadSize));
 
 				std::ostringstream fileName_2;
 				fileName_2<<"udp_throughput_ue_gsoul" << u+1 <<".txt";
@@ -1052,7 +1062,7 @@ main (int argc, char *argv[])
 			}
 		}
 	}
-	AsciiTraceHelper asciiTraceHelper;
+/*	AsciiTraceHelper asciiTraceHelper;
 
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
@@ -1071,7 +1081,7 @@ main (int argc, char *argv[])
 
 	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream ("proxyRto.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTO", MakeBoundCallback (&RTOChange, stream6));
-
+*/
 
 
 	mmwaveHelper -> EnableTraces();

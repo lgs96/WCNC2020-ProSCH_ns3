@@ -887,7 +887,8 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					}
 					NS_LOG_DEBUG ("Total MAC PDU size " << pduMapIt->second.m_pdu->GetSize());
 					harqIt->second.at (tbUid).m_pktBurst->AddPacket (pduMapIt->second.m_pdu);
-
+					//pduMapIt->second.m_pdu->Print(std::cout);
+					//std::cout<<std::endl;
 					m_phySapProvider->SendMacPdu (pduMapIt->second.m_pdu);
 					m_macPduMap.erase (pduMapIt);  // delete map entry
 				}

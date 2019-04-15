@@ -437,6 +437,16 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 			ChangeState (RX_DATA);
 			if (params->packetBurst && !params->packetBurst->GetPackets ().empty ())
 			{
+				
+		
+				std::list< Ptr<Packet> > pkts = params->packetBurst->GetPackets ();
+		/*	
+ 				for(std::list<Ptr<Packet>>::iterator iter = pkts.begin();iter!=pkts.end();iter++)
+				{
+					(*iter)->Print(std::cout);
+					std::cout<<std::endl;
+				}
+		*/
 				m_rxPacketBurstList.push_back (params->packetBurst);
 			}
 			//NS_LOG_DEBUG (this << " insert msgs " << params->ctrlMsgList.size ());
@@ -602,6 +612,11 @@ MmWaveSpectrumPhy::EndRxData ()
 	{
 		for (std::list<Ptr<Packet> >::const_iterator j = (*i)->Begin (); j != (*i)->End (); ++j)
 		{
+			
+			//std::cout<<"Rx phy"<<std::endl;
+			//(*j)->Print(std::cout);
+			//std::cout<<std::endl;
+
 			if ((*j)->GetSize () == 0)
 			{
 				continue;

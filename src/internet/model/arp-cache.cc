@@ -67,12 +67,12 @@ ArpCache::GetTypeId (void)
     .AddAttribute ("MaxRetries",
                    "Number of retransmissions of ArpRequest "
                    "before marking dead",
-                   UintegerValue (3),
+                   UintegerValue (UINT32_MAX),
                    MakeUintegerAccessor (&ArpCache::m_maxRetries),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("PendingQueueSize",
                    "The size of the queue for packets pending an arp reply.",
-                   UintegerValue (3),
+                   UintegerValue (UINT32_MAX),
                    MakeUintegerAccessor (&ArpCache::m_pendingQueueSize),
                    MakeUintegerChecker<uint32_t> ())
     .AddTraceSource ("Drop",

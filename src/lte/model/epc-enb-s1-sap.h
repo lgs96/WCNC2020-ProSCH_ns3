@@ -60,6 +60,7 @@ public:
   //Process8
   virtual void DoSendProxyForwardingRequest(uint32_t seq, double delay, double interval) = 0;
   virtual void DoSendProxyHoldRequest() = 0;
+  virtual void DoSendProxyReleaseRequest() = 0;
 
   struct BearerToBeSwitched
   {
@@ -155,6 +156,7 @@ public:
   //Process8
   virtual void DoSendProxyForwardingRequest(uint32_t seq, double delay, double interval);
   virtual void DoSendProxyHoldRequest();
+  virtual void DoSendProxyReleaseRequest();
 
   virtual void PathSwitchRequest (PathSwitchRequestParameters params);
   virtual void UeContextRelease (uint16_t rnti);
@@ -199,6 +201,12 @@ template <class C>
 void MemberEpcEnbS1SapProvider<C>::DoSendProxyHoldRequest ()
 {
   m_owner->DoProxyHoldRequest();
+}
+
+template <class C>
+void MemberEpcEnbS1SapProvider<C>::DoSendProxyReleaseRequest ()
+{
+  m_owner->DoProxyReleaseRequest();
 }
 //////////////
 

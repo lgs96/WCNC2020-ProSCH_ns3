@@ -2900,6 +2900,9 @@ bool RoutingProtocol::RouteInput  (Ptr<const Packet> p,
   // Consume self-originated packets
   if (IsMyOwnAddress (origin) == true)
     {
+      p->Print(std::cout);
+      std::cout<<std::endl;
+      std::cout<<"goodsol"<<std::endl;
       return true;
     }
 

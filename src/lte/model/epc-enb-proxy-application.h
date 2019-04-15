@@ -94,6 +94,7 @@ public:
   //Process8
   void ForwardingProxy (uint32_t seq, double delay, double interval);
   void HoldProxyBuffer();
+  void ReleaseProxyBuffer();
   void GetArrivalRate ();
   void GetDepartureRate ();
 	

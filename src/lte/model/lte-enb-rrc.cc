@@ -826,7 +826,13 @@ namespace ns3 {
 			for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
 														rlcIt != m_rlcMap.end ();
 														++rlcIt)
-			ForwardRlcBuffers(rlcIt->second->m_rlc, 0, rlcIt->second->gtpTeid, 0, 1, 0);
+			{
+				std::cout<<"RLC buffer size: "<<rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()
+				<<" "<<rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxedBufferSize()
+				<<" "<<rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetRetxBufferSize()<<std::endl;
+
+				ForwardRlcBuffers(rlcIt->second->m_rlc, 0, rlcIt->second->gtpTeid, 0, 1, 0);
+			}
 		}
 	}
 
@@ -993,7 +999,7 @@ namespace ns3 {
 				{
 					//std::cout<<Simulator::Now()<<" Proxy based handover: Received handover ack, start centralized handover"<<std::endl;
 					//#1 Path switching
-
+					
 					for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
 										it != m_drbMap.end (); ++it)
 					{
@@ -1038,7 +1044,7 @@ namespace ns3 {
 							NS_LOG_INFO("No difference with the MC Bearer already defined"); // TODO consider bearer modifications
 						}
 					}
-
+					
 					//#2 Send handover request ack to source cell
 					Ptr<Packet> encodedHandoverCommand = params.rrcContext->Copy();
 					LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
@@ -1085,6 +1091,9 @@ namespace ns3 {
 				m_handoverLeavingTimeout = Simulator::Schedule (m_rrc->m_handoverLeavingTimeoutDuration,
 										&LteEnbRrc::HandoverLeavingTimeout,
 										m_rrc, m_rnti);
+			
+				std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
+				m_rrc->SelfLeaving(m_rnti);
 			}
 		}
 
@@ -1417,13 +1426,13 @@ namespace ns3 {
 							NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
 							NS_LOG_LOGIC ("ueData = " << params.ueData);
 							NS_LOG_LOGIC ("ueData size = " << params.ueData->GetSize ());
-							m_rrc->m_x2SapProvider->SendUeData (params);
+							//m_rrc->m_x2SapProvider->SendUeData (params);
 						}
 						//m_x2forwardingBuffer is not empty, append incomming pkts to m_x2forwardingBuffer.
 						//Forwarding of this m_x2forwardingBuffer is done in RecvHandoverRequestAck
 						else{
 							NS_LOG_INFO ("append incomming pkts to m_x2forwardingBuffer");
-							m_x2forwardingBuffer.push_back(p);
+							//m_x2forwardingBuffer.push_back(p);
 							//NS_LOG_DEBUG("Forwarding but push_bach to buffer SEQ = " << pdcpHeader.GetSequenceNumber());
 						}
 					}
@@ -1535,6 +1544,7 @@ namespace ns3 {
 			NS_ASSERT_MSG (m_state == HANDOVER_LEAVING, "method unexpected in state " << ToString (m_state));
 			m_handoverLeavingTimeout.Cancel ();
 			NS_LOG_INFO("Remove UE " << m_rnti << " from eNB " << m_rrc->m_cellId);
+						
 			if(m_rrc->m_ismmWave && m_isMc)
 			{
 				for (std::map<uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin(); rlcIt != m_rlcMap.end(); ++rlcIt)
@@ -2147,6 +2157,7 @@ namespace ns3 {
 				}  
 			}
 			*/
+			m_rrc->m_s1SapProvider-> DoSendProxyReleaseRequest ();
 
 			m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
 			// send ContextRelease to the old mmWave eNB
@@ -4196,8 +4207,8 @@ namespace ns3 {
 			uint16_t rnti = GetRntiFromImsi(params.imsi);
 			NS_LOG_LOGIC("Rnti " << rnti);
 			//SendHandoverRequest(rnti, params.targetCellId);
-			std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
-			Simulator::Schedule(NanoSeconds(0),&LteEnbRrc::SelfLeaving,this,rnti);
+			//std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
+			//Simulator::Schedule(NanoSeconds(0),&LteEnbRrc::SelfLeaving,this,rnti);
 		}
 
 	void

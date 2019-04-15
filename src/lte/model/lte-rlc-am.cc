@@ -999,7 +999,8 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   while (it < dataField.end ())
     {
       NS_LOG_LOGIC ("Adding SDU/segment to packet, length = " << (*it)->GetSize ());
-
+     // (*it)->Print(std::cout);
+     // std::cout<<std::endl;
       packet->AddAtEnd (*it);
       it++;
     }
@@ -1779,6 +1780,10 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
+  //std::cout<<"Area of RLC"<<std::endl;
+  //p->Print(std::cout);
+  //std::cout<<std::endl;
+
   // Receiver timestamp
   RlcTag rlcTag;
   Time delay;
@@ -1896,7 +1901,13 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
 
       // - if x falls outside of the receiving window; or
       // - if byte segment numbers y to z of the AMD PDU with SN = x have been received before:
-      if ( ! IsInsideReceivingWindow (seqNumber) )
+      /* while ( ! IsInsideReceivingWindow (seqNumber) )
+       {
+          seqNumber = seqNumber + 1;
+       }*/
+
+
+      if(!IsInsideReceivingWindow(seqNumber))
         {
           NS_LOG_LOGIC ("PDU discarded");
           return;

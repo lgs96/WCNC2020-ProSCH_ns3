@@ -1406,6 +1406,7 @@ MmWaveEnbPhy::EndSubFrame (void)
 void
 MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo& slotInfo)
 {
+	//std::cout<<Simulator::Now()<<this<<" send phy data"<<std::endl;
 	if (slotInfo.m_isOmni)
 	{
 		Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());

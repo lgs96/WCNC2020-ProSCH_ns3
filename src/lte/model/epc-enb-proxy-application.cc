@@ -189,6 +189,7 @@ namespace ns3 {
 					proxyTxBuffer->Add(packet);
 					//NS_ASSERT(isIn==true);
 					m_holdBufferCount++;
+					//std::cout<<Simulator::Now()<<" "<<m_holdBufferCount<<" buffered"<<std::endl;
 					Ptr<TcpSocketState> m_tcb = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb;	
 				//        std::cout<<"Next seq: " << m_startPoint << " proxyFin: " << m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin<<" Real next seq: "<<m_tcb->m_nextTxSequence<<std::endl;
 					
@@ -347,7 +348,7 @@ namespace ns3 {
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket -> GetTxBuffer();
 		
-			uint32_t newSeq = seq + (interval + delay) * m_arrivalRate;		
+			uint32_t newSeq = seq;// + (interval + delay) * m_arrivalRate;		
 	
 			std::cout<<"Head seq: "<<proxyTxBuffer->HeadSequence()<<std::endl;
 			std::cout<<"Additional: "<<(interval + delay) * m_arrivalRate<<std::endl;
@@ -359,7 +360,8 @@ namespace ns3 {
 			
 			if(proxyTxBuffer->TailSequence() > SequenceNumber32(2*proxyTxBuffer->HeadSequence().GetValue())) 
 				m_startPoint = proxyTxBuffer->HeadSequence();
-			//	m_startPoint = proxyTxBuffer->HeadSequence();
+			
+			//m_startPoint = proxyTxBuffer->HeadSequence();
 
 			if((m_startPoint < proxyTxBuffer->HeadSequence()|| m_startPoint > m_tcb->m_nextTxSequence||m_startPoint > proxyTxBuffer->TailSequence()))
 			{
@@ -398,6 +400,15 @@ namespace ns3 {
 			std::cout << Simulator::Now() <<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
 
 			m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = true;
+		}
+
+	void
+		EpcEnbProxyApplication::ReleaseProxyBuffer()
+		{
+			NS_LOG_FUNCTION (this);
+			//std::cout<< Simulator::Now() <<" Handove is completed. Release "<<m_holdBufferCount<<" proxy buffer."<<std::endl;
+
+			//m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = false;
 		}
 
 	void 

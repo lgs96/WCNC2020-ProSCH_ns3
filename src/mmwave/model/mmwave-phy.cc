@@ -228,6 +228,8 @@ MmWavePhy::SetMacPdu (Ptr<Packet> p)
 			NS_FATAL_ERROR ("Packet burst map entry already exists");
 		}
 		it->second->AddPacket (p);
+	 	//p->Print(std::cout);
+		//std::cout<<std::endl;
 	}
 	else
 	{

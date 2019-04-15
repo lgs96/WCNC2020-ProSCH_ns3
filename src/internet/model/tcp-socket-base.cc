@@ -1672,7 +1672,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
   // RFC 6675, Section 5, point (C), try to send more data. NB: (C) is implemented
   // inside SendPendingData
-  SendPendingData (m_connected);
+  if (!m_proxyHoldBuffer)
+      SendPendingData (m_connected);
 
   // If there is any data piggybacked, store it into m_rxBuffer
   if (packet->GetSize () > 0)

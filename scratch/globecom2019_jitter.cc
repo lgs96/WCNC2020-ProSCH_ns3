@@ -426,7 +426,7 @@ Traces(uint16_t nodeNum)
 	int
 main (int argc, char *argv[])
 {
-	ns3::Packet::EnablePrinting();
+	//ns3::Packet::EnablePrinting();
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
@@ -435,9 +435,9 @@ main (int argc, char *argv[])
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
 	//LogComponentEnable("LtePdcp", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
+	// LogComponentEnable ("MmWaveSpectrumPhy", LOG_FUNCTION);
+	// LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
+	//LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
 	//LogComponentEnable ("LteUeMac", LOG_FUNCTION);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
@@ -561,7 +561,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
 	// LogComponentEnable("EpcMme", LOG_FUNCTION);
 	//LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
-	//LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_FUNCTION);
 	//  LogComponentEnable("AntennaArrayModel", LOG_FUNCTION);
 	// LogComponentEnable("UdpServer", LOG_LEVEL_INFO);
 	//LogComponentEnable("UdpClient", LOG_LEVEL_INFO);
@@ -618,14 +618,13 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = true;
-	bool isInCar = true;
+	bool ReadBuilding = false;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 60;
-	double x2Latency= 20;
-	int BuildingIndex = 14 ;	
-	string sourceRateString = "1000Mbps";
+	int BuildingNum = 40;
+	double x2Latency= 10;
+	int BuildingIndex = 1;	
+	string sourceRateString = "500Mbps";
 
 	// Command line arguments
 	CommandLine cmd;
@@ -673,7 +672,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	// Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteEnbNetDevice::UlBandwidth",UintegerValue(100));//20MHz bandwidth
-	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
@@ -689,7 +688,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -697,8 +696,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);

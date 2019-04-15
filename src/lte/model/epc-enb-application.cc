@@ -634,6 +634,13 @@ EpcEnbApplication::DoProxyHoldRequest()
   m_proxyApp -> HoldProxyBuffer();
 }
 
+void
+EpcEnbApplication::DoProxyReleaseRequest()
+{
+  NS_LOG_FUNCTION(this);
+  m_proxyApp -> ReleaseProxyBuffer();
+}
+
 
 
 

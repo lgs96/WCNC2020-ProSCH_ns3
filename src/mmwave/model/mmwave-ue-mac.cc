@@ -493,6 +493,10 @@ void
 MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 {
 	NS_LOG_FUNCTION (this);
+
+        //p->Print(std::cout);
+	//std::cout<<std::endl;
+
 	LteRadioBearerTag tag;
 	p->RemovePacketTag (tag);
 	MmWaveMacPduHeader macHeader;

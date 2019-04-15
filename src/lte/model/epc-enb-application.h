@@ -175,6 +175,7 @@ private:
   //Process8 just for definition
   void DoProxyForwardingRequest(uint32_t seq, double delay, double interval);
   void DoProxyHoldRequest();
+  void DoProxyReleaseRequest();
 
   /**
    * Send a packet to the UE via the LTE radio interface of the eNB

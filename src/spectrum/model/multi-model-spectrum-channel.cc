@@ -361,8 +361,19 @@ MultiModelSpectrumChannel::StartTx (Ptr<SpectrumSignalParameters> txParams)
                       delay = m_propagationDelay->GetDelay (txMobility, receiverMobility);
                     }
                 }
+		
+              
 
-              Ptr<NetDevice> netDev = (*rxPhyIterator)->GetDevice ();
+	/*
+			std::list< Ptr<Packet> > pkts = rxParams->GetObject<MmWaveSpectrumSignalParameters>()->packetBurst->GetPackets ();
+			
+ 			for(std::list<Ptr<Packet>>::iterator iter = pkts.begin();iter!=pkts.end();iter++)
+			{
+				iter->Print(std::cout);
+				std::cout<<std::endl;
+			}
+	  */    
+	      Ptr<NetDevice> netDev = (*rxPhyIterator)->GetDevice ();
               if (netDev)
                 {
                   // the receiver has a NetDevice, so we expect that it is attached to a Node

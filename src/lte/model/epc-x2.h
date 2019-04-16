@@ -145,6 +145,7 @@ public:
    * \param socket socket of the X2-C interface
    */
   void RecvFromX2cSocket (Ptr<Socket> socket);
+  void RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint16_t localCellId);
 
   /** 
    * Method to be assigned to the recv callback of the X2-U (X2 User Plane) socket.
@@ -153,6 +154,7 @@ public:
    * \param socket socket of the X2-U interface
    */
   void RecvFromX2uSocket (Ptr<Socket> socket);
+  void RecvFromX2uDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint16_t localCellId);
 
   /**
    * TracedCallback signature for
@@ -240,6 +242,8 @@ private:
   //Process4
   bool m_isEnd;
   EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
+
+  bool m_isMinimum;
 
 };
 

@@ -41,12 +41,11 @@ def start_simulation(data):
 
 buildingNumSet =['20','40','60','80']
 x2DelaySet = ['1']
-throughputSet = ['1000Mbps']
-downloadSize = ['100']
+throughputSet = ['300Mbps']
 schemeSet = ['X2','Proxy','PBH']
 whichScheme = 1
 paramsSet = []
-for  i in range(8,10,1):
+for  i in range(4,10,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]

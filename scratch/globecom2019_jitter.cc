@@ -1,5 +1,5 @@
 /*s program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License version 2 as
+ * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
  *
  * This program is distributed in the hope that it will be useful,
@@ -240,14 +240,14 @@ MyApp::RandomPacket(void)
    {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
  }
-*/
+
 
  static void
  RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
  {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
  }
- 
+ */
 
 
 
@@ -286,19 +286,19 @@ CalculateThroughput (Ptr<OutputStreamWrapper> stream, Ptr<PacketSink> sink, uint
 }
 
 
-/*
+
 	static void 
 Ssthresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSsthresh, uint32_t newSsthresh)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
 }
-*/
+
 	void
 ChangeSpeed(Ptr<Node>  n, Vector speed)
 {
 	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
 }
-/*	static void
+	static void
 CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
@@ -319,7 +319,7 @@ Reset_ack(Ptr<OutputStreamWrapper> stream, uint16_t i)
 	*stream->GetStream () << Simulator::Now().GetSeconds()<<"\t"<<ack_throughput[i]/1e5<<std::endl;	
 	ack_throughput[i] = 0;
 	Simulator::Schedule (MilliSeconds(100), &Reset_ack,stream,i);
-}*/
+}
 /*
 	static void
 RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
@@ -327,7 +327,7 @@ RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> p
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
 }
 */
-/*	static void
+	static void
 GetRx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
 {
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
@@ -344,7 +344,7 @@ RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 {
 	*stream->GetStream () <<Simulator::Now().GetSeconds() << "\t" <<oldrto.GetSeconds()<<"\t"<<newrto.GetSeconds()<<std::endl;
 }
-*/
+
 	static void
 Traces(uint16_t nodeNum)
 {
@@ -360,18 +360,18 @@ Traces(uint16_t nodeNum)
 	{
 	  nodeName = "UE";	
 	}
-/*	std::ostringstream pathCW;
+	std::ostringstream pathCW;
 	pathCW<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow";
 
 	std::ostringstream fileCW;
 	fileCW<<nodeName<<"_Cwnd.txt";
-*/
+
 	std::ostringstream pathRTT;
 	pathRTT<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RTT";
 
 	std::ostringstream fileRTT;
 	fileRTT<<nodeName<<"_Rtt.txt";
-/*
+
 	std::ostringstream pathSST;
 	pathSST<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/SlowStartThreshold";
 
@@ -398,15 +398,15 @@ Traces(uint16_t nodeNum)
 
 	Ptr<OutputStreamWrapper> stream5 = asciiTraceHelper.CreateFileStream (fileRx.str ().c_str ());
 	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream (fileTx.str ().c_str ());
-*/
+
 	if(nodeNum == 0)
 	{
-/*	  Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (fileCW.str ().c_str ());
+	  Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (fileCW.str ().c_str ());
 	  Config::ConnectWithoutContext (pathCW.str ().c_str (), MakeBoundCallback(&CwndChange, stream1));
-*/
+
 	  Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream (fileRTT.str ().c_str ());
 	  Config::ConnectWithoutContext (pathRTT.str ().c_str (), MakeBoundCallback(&RttChange, stream2));
-/*
+
 	  Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream (fileSST.str ().c_str ());
 	  Config::ConnectWithoutContext (pathSST.str ().c_str (), MakeBoundCallback(&Ssthresh, stream4));
 
@@ -414,13 +414,13 @@ Traces(uint16_t nodeNum)
 	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetTx, stream6));
 
 	  Ptr<OutputStreamWrapper> stream7 = asciiTraceHelper.CreateFileStream (fileRTO.str ().c_str ());
-	  Config::ConnectWithoutContext (pathRTO.str ().c_str (), MakeBoundCallback(&RTOChange, stream7));*/
+	  Config::ConnectWithoutContext (pathRTO.str ().c_str (), MakeBoundCallback(&RTOChange, stream7));
 	}	
-/*	else
+	else
 	{
 	  Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetTx, stream5)); 	
 	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
-	}*/
+	}
 }
 
 	int
@@ -435,9 +435,9 @@ main (int argc, char *argv[])
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
 	//LogComponentEnable("LtePdcp", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-	//LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
+	// LogComponentEnable ("MmWaveSpectrumPhy", LOG_FUNCTION);
+	// LogComponentEnable ("MmWaveUeMac", LOG_FUNCTION);
+	//LogComponentEnable ("MmWaveEnbMac", LOG_FUNCTION);
 	//LogComponentEnable ("LteUeMac", LOG_FUNCTION);
 	// LogComponentEnable ("LteEnbMac", LOG_FUNCTION);
 	//  LogComponentEnable ("LteEnbMac", LOG_INFO);
@@ -561,7 +561,7 @@ main (int argc, char *argv[])
 	// LogComponentEnable("EpcMmeApplication", LOG_FUNCTION);
 	// LogComponentEnable("EpcMme", LOG_FUNCTION);
 	//LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
-	//LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_LEVEL_LOGIC);
+	//LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_FUNCTION);
 	//  LogComponentEnable("AntennaArrayModel", LOG_FUNCTION);
 	// LogComponentEnable("UdpServer", LOG_LEVEL_INFO);
 	//LogComponentEnable("UdpClient", LOG_LEVEL_INFO);
@@ -618,12 +618,11 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = true;
-	bool isInCar = true;
+	bool ReadBuilding = false;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 80;
-	double x2Latency= 20;
+	int BuildingNum = 40;
+	double x2Latency= 10;
 	int BuildingIndex = 1;	
 	string sourceRateString = "500Mbps";
 
@@ -673,7 +672,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	// Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteEnbNetDevice::UlBandwidth",UintegerValue(100));//20MHz bandwidth
-	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
@@ -689,7 +688,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -697,8 +696,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -742,7 +740,7 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.030)));
+		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 		//		p2ph.EnablePcapAll("Tcp_highspeed");		
 
@@ -994,7 +992,7 @@ main (int argc, char *argv[])
 
 				//TCP server/user tracing for single user
 				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
-				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
+				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));
@@ -1054,8 +1052,8 @@ main (int argc, char *argv[])
 			}
 		}
 	}
-//	AsciiTraceHelper asciiTraceHelper;
-/*
+/*	AsciiTraceHelper asciiTraceHelper;
+
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 

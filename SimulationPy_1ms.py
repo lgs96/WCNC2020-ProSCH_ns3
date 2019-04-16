@@ -4,6 +4,7 @@ import sys
 import os
 import subprocess
 from multiprocessing import Pool
+	
 
 def start_simulation(data):
 	buildingIndex =data[0]
@@ -38,13 +39,13 @@ def start_simulation(data):
 #		params.append([run, j+1, homes])
 #	run += 1
 
-buildingNumSet = ['20','40']
-x2DelaySet = ['1', '5', '10' ,'20']
-throughputSet = ['1500Mbps']
+buildingNumSet =['20','40','60','80']
+x2DelaySet = ['1','5']
+throughputSet = ['500Mbps']
 schemeSet = ['X2','Proxy','PBH']
 whichScheme = 0
 paramsSet = []
-for  i in range(2,10,1):
+for  i in range(0,10,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]
@@ -54,7 +55,6 @@ for  i in range(2,10,1):
 			scheme = schemeSet[whichScheme]
 			params = [index,x2Delay,buildingNum,throughput,scheme]
 			paramsSet.append(params)
-
 # run)
 for i in range(len(paramsSet)):
 	start_simulation(paramsSet[i])

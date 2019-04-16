@@ -1560,7 +1560,9 @@ private:
 
   //Process4 - judge whether end marker packet arrived or not
   bool m_isEnd;
+  bool m_isSecond;
   EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
+  //bool m_contextArrvied;
 }; // end of `class LteEnbRrc`
 
 

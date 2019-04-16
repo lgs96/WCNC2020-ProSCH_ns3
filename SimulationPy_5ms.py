@@ -37,18 +37,17 @@ def start_simulation(data):
 #	for j in range(sub_runs):
 #		params.append([run, j+1, homes])
 #	run += 1
-
-buildingNumSet = ['20','40']
-x2DelaySet = ['1', '5', '10' ,'20']
+buildingNumSet = ['20','40','60','80']
+x2DelaySet = ['5']
 throughputSet = ['1500Mbps']
 schemeSet = ['X2','Proxy','PBH']
-whichScheme = 0
+whichScheme = 2
 paramsSet = []
-for  i in range(2,10,1):
+for  i in range(0,10,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]
-		for k in range(len(x2DelaySet)):
+		for k in range(len(x2DelaySet)): 
 			x2Delay = x2DelaySet[k]
 			throughput = throughputSet[0]
 			scheme = schemeSet[whichScheme]

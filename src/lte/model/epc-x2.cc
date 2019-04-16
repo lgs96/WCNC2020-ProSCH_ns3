@@ -220,6 +220,9 @@ EpcX2::DoAddTeidToBeForwarded(uint32_t gtpTeid, uint16_t targetCellId)
 {
   NS_LOG_FUNCTION(this << " add an entry to the map of teids to be forwarded: teid " << gtpTeid << " targetCellId " << targetCellId);
   NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
+  //if(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end())
+//	return;
+
   m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
 }
 

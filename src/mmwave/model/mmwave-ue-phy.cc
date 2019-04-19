@@ -807,9 +807,9 @@ MmWaveUePhy::GetSubframeNumber (void)
 void
 MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-	std::cout<<this<<" Packet reception"<<std::endl;
-	p->Print(std::cout);
-	std::cout<<std::endl;
+	//std::cout<<this<<" Packet reception"<<std::endl;
+	//p->Print(std::cout);
+	//std::cout<<std::endl;
 
 	if(!m_phyReset) 
 	{

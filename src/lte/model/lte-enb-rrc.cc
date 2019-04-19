@@ -1093,7 +1093,7 @@ namespace ns3 {
 										m_rrc, m_rnti);
 			
 				std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
-				m_rrc->SelfLeaving(m_rnti);
+				//m_rrc->SelfLeaving(m_rnti);
 			}
 		}
 
@@ -1494,9 +1494,10 @@ namespace ns3 {
 			switch (m_state)
 			{
 				case CONNECTED_NORMALLY:
-					NS_ASSERT (cellId == m_targetCellId);
+					//NS_ASSERT (cellId == m_targetCellId);
 					NS_LOG_INFO ("Master cell requires prefetched Handover Signal");
-					PrePrepareHandover(m_rrc->m_lteCellId);
+					if(cellId == m_targetCellId)
+						PrePrepareHandover(m_rrc->m_lteCellId);
 					break;
 
 				case HANDOVER_PREPARATION:
@@ -3785,7 +3786,7 @@ namespace ns3 {
 			m_imsiHandoverEventsMap.erase(m_imsiHandoverEventsMap.find(imsi));
 
 			// Process8
-			m_s1SapProvider-> DoSendProxyHoldRequest ();
+			m_s1SapProvider-> DoSendProxyHoldRequest (m_delayX2);
 		}
 
 	void 
@@ -4208,7 +4209,8 @@ namespace ns3 {
 			NS_LOG_LOGIC("Rnti " << rnti);
 			//SendHandoverRequest(rnti, params.targetCellId);
 			//std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
-			//Simulator::Schedule(NanoSeconds(0),&LteEnbRrc::SelfLeaving,this,rnti);
+			//GetUeManager(rnti)->SendRlcHead(0,false);
+			//Simulator::Schedule(NanoSeconds(m_delayX2),&LteEnbRrc::SelfLeaving,this,rnti);
 		}
 
 	void

@@ -174,7 +174,7 @@ private:
 
   //Process8 just for definition
   void DoProxyForwardingRequest(uint32_t seq, double delay, double interval);
-  void DoProxyHoldRequest();
+  void DoProxyHoldRequest(double delay);
   void DoProxyReleaseRequest();
 
   /**

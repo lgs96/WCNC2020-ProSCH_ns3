@@ -93,7 +93,8 @@ public:
 
   //Process8
   void ForwardingProxy (uint32_t seq, double delay, double interval);
-  void HoldProxyBuffer();
+  void HoldProxyBuffer(double delay);
+  void DelayedHoldBuffer();
   void ReleaseProxyBuffer();
   void GetArrivalRate ();
   void GetDepartureRate ();
@@ -132,6 +133,11 @@ private:
   bool m_forwardMode;
   SequenceNumber32 m_startPoint;
   int m_holdBufferCount;
+  double m_holdDelay;
+  double m_delayX2;
+
+  uint32_t m_prevHighTx;
+  uint32_t m_delayedHighTx;
 };
 
 } //namespace ns3

@@ -521,7 +521,11 @@ public:
   SequenceNumber32 m_proxyFin;
 
   uint32_t SendPendingProxyData (bool withAck = false);
-
+  
+  //TracedValue<Time> m_lastRtt;         //!< Last RTT sample collected
+  double GetRecentRtt (Time rtt);
+  int m_rttWindowIndex = 0;
+  double m_rttWindow[10];
 
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set

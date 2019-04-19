@@ -1,5 +1,5 @@
 /*s program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
+  it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
  *
  * This program is distributed in the hope that it will be useful,
@@ -240,14 +240,14 @@ MyApp::RandomPacket(void)
    {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
  }
-
+*/
 
  static void
  RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
  {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
  }
- */
+ 
 
 
 
@@ -298,7 +298,7 @@ ChangeSpeed(Ptr<Node>  n, Vector speed)
 {
 	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
 }
-	static void
+/*	static void
 CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
@@ -319,7 +319,7 @@ Reset_ack(Ptr<OutputStreamWrapper> stream, uint16_t i)
 	*stream->GetStream () << Simulator::Now().GetSeconds()<<"\t"<<ack_throughput[i]/1e5<<std::endl;	
 	ack_throughput[i] = 0;
 	Simulator::Schedule (MilliSeconds(100), &Reset_ack,stream,i);
-}
+}*/
 /*
 	static void
 RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
@@ -327,7 +327,7 @@ RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> p
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
 }
 */
-	static void
+/*	static void
 GetRx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
 {
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
@@ -422,11 +422,11 @@ Traces(uint16_t nodeNum)
 	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
 	}
 }
-
+*/
 	int
 main (int argc, char *argv[])
 {
-	ns3::Packet::EnablePrinting();
+	//ns3::Packet::EnablePrinting();
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
@@ -622,10 +622,10 @@ main (int argc, char *argv[])
 	bool isInCar = true;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 60;
-	double x2Latency= 20;
-	int BuildingIndex = 14 ;	
-	string sourceRateString = "1000Mbps";
+	int BuildingNum = 80;
+	double x2Latency= 10;
+	int BuildingIndex = 8;	
+	string sourceRateString = "500Mbps";
 
 	// Command line arguments
 	CommandLine cmd;
@@ -673,7 +673,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	// Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteEnbNetDevice::UlBandwidth",UintegerValue(100));//20MHz bandwidth
-	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(1)));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
@@ -689,7 +689,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -742,7 +742,7 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
+		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.030)));
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 		//		p2ph.EnablePcapAll("Tcp_highspeed");		
 
@@ -993,8 +993,8 @@ main (int argc, char *argv[])
 				Simulator::Schedule (Seconds (ueStartTime+u*ueGapTime), &CalculateThroughput,stream_2,serverApps.Get(u)->GetObject<PacketSink>(),u);
 
 				//TCP server/user tracing for single user
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
+				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
+				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));
@@ -1055,16 +1055,16 @@ main (int argc, char *argv[])
 		}
 	}
 	AsciiTraceHelper asciiTraceHelper;
-
+/*
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
-
+*/
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("proxyRtt.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream2));
 
 	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("proxySst.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh, stream3));
-
+/*
 	Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("proxyRx.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("Rx", MakeBoundCallback (&GetRx, stream4));
 
@@ -1073,7 +1073,7 @@ main (int argc, char *argv[])
 
 	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream ("proxyRto.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTO", MakeBoundCallback (&RTOChange, stream6));
-
+*/
 
 
 	mmwaveHelper -> EnableTraces();

@@ -628,10 +628,10 @@ EpcEnbApplication::DoProxyForwardingRequest(uint32_t seq, double delay, double i
 }
 
 void
-EpcEnbApplication::DoProxyHoldRequest()
+EpcEnbApplication::DoProxyHoldRequest(double delay)
 {
   NS_LOG_FUNCTION(this);
-  m_proxyApp -> HoldProxyBuffer();
+  m_proxyApp -> HoldProxyBuffer(delay);
 }
 
 void

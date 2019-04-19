@@ -84,7 +84,7 @@ namespace ns3 {
 		m_count_dep = 0;
 		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
 		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate,this);
-		m_delay = 0.02;
+		m_delay = 0.03;
 		m_forwardMode = false;
 		m_holdBufferCount = 0;
 		//m_temp = true;
@@ -187,14 +187,19 @@ namespace ns3 {
 					NS_LOG_LOGIC("Hold buffer phase!!");
 					Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
 					proxyTxBuffer->Add(packet);
+					//m_proxyTcpSocket->Send(packet);
 					//NS_ASSERT(isIn==true);
 					m_holdBufferCount++;
 					//std::cout<<Simulator::Now()<<" "<<m_holdBufferCount<<" buffered"<<std::endl;
 					Ptr<TcpSocketState> m_tcb = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb;	
-				//        std::cout<<"Next seq: " << m_startPoint << " proxyFin: " << m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin<<" Real next seq: "<<m_tcb->m_nextTxSequence<<std::endl;
-					
+				        //std::cout<<"Next seq: " << m_startPoint << " Head: " << proxyTxBuffer->HeadSequence()<<" Real next seq: "<<m_tcb->m_nextTxSequence<<std::endl;
+
 					if(m_forwardMode)
-					{	
+					{
+						if((m_startPoint < proxyTxBuffer->HeadSequence()|| m_startPoint > m_tcb->m_nextTxSequence||m_startPoint > proxyTxBuffer->TailSequence()))
+						{
+							m_startPoint = proxyTxBuffer -> HeadSequence();
+						}
 						//Ptr<TcpSocketState> m_tcb = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb;	
 						//std::cout<<"Next seq: " << m_tcb->m_nextTxSequence << " proxyFin: " << m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin<<std::endl;	
 						m_tcb->m_nextTxSequence = m_startPoint;
@@ -347,11 +352,17 @@ namespace ns3 {
 			std::cout<<Simulator::Now()<<"Forwarding"<<std::endl;
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket -> GetTxBuffer();
-		
-			uint32_t newSeq = seq;// + (interval + delay) * m_arrivalRate;		
-	
-			std::cout<<"Head seq: "<<proxyTxBuffer->HeadSequence()<<std::endl;
-			std::cout<<"Additional: "<<(interval + delay) * m_arrivalRate<<std::endl;
+
+			double departed = (m_delayedHighTx - m_prevHighTx)/((m_holdDelay)/(1e9));
+			double tempDelay = (interval) +(m_holdDelay)/(1e9);
+			double departedRate = departed * tempDelay;
+
+			//uint32_t newSeq =1.2*( seq +  tempDelay * departedRate);   // seq + (interval + delay) * m_arrivalRate;			
+
+			uint32_t newSeq = proxyTxBuffer -> HeadSequence().GetValue();
+
+			std::cout<<"RLC size: " << seq << " departed: "<<departed<<" tempDelay: "<<tempDelay<<" interval:  "<<interval<<" delay: "<<delay<< std::endl;
+			std::cout<<"Additional: " << departedRate <<std::endl;
 	
 			Ptr<TcpSocketState>m_tcb = tempSocket->m_tcb;
 
@@ -394,13 +405,38 @@ namespace ns3 {
 
 	//Process8
 	void
-		EpcEnbProxyApplication::HoldProxyBuffer()
+		EpcEnbProxyApplication::HoldProxyBuffer(double delay)
 		{
 			NS_LOG_FUNCTION (this);
 			std::cout << Simulator::Now() <<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
+			//std::cout <<"After " << NanoSeconds(0.5*delay) <<" delayed holding start"<<std::endl; 
+			//m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = true;
+					
+			m_holdDelay = delay - (m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetRecentRtt(Seconds(0))-2*delay)/2;			 
+			//m_holdDelay = delay;
 
+			if(m_holdDelay < 0)
+				m_holdDelay = 0;
+
+			SequenceNumber32 temp = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb->m_nextTxSequence;	
+			m_prevHighTx = temp.GetValue();
+
+			std::cout <<"After " << NanoSeconds(m_holdDelay) <<" delayed holding start"<<std::endl;
+			Simulator::Schedule(NanoSeconds(m_holdDelay),&EpcEnbProxyApplication::DelayedHoldBuffer,this);
+		}
+
+	void
+		EpcEnbProxyApplication::DelayedHoldBuffer()
+		{
+			NS_LOG_FUNCTION (this);
+		
+			SequenceNumber32 temp = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb->m_nextTxSequence;
+			m_delayedHighTx = temp.GetValue();				
+
+			std::cout << Simulator::Now() <<"Delayed Hold Buffer"<<std::endl;	
 			m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = true;
 		}
+
 
 	void
 		EpcEnbProxyApplication::ReleaseProxyBuffer()

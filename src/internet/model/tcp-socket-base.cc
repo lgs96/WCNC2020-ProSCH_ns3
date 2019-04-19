@@ -463,6 +463,12 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   ok = m_tcb->TraceConnectWithoutContext ("HighestSequence",
                                           MakeCallback (&TcpSocketBase::UpdateHighTxMark, this));
   NS_ASSERT (ok == true);
+
+  for(int i = 0; i < 10; i++)
+  {
+    m_rttWindow [i] = 0;
+  }
+  m_rttWindowIndex = 0;
 }
 
 TcpSocketBase::~TcpSocketBase (void)
@@ -3157,6 +3163,29 @@ TcpSocketBase::SendPendingProxyData (bool withAck)
   return nPacketsSent;
 }
 
+double
+TcpSocketBase::GetRecentRtt (Time rtt)
+{
+  //std::cout<<m_rttWindowIndex<<" "<<rtt.GetDouble()<<std::endl;
+  if(rtt.GetDouble()!=0)
+  {
+  	m_rttWindow [m_rttWindowIndex] = rtt.GetDouble(); 
+  	m_rttWindowIndex = (m_rttWindowIndex + 1)%10;
+  }
+  
+  double maxRtt = 0;
+  
+  for(uint8_t i = 0; i < 10; i++)
+  {
+    if (maxRtt < m_rttWindow[i])
+    {
+      maxRtt = m_rttWindow[i];		
+    }
+  } 
+  return maxRtt;
+}
+
+
 uint32_t
 TcpSocketBase::UnAckDataCount () const
 {
@@ -3354,6 +3383,8 @@ TcpSocketBase::EstimateRtt (const TcpHeader& tcpHeader)
       // RFC 6298, clause 2.4
       m_rto = Max (m_rtt->GetEstimate () + Max (m_clockGranularity, m_rtt->GetVariation () * 4), m_minRto);
       m_lastRtt = m_rtt->GetEstimate ();
+      GetRecentRtt (m_lastRtt); 
+
       NS_LOG_FUNCTION (this << m_lastRtt);
     }
 }

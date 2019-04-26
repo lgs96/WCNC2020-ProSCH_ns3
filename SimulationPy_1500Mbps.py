@@ -18,7 +18,7 @@ def start_simulation(data):
 	try:
 		subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s --BuildingNum=%s --SourceRate=%s" --run globecom2019_pbh' % (location,buildingIndex, x2_delay, buildingNum, throughput),shell=True)
 	except: 
-		subprocess.check_call('rm -r %s '%(location),shell=True)
+		subprocess.check_call('rm -r '%(location),shell=True)
 		start_simulation(data)
 		pass
 
@@ -46,11 +46,11 @@ def start_simulation(data):
 
 buildingNumSet =['80']
 x2DelaySet = ['10']
-throughputSet = ['500Mbps']
-schemeSet = ['X2Min','Proxy','PBH']
-whichScheme = 0
+throughputSet = ['1500Mbps']
+schemeSet = ['X2','Proxy','PBH']
+whichScheme = 1
 paramsSet = []
-for  i in range(114,200,1):
+for  i in range(100,200,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]

@@ -25,7 +25,6 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/config-store.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
-#include "ns3/delay-jitter-estimation.h"
 //#include "ns3/gtk-config-store.h"
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
@@ -123,7 +122,6 @@ class MyApp : public Application
 		bool            m_running;
 		uint32_t        m_packetsSent;
 		bool		m_isRandom;
-		DelayJitterEstimation m_jitterEstimate;
 };
 
 MyApp::MyApp ()
@@ -191,7 +189,6 @@ MyApp::SendPacket (void)
 {
 	Ptr<Packet> packet = Create<Packet> (m_packetSize);
 	MyAppTag tag (Simulator::Now ());
-	m_jitterEstimate.PrepareTx(packet);	
 
 	m_socket->Send (packet);
 	if (++m_packetsSent < m_nPackets)
@@ -289,28 +286,22 @@ CalculateThroughput (Ptr<OutputStreamWrapper> stream, Ptr<PacketSink> sink, uint
 }
 
 
-/*
+
 	static void 
 Ssthresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSsthresh, uint32_t newSsthresh)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
 }
-*/
+
 	void
 ChangeSpeed(Ptr<Node>  n, Vector speed)
 {
 	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
 }
-/*	static void
+	static void
 CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
-}
-
-	static void
-RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
-{
-	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
 }
 
 double ack_throughput[100];
@@ -322,7 +313,7 @@ Reset_ack(Ptr<OutputStreamWrapper> stream, uint16_t i)
 	*stream->GetStream () << Simulator::Now().GetSeconds()<<"\t"<<ack_throughput[i]/1e5<<std::endl;	
 	ack_throughput[i] = 0;
 	Simulator::Schedule (MilliSeconds(100), &Reset_ack,stream,i);
-}*/
+}
 /*
 	static void
 RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
@@ -330,7 +321,7 @@ RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> p
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
 }
 */
-/*	static void
+	static void
 GetRx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
 {
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetAckNumber() << std::endl;
@@ -347,7 +338,7 @@ RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 {
 	*stream->GetStream () <<Simulator::Now().GetSeconds() << "\t" <<oldrto.GetSeconds()<<"\t"<<newrto.GetSeconds()<<std::endl;
 }
-*/
+
 	static void
 Traces(uint16_t nodeNum)
 {
@@ -363,18 +354,18 @@ Traces(uint16_t nodeNum)
 	{
 	  nodeName = "UE";	
 	}
-/*	std::ostringstream pathCW;
+	std::ostringstream pathCW;
 	pathCW<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow";
 
 	std::ostringstream fileCW;
 	fileCW<<nodeName<<"_Cwnd.txt";
-*/
+
 	std::ostringstream pathRTT;
 	pathRTT<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RTT";
 
 	std::ostringstream fileRTT;
 	fileRTT<<nodeName<<"_Rtt.txt";
-/*
+
 	std::ostringstream pathSST;
 	pathSST<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/SlowStartThreshold";
 
@@ -401,15 +392,15 @@ Traces(uint16_t nodeNum)
 
 	Ptr<OutputStreamWrapper> stream5 = asciiTraceHelper.CreateFileStream (fileRx.str ().c_str ());
 	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream (fileTx.str ().c_str ());
-*/
+
 	if(nodeNum == 0)
 	{
-/*	  Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (fileCW.str ().c_str ());
+	  Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (fileCW.str ().c_str ());
 	  Config::ConnectWithoutContext (pathCW.str ().c_str (), MakeBoundCallback(&CwndChange, stream1));
-*/
+
 	  Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream (fileRTT.str ().c_str ());
 	  Config::ConnectWithoutContext (pathRTT.str ().c_str (), MakeBoundCallback(&RttChange, stream2));
-/*
+
 	  Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream (fileSST.str ().c_str ());
 	  Config::ConnectWithoutContext (pathSST.str ().c_str (), MakeBoundCallback(&Ssthresh, stream4));
 
@@ -418,11 +409,11 @@ Traces(uint16_t nodeNum)
 
 	  Ptr<OutputStreamWrapper> stream7 = asciiTraceHelper.CreateFileStream (fileRTO.str ().c_str ());
 	  Config::ConnectWithoutContext (pathRTO.str ().c_str (), MakeBoundCallback(&RTOChange, stream7));
-*/	}	
+	}	
 	else
 	{
-//	  Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetTx, stream5)); 	
-//	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
+	  Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetTx, stream5)); 	
+	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
 	}
 }
 
@@ -433,7 +424,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
-	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
+	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
@@ -599,7 +590,7 @@ main (int argc, char *argv[])
 	std::cout << "Goodsol Lee of SNU, Korea " <<std::endl;
 	std::cout << "gslee2@netlab.snu.ac.kr" << std::endl;
 
-	double simTime = 15.5;
+	double simTime = 10.5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -615,20 +606,21 @@ main (int argc, char *argv[])
 	double UeTxPower = 25;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
-	uint16_t Velocity = 20;
+	uint16_t Velocity = 10;
 	std::string scheduler ="MmWaveFlexTtiMacScheduler";
 	std::string pathLossModel = "BuildingsObstaclePropagationLossModel";
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = true;
+	bool ReadBuilding = false;
 	bool isInCar = true;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum =0 ;
-	double x2Latency= 10;
-	int BuildingIndex = 1;	
+	int BuildingNum = 80;
+	double x2Latency= 20;
+	int BuildingIndex = 10 ;	
 	string sourceRateString = "500Mbps";
+	bool isMinimum = false;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -644,12 +636,13 @@ main (int argc, char *argv[])
 	cmd.AddValue("harqEnabled", "harq enable or not", harqEnabled);
 	cmd.AddValue("typeOfSplitting", "splitting algorithm type",typeOfSplitting);
 	cmd.AddValue("nPacket", "number of packets" , nPacket);
-	
+
 	//Command for Proxy based handover
 	cmd.AddValue("X2LinkDelay" , "X2 link delay", x2Latency);
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
+	cmd.AddValue("isMinimum","Is minimum topology?", isMinimum);	
 
 	cmd.Parse(argc, argv);
 	// Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
@@ -676,7 +669,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	// Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteEnbNetDevice::UlBandwidth",UintegerValue(100));//20MHz bandwidth
-	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100)));
+	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
@@ -686,14 +679,14 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
 	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (15*1024*1024));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (15*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (20*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (20*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (15 *1024 * 1024));
+	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));
@@ -702,7 +695,7 @@ main (int argc, char *argv[])
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
 	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
-	Config::SetDefault ("ns3::PacketSink::CalcJitter",BooleanValue(true));
+	Config::SetDefault ("ns3::EpcX2::IsMinimum",BooleanValue(isMinimum));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -769,7 +762,7 @@ main (int argc, char *argv[])
 	NodeContainer lteEnbNodes;
 	NodeContainer allEnbNodes;
 
-	mmWaveEnbNodes_28G.Create(4);
+	mmWaveEnbNodes_28G.Create(6);
 	lteEnbNodes.Create(1);
 	ueNodes.Create(nodeNum);
 
@@ -779,25 +772,25 @@ main (int argc, char *argv[])
 	//	std::ofstream f ("enb_topology.txt");
 
 	Vector mmw1Position = Vector(0.0,0.0, 35);  ///28Ghz //path 0
-	Vector mmw2Position = Vector(100.0, 100.0, 35); //28Ghz // path 0
-	Vector mmw3Position = Vector(0.0, 200.0, 35); //28Ghz // path 0
-	Vector mmw4Position = Vector(100.0, 300.0, 35); //28Ghz // path 1
+	Vector mmw2Position = Vector(0.0, 50.0, 35); //28Ghz // path 0
+	Vector mmw3Position = Vector(0.0, 100.0, 35); //28Ghz // path 0
 
-//	Vector mmw5Position = Vector(100.0,50.0, 35);  ///28Ghz //path 1
-//	Vector mmw6Position = Vector(100.0, 100, 35); //28Ghz // path 1
+	Vector mmw4Position = Vector(100.0, 0.0, 35); //28Ghz // path 1
+	Vector mmw5Position = Vector(100.0,50.0, 35);  ///28Ghz //path 1
+	Vector mmw6Position = Vector(100.0, 100, 35); //28Ghz // path 1
 	//Vector mmw7Position = Vector (100.0, 60,25);
 	//Vector mmw8Position = Vector(100.0, 90, 25); //73Ghz // path 1
 	// Vector mmw7Position = Vector(0.0, 40, 12); //73Ghz // path 1
 
 	// Install Mobility Model
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector ((double)30.0, 0, 35));
+	enbPositionAlloc->Add (Vector ((double)30.0, -5, 35));
 	enbPositionAlloc->Add (mmw1Position);
-	enbPositionAlloc->Add (mmw2Position);
 	enbPositionAlloc->Add (mmw3Position);
+	enbPositionAlloc->Add (mmw5Position);
+	enbPositionAlloc->Add (mmw2Position);
 	enbPositionAlloc->Add (mmw4Position);
-//	enbPositionAlloc->Add (mmw5Position);
-//	enbPositionAlloc->Add (mmw6Position);
+	enbPositionAlloc->Add (mmw6Position);
 	//	enbPositionAlloc->Add (mmw7Position);
 	//enbPositionAlloc->Add (mmw8Position);
 
@@ -810,7 +803,7 @@ main (int argc, char *argv[])
 
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
 	//for(uint16_t i =0 ; i<ueNodes.GetN(); i++){
-	uePositionAlloc->Add(Vector(50 ,-25,1.5));
+	uePositionAlloc->Add(Vector(50 ,0,1.5));
 	//uePositionAlloc->Add(Vector(50 ,51,1.5));
 
 	//	uePositionAlloc->Add(Vector(52 ,100,1.5));
@@ -825,27 +818,27 @@ main (int argc, char *argv[])
 	uemobility.AssignStreams(ueNodes,0);
 
 	Simulator::Schedule(Seconds(0.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
-//	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
+	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
 	Simulator::Schedule(Seconds(20.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
 
 
 	if(!ReadBuilding)
 	{
-		//int Building_xlim_low = 5;
-		//int Building_xlim_high = 95;
-		//int Building_ylim_low = 5;
-		//int Building_ylim_high = 95;
+		int Building_xlim_low = 5;
+		int Building_xlim_high = 95;
+		int Building_ylim_low = 5;
+		int Building_ylim_high = 95;
 
 		Ptr<Building> building1;
 		//	ofstream file("building_topology.txt");
 		srand((unsigned int) time (NULL));
 
-		for (int i = 0; i < 3; i++){
+		for (int i = 0; i<BuildingNum; i++){
 
-			double xcoordinate = 20 + i*50;
-			double ycoordinate = 20 + i*50;
-			double xlength = 10;
-			double ylength = 10;
+			double xcoordinate = (double)((int)rand()%(Building_xlim_high-Building_xlim_low)+Building_xlim_low);
+			double ycoordinate = (double)((int)rand()%(Building_ylim_high-Building_ylim_low)+Building_ylim_low);
+			double xlength = rand()%6+1;
+			double ylength = rand()%6+1;
 
 			building1 = Create<Building>();
 			building1->SetBoundaries(Box(xcoordinate, xcoordinate + xlength, ycoordinate, ycoordinate + ylength,0,35));
@@ -916,7 +909,7 @@ main (int argc, char *argv[])
 		*enb_stream->GetStream() << enbPositionAlloc->GetNext() << std::endl;
 	}
 
-/*	if(!ReadBuilding)
+	if(!ReadBuilding)
 	{
 		std::ostringstream buildingfile;
 		buildingfile <<BuildingIndex<<"_BuildingPosition.txt";
@@ -928,7 +921,7 @@ main (int argc, char *argv[])
 			*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;
 		}
 	}
-*/	// Install mmWave, lte, mc Devices to the nodes
+	// Install mmWave, lte, mc Devices to the nodes
 	NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
 	NetDeviceContainer mmWaveEnbDevs_28GHZ = mmwaveHelper->InstallEnbDevice(mmWaveEnbNodes_28G);
 	//	NetDeviceContainer mmWaveEnbDevs_73GHZ = mmwaveHelper->InstallEnbDevice_73GHZ(mmWaveEnbNodes_73G);
@@ -998,7 +991,7 @@ main (int argc, char *argv[])
 
 				//TCP server/user tracing for single user
 				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
-				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
+				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
 
 				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
 				app->SetStopTime (Seconds (simTime+0.1));
@@ -1058,17 +1051,17 @@ main (int argc, char *argv[])
 			}
 		}
 	}
-	//AsciiTraceHelper asciiTraceHelper;
-/*
+/*	AsciiTraceHelper asciiTraceHelper;
+
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
-*/
-//	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("proxyRtt.txt");
-//	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream2));
 
-//	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("proxySst.txt");
-//	epcHelper->m_traceProxy->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh, stream3));
-/*
+	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("proxyRtt.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream2));
+
+	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("proxySst.txt");
+	epcHelper->m_traceProxy->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh, stream3));
+
 	Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("proxyRx.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("Rx", MakeBoundCallback (&GetRx, stream4));
 

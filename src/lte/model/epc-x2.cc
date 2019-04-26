@@ -123,6 +123,11 @@ EpcX2::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::EpcX2")
     .SetParent<Object> ()
     .SetGroupName("Lte")
+	.AddAttribute ("IsMinimum",
+				   "True if X2 interfaces mimic minimum topology",
+				   BooleanValue (false),
+				   MakeBooleanAccessor (&EpcX2::m_isMinimum),
+				   MakeBooleanChecker ())
     .AddTraceSource ("RxPDU",
                      "PDU received.",
                      MakeTraceSourceAccessor (&EpcX2::m_rxPdu),
@@ -220,9 +225,6 @@ EpcX2::DoAddTeidToBeForwarded(uint32_t gtpTeid, uint16_t targetCellId)
 {
   NS_LOG_FUNCTION(this << " add an entry to the map of teids to be forwarded: teid " << gtpTeid << " targetCellId " << targetCellId);
   NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
-  //if(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end())
-//	return;
-
   m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
 }
 
@@ -253,10 +255,19 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
   if (packet->PeekPacketTag(epcX2Tag))
     {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
-      packet->RemovePacketTag(epcX2Tag);
+      //packet->RemovePacketTag(epcX2Tag);
     }
+  // hard coded minimum mode. It's for just simulation ////
+  if(m_isMinimum && (cellsInfo->m_remoteCellId != 1 && cellsInfo->m_localCellId != 1))
+  {
+	//std::cout<<Simulator::Now()<<" Delayed signal in minimum topology"<<std::endl;
+   	Simulator::Schedule(delay,&EpcX2::RecvFromX2cDelayedSocket, this, packet, cellsInfo->m_remoteCellId, cellsInfo->m_localCellId);
+   	return;
+  }
 
+  packet->RemovePacketTag(epcX2Tag);
   m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  ////////////////////////////////////////////////////////
 
   EpcX2Header x2Header;
   packet->RemoveHeader (x2Header);
@@ -265,6 +276,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
   uint8_t messageType = x2Header.GetMessageType ();
   uint8_t procedureCode = x2Header.GetProcedureCode ();
+
+
 
   if (procedureCode == EpcX2Header::HandoverPreparation)
     {
@@ -621,6 +634,388 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     }
 }
 
+void
+EpcX2::RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint16_t localCellId)
+{
+  NS_LOG_FUNCTION (this << packet);
+
+  NS_LOG_LOGIC ("Recv X2 message: from delayed Socket");
+  NS_LOG_LOGIC ("packetLen = " << packet->GetSize ());
+
+  EpcX2Tag epcX2Tag;
+  Time delay;
+  if (packet->PeekPacketTag(epcX2Tag))
+    {
+      delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
+      packet->RemovePacketTag(epcX2Tag);
+    }
+
+  m_rxPdu(remoteCellId, localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+
+  EpcX2Header x2Header;
+  packet->RemoveHeader (x2Header);
+
+  NS_LOG_LOGIC ("X2 header: " << x2Header);
+
+  uint8_t messageType = x2Header.GetMessageType ();
+  uint8_t procedureCode = x2Header.GetProcedureCode ();
+
+  if (procedureCode == EpcX2Header::HandoverPreparation)
+    {
+      if (messageType == EpcX2Header::InitiatingMessage)
+        {
+          NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST");
+
+          EpcX2HandoverRequestHeader x2HoReqHeader;
+          packet->RemoveHeader (x2HoReqHeader);
+
+          NS_LOG_INFO ("X2 HandoverRequest header: " << x2HoReqHeader);
+
+          EpcX2SapUser::HandoverRequestParams params;
+          params.oldEnbUeX2apId = x2HoReqHeader.GetOldEnbUeX2apId ();
+          params.cause          = x2HoReqHeader.GetCause ();
+          params.sourceCellId   = remoteCellId;
+          params.targetCellId   = x2HoReqHeader.GetTargetCellId ();
+          params.mmeUeS1apId    = x2HoReqHeader.GetMmeUeS1apId ();
+          params.ueAggregateMaxBitRateDownlink = x2HoReqHeader.GetUeAggregateMaxBitRateDownlink ();
+          params.ueAggregateMaxBitRateUplink   = x2HoReqHeader.GetUeAggregateMaxBitRateUplink ();
+          params.bearers        = x2HoReqHeader.GetBearers ();
+          // RlcRequests for secondary cell HO
+          params.rlcRequests    = x2HoReqHeader.GetRlcSetupRequests();
+          params.rrcContext     = packet;
+          params.isMc           = x2HoReqHeader.GetIsMc ();
+
+          NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+          NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+          NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+          NS_LOG_LOGIC ("mmeUeS1apId = " << params.mmeUeS1apId);
+          NS_LOG_LOGIC ("cellsInfo->m_localCellId = " << localCellId);
+          NS_ASSERT_MSG (params.targetCellId == localCellId,
+                         "TargetCellId mismatches with localCellId");
+
+          m_x2SapUser->RecvHandoverRequest (params);
+        }
+      else if (messageType == EpcX2Header::SuccessfulOutcome)
+        {
+          NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST ACK");
+
+          EpcX2HandoverRequestAckHeader x2HoReqAckHeader;
+          packet->RemoveHeader (x2HoReqAckHeader);
+
+          NS_LOG_INFO ("X2 HandoverRequestAck header: " << x2HoReqAckHeader);
+
+          EpcX2SapUser::HandoverRequestAckParams params;
+          params.oldEnbUeX2apId = x2HoReqAckHeader.GetOldEnbUeX2apId ();
+          params.newEnbUeX2apId = x2HoReqAckHeader.GetNewEnbUeX2apId ();
+          params.sourceCellId   = localCellId;
+          params.targetCellId   = remoteCellId;
+          params.admittedBearers = x2HoReqAckHeader.GetAdmittedBearers ();
+          params.notAdmittedBearers = x2HoReqAckHeader.GetNotAdmittedBearers ();
+          params.rrcContext     = packet;
+
+          NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+          NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
+          NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+          NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+
+          m_x2SapUser->RecvHandoverRequestAck (params);
+        }
+      else // messageType == EpcX2Header::UnsuccessfulOutcome
+        {
+          NS_LOG_LOGIC ("Recv X2 message: HANDOVER PREPARATION FAILURE");
+
+          EpcX2HandoverPreparationFailureHeader x2HoPrepFailHeader;
+          packet->RemoveHeader (x2HoPrepFailHeader);
+
+          NS_LOG_INFO ("X2 HandoverPreparationFailure header: " << x2HoPrepFailHeader);
+
+          EpcX2SapUser::HandoverPreparationFailureParams params;
+          params.oldEnbUeX2apId = x2HoPrepFailHeader.GetOldEnbUeX2apId ();
+          params.sourceCellId   = localCellId;
+          params.targetCellId   = remoteCellId;
+          params.cause          = x2HoPrepFailHeader.GetCause ();
+          params.criticalityDiagnostics = x2HoPrepFailHeader.GetCriticalityDiagnostics ();
+
+          NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+          NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+          NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+          NS_LOG_LOGIC ("cause = " << params.cause);
+          NS_LOG_LOGIC ("criticalityDiagnostics = " << params.criticalityDiagnostics);
+
+          m_x2SapUser->RecvHandoverPreparationFailure (params);
+        }
+    }
+  else if (procedureCode == EpcX2Header::LoadIndication)
+    {
+      if (messageType == EpcX2Header::InitiatingMessage)
+        {
+          NS_LOG_LOGIC ("Recv X2 message: LOAD INFORMATION");
+
+          EpcX2LoadInformationHeader x2LoadInfoHeader;
+          packet->RemoveHeader (x2LoadInfoHeader);
+
+          NS_LOG_INFO ("X2 LoadInformation header: " << x2LoadInfoHeader);
+
+          EpcX2SapUser::LoadInformationParams params;
+          params.cellInformationList = x2LoadInfoHeader.GetCellInformationList ();
+
+          NS_LOG_LOGIC ("cellInformationList size = " << params.cellInformationList.size ());
+
+          m_x2SapUser->RecvLoadInformation (params);
+        }
+    }
+  else if (procedureCode == EpcX2Header::SnStatusTransfer)
+    {
+      if (messageType == EpcX2Header::InitiatingMessage)
+        {
+          NS_LOG_LOGIC ("Recv X2 message: SN STATUS TRANSFER");
+
+            EpcX2SnStatusTransferHeader x2SnStatusXferHeader;
+            packet->RemoveHeader (x2SnStatusXferHeader);
+
+            NS_LOG_INFO ("X2 SnStatusTransfer header: " << x2SnStatusXferHeader);
+
+            EpcX2SapUser::SnStatusTransferParams params;
+            params.oldEnbUeX2apId = x2SnStatusXferHeader.GetOldEnbUeX2apId ();
+            params.newEnbUeX2apId = x2SnStatusXferHeader.GetNewEnbUeX2apId ();
+            params.sourceCellId   = remoteCellId;
+            params.targetCellId   = localCellId;
+            params.erabsSubjectToStatusTransferList = x2SnStatusXferHeader.GetErabsSubjectToStatusTransferList ();
+
+            NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+            NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
+            NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+            NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+            NS_LOG_LOGIC ("erabsList size = " << params.erabsSubjectToStatusTransferList.size ());
+
+            m_x2SapUser->RecvSnStatusTransfer (params);
+        }
+    }
+  else if (procedureCode == EpcX2Header::UeContextRelease)
+    {
+      if (messageType == EpcX2Header::InitiatingMessage)
+        {
+		  //Process4
+		  NS_LOG_LOGIC ("Recv X2 message: UE CONTEXT RELEASE");
+
+		  EpcX2UeContextReleaseHeader x2UeCtxReleaseHeader;
+		  packet->RemoveHeader (x2UeCtxReleaseHeader);
+
+		  NS_LOG_INFO ("X2 UeContextRelease header: " << x2UeCtxReleaseHeader);
+
+		  EpcX2SapUser::UeContextReleaseParams params;
+		  params.oldEnbUeX2apId = x2UeCtxReleaseHeader.GetOldEnbUeX2apId ();
+		  params.newEnbUeX2apId = x2UeCtxReleaseHeader.GetNewEnbUeX2apId ();
+		  params.sourceCellId = remoteCellId;
+
+		  NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+		  NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
+
+		  m_x2SapUser->RecvUeContextRelease (params);
+        }
+      //Process3 gsoul, now end marker will be sent with ue context release message, and get timer to count whether packets from source cell come or not come
+/*      else
+      	{
+    	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
+
+    	  EpcX2EndMarkerHeader x2emHeader;
+    	  packet->RemoveHeader(x2emHeader);
+
+    	  EpcX2SapUser::EndMarkerParams params;
+    	  params.gtpTeid = x2emHeader.GetGtpTeid();
+
+		  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+
+	      if(user != 0)
+	      {
+	    	user -> GetEndMarker ();
+		  }
+		  else
+		  {
+			NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+		   }
+      	 }*/
+    }
+  else if (procedureCode == EpcX2Header::ResourceStatusReporting)
+    {
+      if (messageType == EpcX2Header::InitiatingMessage)
+        {
+          NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS UPDATE");
+
+          EpcX2ResourceStatusUpdateHeader x2ResStatUpdHeader;
+          packet->RemoveHeader (x2ResStatUpdHeader);
+
+          NS_LOG_INFO ("X2 ResourceStatusUpdate header: " << x2ResStatUpdHeader);
+
+          EpcX2SapUser::ResourceStatusUpdateParams params;
+          params.targetCellId = 0;
+          params.enb1MeasurementId = x2ResStatUpdHeader.GetEnb1MeasurementId ();
+          params.enb2MeasurementId = x2ResStatUpdHeader.GetEnb2MeasurementId ();
+          params.cellMeasurementResultList = x2ResStatUpdHeader.GetCellMeasurementResultList ();
+
+          NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+          NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+          NS_LOG_LOGIC ("cellMeasurementResultList size = " << params.cellMeasurementResultList.size ());
+
+          m_x2SapUser->RecvResourceStatusUpdate (params);
+        }
+    }
+  else if (procedureCode == EpcX2Header::RlcSetupRequest)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: RLC SETUP REQUEST");
+
+      EpcX2RlcSetupRequestHeader x2RlcHeader;
+      packet->RemoveHeader (x2RlcHeader);
+
+      NS_LOG_INFO ("X2 RlcSetupRequest header: " << x2RlcHeader);
+
+      EpcX2SapUser::RlcSetupRequest params;
+      params.targetCellId = x2RlcHeader.GetTargetCellId();
+      params.sourceCellId = x2RlcHeader.GetSourceCellId ();
+      params.mmWaveRnti = x2RlcHeader.GetMmWaveRnti ();
+      params.gtpTeid = x2RlcHeader.GetGtpTeid ();
+      params.lteRnti = x2RlcHeader.GetLteRnti ();
+      params.drbid = x2RlcHeader.GetDrbid ();
+      params.lcinfo = x2RlcHeader.GetLcInfo();
+      params.rlcConfig = x2RlcHeader.GetRlcConfig();
+      params.logicalChannelConfig = x2RlcHeader.GetLogicalChannelConfig();
+
+      NS_LOG_LOGIC ("GtpTeid = " << params.gtpTeid);
+      NS_LOG_LOGIC ("MmWaveRnti = " << params.mmWaveRnti);
+      NS_LOG_LOGIC ("SourceCellID = " << params.sourceCellId);
+      NS_LOG_LOGIC ("TargetCellID = " << params.targetCellId);
+      NS_LOG_LOGIC ("Drbid = " << params.drbid);
+
+      m_x2SapUser->RecvRlcSetupRequest (params);
+    }
+  else if (procedureCode == EpcX2Header::RlcSetupCompleted)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: RLC SETUP COMPLETED");
+
+      EpcX2RlcSetupCompletedHeader x2RlcHeader;
+      packet->RemoveHeader (x2RlcHeader);
+
+      NS_LOG_INFO ("X2 RlcSetupCompleted header: " << x2RlcHeader);
+
+      EpcX2SapUser::UeDataParams params;
+      params.targetCellId = x2RlcHeader.GetTargetCellId();
+      params.sourceCellId = x2RlcHeader.GetSourceCellId ();
+      params.gtpTeid = x2RlcHeader.GetGtpTeid ();
+
+      NS_LOG_LOGIC ("GtpTeid = " << params.gtpTeid);
+      NS_LOG_LOGIC ("SourceCellID = " << params.sourceCellId);
+      NS_LOG_LOGIC ("TargetCellID = " << params.targetCellId);
+
+      m_x2SapUser->RecvRlcSetupCompleted (params);
+    }
+  else if(procedureCode == EpcX2Header::UpdateUeSinr)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: UPDATE UE SINR");
+
+      EpcX2UeImsiSinrUpdateHeader x2ueSinrUpdateHeader;
+      packet->RemoveHeader(x2ueSinrUpdateHeader);
+
+      NS_LOG_INFO ("X2 SinrUpdateHeader header: " << x2ueSinrUpdateHeader);
+
+      EpcX2SapUser::UeImsiSinrParams params;
+      params.ueImsiSinrMap = x2ueSinrUpdateHeader.GetUeImsiSinrMap();
+      params.sourceCellId = x2ueSinrUpdateHeader.GetSourceCellId();
+
+      m_x2SapUser->RecvUeSinrUpdate(params);
+    }
+  else if (procedureCode == EpcX2Header::RequestMcHandover)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: REQUEST MC HANDOVER");
+
+      EpcX2McHandoverHeader x2mcHeader;
+      packet->RemoveHeader(x2mcHeader);
+
+      NS_LOG_INFO ("X2 RequestMcHandover header: " << x2mcHeader);
+
+      EpcX2SapUser::SecondaryHandoverParams params;
+      params.targetCellId = x2mcHeader.GetTargetCellId();
+      params.imsi = x2mcHeader.GetImsi();
+      params.oldCellId = x2mcHeader.GetOldCellId();
+
+      m_x2SapUser->RecvMcHandoverRequest(params);
+    }
+  else if (procedureCode == EpcX2Header::NotifyMmWaveLteHandover)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: NOTIFY MMWAVE HANDOVER TO LTE");
+
+      EpcX2McHandoverHeader x2mcHeader;
+      packet->RemoveHeader(x2mcHeader);
+
+      NS_LOG_INFO ("X2 McHandover header: " << x2mcHeader);
+
+      EpcX2SapUser::SecondaryHandoverParams params;
+      params.targetCellId = x2mcHeader.GetTargetCellId(); // the new MmWave cell to which the UE is connected
+      params.imsi = x2mcHeader.GetImsi();
+      params.oldCellId = x2mcHeader.GetOldCellId(); // actually, the LTE cell ID
+
+      m_x2SapUser->RecvLteMmWaveHandoverCompleted(params);
+    }
+  else if (procedureCode == EpcX2Header::SwitchConnection)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: SWITCH CONNECTION");
+
+      EpcX2ConnectionSwitchHeader x2mcHeader;
+      packet->RemoveHeader(x2mcHeader);
+
+      NS_LOG_INFO ("X2 SwitchConnection header: " << x2mcHeader);
+
+      EpcX2SapUser::SwitchConnectionParams params;
+      params.mmWaveRnti = x2mcHeader.GetMmWaveRnti();
+      params.useMmWaveConnection = x2mcHeader.GetUseMmWaveConnection();
+      params.drbid = x2mcHeader.GetDrbid();
+
+      m_x2SapUser->RecvConnectionSwitchToMmWave(params);
+    }
+  else if (procedureCode == EpcX2Header::SecondaryCellHandoverCompleted)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: SECONDARY CELL HANDOVER COMPLETED");
+
+      EpcX2SecondaryCellHandoverCompletedHeader x2hoHeader;
+      packet->RemoveHeader(x2hoHeader);
+
+      EpcX2SapUser::SecondaryHandoverCompletedParams params;
+      params.mmWaveRnti = x2hoHeader.GetMmWaveRnti();
+      params.imsi = x2hoHeader.GetImsi();
+      params.oldEnbUeX2apId = x2hoHeader.GetOldEnbUeX2apId();
+      params.cellId = remoteCellId;
+
+      m_x2SapUser->RecvSecondaryCellHandoverCompleted(params);
+    }
+  //Process3 this function is moved to UeContextRelease for late end marker
+ /* else if (procedureCode == EpcX2Header::EndMarker)
+    {
+	  NS_LOG_LOGIC ("Recv X2 message: END MARKER");
+
+      EpcX2EndMarkerHeader x2emHeader;
+	  packet->RemoveHeader(x2emHeader);
+
+	  EpcX2SapUser::EndMarkerParams params;
+	  params.gtpTeid = x2emHeader.GetGtpTeid();
+
+	  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+
+	  if(user != 0)
+	  {
+		  user -> GetEndMarker ();
+	  }
+	  else
+	  {
+		  NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+	  }
+    }*/
+
+  else
+    {
+      NS_ASSERT_MSG (false, "ProcedureCode NOT SUPPORTED!!!");
+    }
+}
+
+
 
 void 
 EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
@@ -641,11 +1036,22 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   EpcX2Tag epcX2Tag;
   Time delay;
   if (packet->PeekPacketTag(epcX2Tag))
-    {
-      delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
-      packet->RemovePacketTag(epcX2Tag);
-    }
+  {
+    delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
+    //packet->RemovePacketTag(epcX2Tag);
+  }
+
+  ///hard coded for simulation///
+  if(m_isMinimum && (cellsInfo->m_remoteCellId != 1 && cellsInfo->m_localCellId != 1))
+  {
+	//std::cout<<Simulator::Now()<<" Delayed data signal in minimum topology"<<std::endl;
+	Simulator::Schedule(delay,&EpcX2::RecvFromX2uDelayedSocket, this, packet, cellsInfo->m_remoteCellId, cellsInfo->m_localCellId);
+	return;
+  }
+
+  packet->RemovePacketTag(epcX2Tag);
   m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
+  ///////////////////////////////
 
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
@@ -657,6 +1063,106 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   EpcX2SapUser::UeDataParams params;
   params.sourceCellId = cellsInfo->m_remoteCellId;
   params.targetCellId = cellsInfo->m_localCellId;
+  params.gtpTeid = gtpu.GetTeid ();
+  params.ueData = packet;
+
+  NS_LOG_LOGIC("Received packet on X2 u, size " << packet->GetSize()
+    << " source " << params.sourceCellId << " target " << params.targetCellId << " type " << gtpu.GetMessageType());
+
+  NS_LOG_LOGIC("found "<<m_teidToBeForwardedMap.find(params.gtpTeid)->first<<" "<<m_teidToBeForwardedMap.find(params.gtpTeid)->second);
+  NS_LOG_LOGIC("end "<<m_teidToBeForwardedMap.end()->first<<" "<<m_teidToBeForwardedMap.end()->second);
+
+  if(m_teidToBeForwardedMap.find(params.gtpTeid) == m_teidToBeForwardedMap.end())
+  {
+    if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
+    {
+      // add PdcpTag
+      PdcpTag pdcpTag (Simulator::Now ());
+      params.ueData->AddByteTag (pdcpTag);
+      // call rlc interface
+      EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+      if(user != 0)
+      {
+        user -> SendMcPdcpSdu(params);
+      }
+      else
+      {
+        NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+      }
+    }
+    //Process4 -->forwarding to the true path
+    else if (gtpu.GetMessageType() == EpcX2Header::EndMarker)
+    {
+      // add PdcpTag
+	  PdcpTag pdcpTag (Simulator::Now ());
+	  params.ueData->AddByteTag (pdcpTag);
+	  // call rlc interface
+	  EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+	  if(user != 0)
+	  {
+		user -> GetEndMarker(params);
+	  }
+	  else
+	  {
+		NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+	  }
+    }
+    else if (gtpu.GetMessageType() == EpcX2Header::McForwardUplinkData)
+    {
+      // call pdcp interface
+      NS_LOG_INFO("Call PDCP interface");
+      m_x2PdcpUserMap[params.gtpTeid] -> ReceiveMcPdcpPdu(params);
+    }
+    else
+    {
+      m_x2SapUser->RecvUeData (params);
+    }
+  }
+  else // the packet was received during a secondary cell HO, forward to the target cell , Process4
+  {
+    params.sourceCellId = cellsInfo->m_remoteCellId;
+    params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
+    NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);
+    if(gtpu.GetMessageType() == EpcX2Header::EndMarker)
+    {
+      DoSendEndMarker(params);
+      m_x2SapUser->RecvEndMarker();
+    }
+    else
+      DoSendMcPdcpPdu(params);
+  }
+}
+
+void
+EpcX2::RecvFromX2uDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint16_t localCellId)
+{
+  NS_LOG_FUNCTION (this << packet);
+
+  NS_LOG_LOGIC ("Recv UE DATA through X2-U interface from delayed Socket");
+  NS_LOG_LOGIC ("packetLen = " << packet->GetSize ());
+
+  NS_LOG_INFO("localCellId = " << localCellId);
+  NS_LOG_INFO("remoteCellId = " << remoteCellId);
+
+  EpcX2Tag epcX2Tag;
+  Time delay;
+  if (packet->PeekPacketTag(epcX2Tag))
+    {
+      delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
+      packet->RemovePacketTag(epcX2Tag);
+    }
+  m_rxPdu(localCellId, remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
+
+  GtpuHeader gtpu;
+  packet->RemoveHeader (gtpu);
+  //SocketAddressTag satag;
+  //packet->RemovePacketTag(satag);
+
+  NS_LOG_LOGIC ("GTP-U header: " << gtpu);
+
+  EpcX2SapUser::UeDataParams params;
+  params.sourceCellId = remoteCellId;
+  params.targetCellId = localCellId;
   params.gtpTeid = gtpu.GetTeid ();
   params.ueData = packet;
 
@@ -714,9 +1220,9 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   }
   else // the packet was received during a secondary cell HO, forward to the target cell , Process4
   {
-    params.sourceCellId = cellsInfo->m_remoteCellId;
+    params.sourceCellId = remoteCellId;
     params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
-    NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);
+    NS_LOG_LOGIC("Forward from " << localCellId << " to " << params.targetCellId);
     if(gtpu.GetMessageType() == EpcX2Header::EndMarker)
     {
       DoSendEndMarker(params);

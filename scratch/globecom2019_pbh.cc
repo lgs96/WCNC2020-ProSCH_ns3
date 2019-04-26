@@ -430,7 +430,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
-	//  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
+	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//  LogComponentEnable ("LteRlcTm", LOG_FUNCTION);
 	// LogComponentEnable("MmWavePointToPointEpcHelper",LOG_FUNCTION);
 	//  LogComponentEnable("EpcUeNas",LOG_FUNCTION);
@@ -618,14 +618,15 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = true;
+	bool ReadBuilding = false;
 	bool isInCar = true;
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 80;
-	double x2Latency= 20;
+	double x2Latency= 10;
 	int BuildingIndex = 1;	
 	string sourceRateString = "500Mbps";
+	bool isMinimum = true;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -647,6 +648,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
+	cmd.AddValue("IsMinimum", "Is minimum topology?",isMinimum);
 
 	cmd.Parse(argc, argv);
 	// Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
@@ -673,7 +675,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	// Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteEnbNetDevice::UlBandwidth",UintegerValue(100));//20MHz bandwidth
-	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(1)));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
@@ -683,14 +685,14 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
 	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (20*1024*1024));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (20*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (15*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (15*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (28 *1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (15 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));
@@ -699,6 +701,7 @@ main (int argc, char *argv[])
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
 	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
+	Config::SetDefault ("ns3::EpcX2::IsMinimum", BooleanValue (isMinimum));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);

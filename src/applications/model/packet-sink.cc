@@ -31,6 +31,9 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/udp-socket-factory.h"
 #include "packet-sink.h"
+#include "ns3/delay-jitter-estimation.h"
+#include "ns3/boolean.h"
+#include <fstream>
 
 namespace ns3 {
 
@@ -55,6 +58,11 @@ PacketSink::GetTypeId (void)
                    TypeIdValue (UdpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&PacketSink::m_tid),
                    MakeTypeIdChecker ())
+    .AddAttribute ("CalcJitter",
+		   "Calculate jitter delay if true",
+		   BooleanValue (false),
+		   MakeBooleanAccessor (&PacketSink::m_calcJitter),
+		   MakeBooleanChecker ())
     .AddTraceSource ("Rx",
                      "A packet has been received",
                      MakeTraceSourceAccessor (&PacketSink::m_rxTrace),
@@ -68,11 +76,13 @@ PacketSink::PacketSink ()
   NS_LOG_FUNCTION (this);
   m_socket = 0;
   m_totalRx = 0;
+  m_jitterFileName = "Jitter.txt";
 }
 
 PacketSink::~PacketSink()
 {
   NS_LOG_FUNCTION (this);
+  m_jitterFile.close();
 }
 
 uint64_t PacketSink::GetTotalRx () const
@@ -191,6 +201,18 @@ void PacketSink::HandleRead (Ptr<Socket> socket)
                        << " total Rx " << m_totalRx << " bytes");
         }
       m_rxTrace (packet, from);
+
+      if(m_calcJitter)
+      	{
+	  m_jitterEstimate.RecordRx(packet); 
+          //packet->Print(std::cout);
+ 	  if(!m_jitterFile.is_open())
+  	  {
+   		 m_jitterFile.open(m_jitterFileName.c_str(), std::ofstream::app);
+   		 NS_LOG_LOGIC("File opened");
+  	  }
+  	  m_jitterFile << Simulator::Now().GetSeconds() << " " <<m_jitterEstimate.GetIpdv()/(1e9) << std::endl;
+	}
     }
 }
 

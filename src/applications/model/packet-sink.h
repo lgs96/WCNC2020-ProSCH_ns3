@@ -26,6 +26,8 @@
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 #include "ns3/address.h"
+#include "ns3/delay-jitter-estimation.h"
+#include <fstream>
 
 namespace ns3 {
 
@@ -133,6 +135,10 @@ private:
   /// Traced Callback: received packets, source address.
   TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;
 
+  DelayJitterEstimation m_jitterEstimate;
+  bool m_calcJitter;
+  std::ofstream m_jitterFile;
+  std::string m_jitterFileName; 
 };
 
 } // namespace ns3

@@ -14,8 +14,13 @@ def start_simulation(data):
 	scheme = data[4]
 	location = scheme+"_"+str(buildingIndex)+"index_"+x2_delay+"ms_"+buildingNum+"buildings_"+throughput
 	subprocess.check_call('mkdir %s'%(location),shell=True)
-	subprocess.check_call('cp %s %s/%s'%(str(buildingIndex)+"_BuildingPosition.txt",location,str(buildingIndex)+"_BuildingPosition.txt"),shell=True)
-	subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s --BuildingNum=%s --SourceRate=%s" --run globecom2019_pbh' % (location,buildingIndex, x2_delay, buildingNum, throughput),shell=True)
+	#subprocess.check_call('cp %s %s/%s'%(str(buildingIndex)+"_BuildingPosition.txt",location,str(buildingIndex)+"_BuildingPosition.txt"),shell=True)
+	try:
+		subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s --BuildingNum=%s --SourceRate=%s" --run globecom2019_pbh' % (location,buildingIndex, x2_delay, buildingNum, throughput),shell=True)
+	except: 
+		subprocess.check_call('rm -r %s'%(location),shell=True)
+		start_simulation(data)
+		pass
 
 #if len(sys.argv) != 5:
 #	print "usage: ./parallel [max_homes] [step] [sub_runs] [processes]"
@@ -45,7 +50,7 @@ throughputSet = ['1000Mbps']
 schemeSet = ['X2','Proxy','PBH']
 whichScheme = 2
 paramsSet = []
-for  i in range(1,20,1):
+for  i in range(150,200,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]

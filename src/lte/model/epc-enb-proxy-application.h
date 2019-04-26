@@ -45,6 +45,7 @@
 #include "ns3/internet-module.h"
 //#include "ns3/lte-module.h"
 #include <ns3/epc-enb-application.h>
+#include "ns3/delay-jitter-estimation.h"
 
 namespace ns3 {
 class EpcEnbS1SapUser;
@@ -138,6 +139,8 @@ private:
 
   uint32_t m_prevHighTx;
   uint32_t m_delayedHighTx;
+
+  DelayJitterEstimation m_jitterEstimate;
 };
 
 } //namespace ns3

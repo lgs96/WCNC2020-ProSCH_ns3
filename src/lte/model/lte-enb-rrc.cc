@@ -2830,7 +2830,7 @@ namespace ns3 {
 						MakeBooleanChecker ())
 				.AddAttribute ("HoSinrDifference",
 						"The value for which an handover between MmWave eNB is triggered",
-						DoubleValue (3),
+						DoubleValue (5),
 						MakeDoubleAccessor (&LteEnbRrc::m_sinrThresholdDifference),
 						MakeDoubleChecker<double> ())
 				.AddAttribute ("SecondaryCellHandoverMode",

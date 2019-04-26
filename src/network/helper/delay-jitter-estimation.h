@@ -68,11 +68,14 @@ public:
    */
   uint64_t GetLastJitter (void) const;
 
+  Time GetIpdv (void) const;
+
 private:
   Time m_previousRx;   //!< Previous Rx time
   Time m_previousRxTx; //!< Previous Rx or Tx time
   int64x64_t m_jitter; //!< Jitter estimation
   Time m_delay;        //!< Delay estimation
+  Time m_ipdv;	       // Instantaneous packet delay variation;
 };
 
 } // namespace ns3

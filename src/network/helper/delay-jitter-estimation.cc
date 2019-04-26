@@ -22,6 +22,7 @@
 #include "ns3/tag.h"
 #include "ns3/simulator.h"
 #include "ns3/string.h"
+#include <fstream>
 
 namespace ns3 {
 
@@ -121,6 +122,10 @@ DelayJitterEstimation::PrepareTx (Ptr<const Packet> packet)
   DelayJitterEstimationTimestampTag tag;
   packet->AddByteTag (tag);
 }
+
+std::ofstream file;
+std::string fileName = "Ipdv.txt";
+
 void
 DelayJitterEstimation::RecordRx (Ptr<const Packet> packet)
 {
@@ -132,7 +137,16 @@ DelayJitterEstimation::RecordRx (Ptr<const Packet> packet)
       return;
     }
   tag.GetTxTime ();
-
+  if(m_previousRx != 0)
+  {
+  	m_ipdv = Simulator::Now() - m_previousRx;
+	if(!file.is_open())
+	{
+		file.open(fileName.c_str(),std::ofstream::app);
+	}
+	//std::cout<<Simulator::Now().GetSeconds()<<" "<<m_ipdv<<std::endl;
+	file<<Simulator::Now().GetSeconds()<<" "<<m_ipdv.GetSeconds()<<std::endl;
+  }
   Time delta = (Simulator::Now () - m_previousRx) - (tag.GetTxTime () - m_previousRxTx);
   m_jitter += (Abs (delta) - m_jitter) / 16;
   m_previousRx = Simulator::Now ();
@@ -149,6 +163,12 @@ uint64_t
 DelayJitterEstimation::GetLastJitter (void) const
 {
   return m_jitter.GetHigh ();
+}
+
+Time
+DelayJitterEstimation::GetIpdv (void) const
+{
+  return m_ipdv;
 }
 
 } // namespace ns3

@@ -212,9 +212,12 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   LtePdcpHeader pdcpHeader;
   pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
 
+  //std::cout<<"Enb: "<<m_txSequenceNumber<<" " <<m_maxPdcpSn<<std::endl;
+
   m_txSequenceNumber++;
   if (m_txSequenceNumber > m_maxPdcpSn)
     {
+      //std::cout<<m_txSequenceNumber<<" " <<m_maxPdcpSn<<std::endl;
       m_txSequenceNumber = 0;
     }
 
@@ -297,7 +300,7 @@ McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
     }
   m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
-  p->RemoveAllByteTags();
+  //p->RemoveAllByteTags();
   NS_LOG_LOGIC("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
   
   LtePdcpHeader pdcpHeader;

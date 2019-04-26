@@ -43,6 +43,7 @@
 #include <ns3/epc-s1ap-sap.h>
 #include <map>
 #include "ns3/internet-module.h"
+#include "ns3/delay-jitter-estimation.h"
 
 namespace ns3 {
 class EpcEnbS1SapUser;
@@ -115,6 +116,8 @@ private:
   uint32_t m_currentAvailable;
   uint32_t m_lastAvailable;
   uint32_t m_delay;
+
+  DelayJitterEstimation m_jitterEstimate;
 };
 
 } //namespace ns3

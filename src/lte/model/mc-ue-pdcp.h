@@ -31,7 +31,7 @@
 #include <ns3/lte-pdcp-sap.h>
 #include <ns3/lte-rlc-sap.h>
 #include <ns3/lte-pdcp.h>
-
+#include "ns3/network-module.h"
 namespace ns3 {
 
 /**
@@ -63,6 +63,12 @@ public:
    * \param rnti
    */
   void SetRnti (uint16_t rnti);
+  void BufferingAndReordering(Ptr<Packet>p); // this is reordering function
+  void BufferingAndReordering_New(Ptr<Packet>p); // this is reordering function
+
+  void printData(std::string filename, uint16_t SN);
+  void t_ReordringTimer_Expired();
+  void t_ReorderingTimer_Expired_New();
 
   /**
    * Set the ldid
@@ -105,6 +111,7 @@ public:
    * \param s the MmWave RLC SAP Provider to be used by this MC_PDCP
    */
   void SetMmWaveRlcSapProvider (LteRlcSapProvider * s);
+  void SetMmWaveRlcSapProvider_2 (LteRlcSapProvider * s); //sjkang1110
 
   static const uint16_t MAX_PDCP_SN = 4096;
 
@@ -117,6 +124,11 @@ public:
     uint16_t txSn; ///< TX sequence number
     uint16_t rxSn; ///< RX sequence number
   };
+  struct BufferedPackets{
+ 	  uint16_t sequenceNumber;
+ 	  LtePdcpSapUser::ReceivePdcpSduParameters params;
+ 	  uint16_t RX_HFN;
+   };
 
   /** 
    * 
@@ -160,12 +172,16 @@ public:
    */
   void SwitchConnection(bool useMmWaveConnection);
 
+  void CalculatePdcpThroughput(std::ofstream *stream ); //sjkang
 
+  void SetStreams ( std::ofstream * stream); //sjkang
+  void MeasureSN_Difference(); //sjkang1116
 
 protected:
   // Interface provided to upper RRC entity
   virtual void DoTransmitPdcpSdu (Ptr<Packet> p);
-
+  //virtual void DoTransmitPdcpControlPacket(Ptr<Packet> p, uint16_t cellId);//sjkang
+  virtual void sendControlMessage();
   LtePdcpSapUser* m_pdcpSapUser;
   LtePdcpSapProvider* m_pdcpSapProvider;
 
@@ -175,10 +191,12 @@ protected:
   LteRlcSapUser* m_rlcSapUser;
   LteRlcSapProvider* m_rlcSapProvider;
   LteRlcSapProvider* m_mmWaveRlcSapProvider;
+  LteRlcSapProvider* m_mmWaveRlcSapProvider_2; //sjkang1110
 
   uint16_t m_rnti;
   uint8_t m_lcid;
   uint16_t m_mmWaveRnti;
+
 
   /**
    * Used to inform of a PDU delivery to the RLC SAP provider.
@@ -190,7 +208,7 @@ protected:
    * The parameters are RNTI, LCID, bytes delivered and delivery delay in nanoseconds. 
    */
   TracedCallback<uint16_t, uint8_t, uint32_t, uint64_t> m_rxPdu;
-
+  EventId t_ReorderingTimer;
 private:
   /**
    * State variables. See section 7.1 in TS 36.323
@@ -205,6 +223,61 @@ private:
 
   bool m_useMmWaveConnection;
   bool m_alwaysLteUplink;
+  int  Last_Submitted_PDCP_RX_SN;
+  /////sjkang for enabling reordering
+  int *temp ;
+ Time  expiredTime;
+ int receivedPDCP_SN;
+    int  Reordering_PDCP_RX_COUNT;
+    int Next_PDCP_RX_SN;
+    std::map <uint16_t,LtePdcpSapUser::ReceivePdcpSduParameters> PdcpBuffer;
+
+    uint64_t discardedPacketSize=0;
+    uint32_t numberOfDiscaredPackets=0;
+    static const int reorderingWindow =2048;//8192;//2048;
+    std::map<uint16_t, uint16_t>RX_HFNbySN;
+    int present_RX_HFN;
+    uint32_t 	SumOfPacketSize=0;
+    uint32_t	 orderdedSumOfPacket=0;
+    uint16_t	numberOfReorderingTimeout=0;
+    bool check;
+    bool check_2;
+
+///////// for measuring SN difference
+
+    int tempBuffer[100]; //sjkang0810
+    uint64_t *temp_n;
+     Time tempTime; //sjkang0810
+     Time previousTime;
+     uint16_t counter=0;
+     //for calculating Pdcp Tput
+     uint64_t TotalPacketSize;
+     uint64_t  TotalPacketSize_ordered;
+     double TotalTime;
+
+   std::ofstream * m_SN_DifferenceStream; //sjkang1116
+    //uint16_t temp_SN; //sjkang1116
+    uint64_t cellIdToSN_1, cellIdToSN_2; //sjkang1116
+    uint16_t cellId_1, cellId_2; //sjkang1116
+    bool m_isEnableReordering;
+    bool firstPacket ;
+
+
+    std::map <uint64_t,LtePdcpSapUser::ReceivePdcpSduParameters> NewPdcpBuffer;
+    std::map<uint64_t,uint16_t> HFN;
+    std::map<uint64_t,uint32_t> SN;
+    uint32_t RCVD_SN;
+    uint16_t RCVD_HFN;
+    uint64_t RCVD_COUNT;
+    uint64_t RX_NEXT;
+    uint64_t RX_RECORD;
+    uint64_t RX_DELIV;
+    uint64_t LAST_SUBMITED;
+    bool outOfDelivery = false;
+
+    // for processing packet duplication
+  //  std::map <uint16_t, uint16_t> checkPacketDuplication; //sjkang
+    std::vector<uint32_t> CheckSN;
 
 };
 

@@ -72,7 +72,7 @@ EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<
   NS_LOG_FUNCTION (this << proxyTcpSocket << proxyEnbSocket << proxyToEnbAddress);
   //m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
   m_proxyEnbSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromEnbSocket, this));
-  m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(24*1024*1024);
+  m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
   m_totalRx = 0;
   m_lastTotalRx = 0;
   m_currentAvailable = 0;
@@ -115,6 +115,8 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this << socket);  
   NS_ASSERT (socket == m_proxyEnbSocket);
   Ptr<Packet> packet = socket -> Recv ();
+
+  m_jitterEstimate.PrepareTx(packet);
 
   NS_LOG_LOGIC("Packet size before remove header: "<<packet->GetSize());
   Ipv4Header tempIpv4Header;

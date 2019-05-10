@@ -246,6 +246,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
   Ptr<Packet> packet = socket->Recv ();
   NS_LOG_LOGIC ("packetLen = " << packet->GetSize ());
 
+  uint32_t packetSize = packet->GetSize();
+
   NS_ASSERT_MSG (m_x2InterfaceCellIds.find (socket) != m_x2InterfaceCellIds.end (),
                  "Missing infos of local and remote CellId");
   Ptr<X2CellInfo> cellsInfo = m_x2InterfaceCellIds [socket];
@@ -266,7 +268,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
   }
 
   packet->RemovePacketTag(epcX2Tag);
-  m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  //m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
   ////////////////////////////////////////////////////////
 
   EpcX2Header x2Header;
@@ -284,6 +286,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
       if (messageType == EpcX2Header::InitiatingMessage)
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST");
+
+ 	  m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packetSize, delay.GetNanoSeconds (), 0);
 
           EpcX2HandoverRequestHeader x2HoReqHeader;
           packet->RemoveHeader (x2HoReqHeader);
@@ -318,7 +322,9 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST ACK");
 
-          EpcX2HandoverRequestAckHeader x2HoReqAckHeader;
+ 	  m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packetSize, delay.GetNanoSeconds (), 0);
+          
+	  EpcX2HandoverRequestAckHeader x2HoReqAckHeader;
           packet->RemoveHeader (x2HoReqAckHeader);
 
           NS_LOG_INFO ("X2 HandoverRequestAck header: " << x2HoReqAckHeader);
@@ -420,6 +426,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 		  EpcX2UeContextReleaseHeader x2UeCtxReleaseHeader;
 		  packet->RemoveHeader (x2UeCtxReleaseHeader);
 
+  		  m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  
 		  NS_LOG_INFO ("X2 UeContextRelease header: " << x2UeCtxReleaseHeader);
 
 		  EpcX2SapUser::UeContextReleaseParams params;
@@ -546,6 +554,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     {
       NS_LOG_LOGIC ("Recv X2 message: REQUEST MC HANDOVER");
       
+      m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packetSize, delay.GetNanoSeconds (), 0);
+      
       EpcX2McHandoverHeader x2mcHeader;
       packet->RemoveHeader(x2mcHeader);
 
@@ -594,6 +604,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     {
       NS_LOG_LOGIC ("Recv X2 message: SECONDARY CELL HANDOVER COMPLETED");
 
+      m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  
       EpcX2SecondaryCellHandoverCompletedHeader x2hoHeader;
       packet->RemoveHeader(x2hoHeader);
 
@@ -642,6 +654,8 @@ EpcX2::RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint
   NS_LOG_LOGIC ("Recv X2 message: from delayed Socket");
   NS_LOG_LOGIC ("packetLen = " << packet->GetSize ());
 
+  uint32_t packetSize = packet->GetSize ();
+
   EpcX2Tag epcX2Tag;
   Time delay;
   if (packet->PeekPacketTag(epcX2Tag))
@@ -650,7 +664,7 @@ EpcX2::RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint
       packet->RemovePacketTag(epcX2Tag);
     }
 
-  m_rxPdu(remoteCellId, localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  //m_rxPdu(remoteCellId, localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
 
   EpcX2Header x2Header;
   packet->RemoveHeader (x2Header);
@@ -666,6 +680,7 @@ EpcX2::RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST");
 
+ 	  m_rxPdu(remoteCellId,localCellId, packetSize, delay.GetNanoSeconds (), 0);
           EpcX2HandoverRequestHeader x2HoReqHeader;
           packet->RemoveHeader (x2HoReqHeader);
 
@@ -699,6 +714,7 @@ EpcX2::RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST ACK");
 
+ 	  m_rxPdu(remoteCellId, localCellId, packetSize, delay.GetNanoSeconds (), 0);
           EpcX2HandoverRequestAckHeader x2HoReqAckHeader;
           packet->RemoveHeader (x2HoReqAckHeader);
 
@@ -927,6 +943,7 @@ EpcX2::RecvFromX2cDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint
     {
       NS_LOG_LOGIC ("Recv X2 message: REQUEST MC HANDOVER");
 
+      m_rxPdu(remoteCellId, localCellId, packetSize, delay.GetNanoSeconds (), 0);
       EpcX2McHandoverHeader x2mcHeader;
       packet->RemoveHeader(x2mcHeader);
 
@@ -1049,8 +1066,11 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
 	return;
   }
 
+  if(cellsInfo->m_remoteCellId !=1 && cellsInfo->m_localCellId != 1)
+  	m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  
   packet->RemovePacketTag(epcX2Tag);
-  m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
+  //m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
   ///////////////////////////////
 
   GtpuHeader gtpu;
@@ -1147,10 +1167,10 @@ EpcX2::RecvFromX2uDelayedSocket (Ptr<Packet> packet, uint16_t remoteCellId, uint
   EpcX2Tag epcX2Tag;
   Time delay;
   if (packet->PeekPacketTag(epcX2Tag))
-    {
+  {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
       packet->RemovePacketTag(epcX2Tag);
-    }
+  }
   m_rxPdu(localCellId, remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 
   GtpuHeader gtpu;

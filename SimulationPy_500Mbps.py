@@ -16,7 +16,7 @@ def start_simulation(data):
 	subprocess.check_call('mkdir %s'%(location),shell=True)
 	#subprocess.check_call('cp %s %s/%s'%(str(buildingIndex)+"_BuildingPosition.txt",location,str(buildingIndex)+"_BuildingPosition.txt"),shell=True)
 	try:
-		subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s --BuildingNum=%s --SourceRate=%s" --run globecom2019_pbh' % (location,buildingIndex, x2_delay, buildingNum, throughput),shell=True)
+		subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s --BuildingNum=%s --SourceRate=%s" --run globecom2019_pbh2' % (location,buildingIndex, x2_delay, buildingNum, throughput),shell=True)
 	except: 
 		subprocess.check_call('rm -r %s '%(location),shell=True)
 		start_simulation(data)
@@ -47,10 +47,10 @@ def start_simulation(data):
 buildingNumSet =['80']
 x2DelaySet = ['10']
 throughputSet = ['500Mbps']
-schemeSet = ['X2Min','Proxy','PBH']
+schemeSet = ['X2','Proxy','PBH']
 whichScheme = 0
 paramsSet = []
-for  i in range(114,200,1):
+for  i in range(260,280,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]

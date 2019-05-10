@@ -626,7 +626,7 @@ main (int argc, char *argv[])
 	double x2Latency= 10;
 	int BuildingIndex = 6 ;	
 	string sourceRateString = "500Mbps";
-	bool isMinimum = true;
+	bool isMinimum = false;
 
 	// Command line arguments
 	CommandLine cmd;

@@ -717,8 +717,8 @@ void UeManager::RecvHandoverRequestAck(
 			&LteEnbRrc::HandoverLeavingTimeout, m_rrc, m_rnti);
 	// TODO check the actions to be performed when timeout expires
 	NS_ASSERT(handoverCommand.haveMobilityControlInfo);
-	m_rrc->m_handoverStartTrace(m_imsi, m_rrc->m_cellId, m_rnti,
-			handoverCommand.mobilityControlInfo.targetPhysCellId);
+	//m_rrc->m_handoverStartTrace(m_imsi, m_rrc->m_cellId, m_rnti,
+	//		handoverCommand.mobilityControlInfo.targetPhysCellId);
 
 	EpcX2SapProvider::SnStatusTransferParams sst;
 	sst.oldEnbUeX2apId = params.oldEnbUeX2apId;
@@ -859,7 +859,6 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 					txonBuffer.begin(), txonBuffer.end());
 			m_x2forwardingBufferSize += rlcAm->GetTransmittingRlcSduBufferSize()
 					+ txonBufferSize;
-
 			//Get the rlcAm
 			std::vector<Ptr<Packet> > rlcAmTxedSduBuffer =
 					rlcAm->GetTxedRlcSduBuffer();
@@ -927,6 +926,13 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 		NS_ASSERT_MSG(mcPdcp->GetUseMmWaveConnection(),
 				"The McEnbPdcp is not forwarding data to the mmWave eNB, check if the switch happened!");
 	}
+
+	if(!m_forwardSizeFile.is_open())
+	{
+		std::string fileName = "CacheSize.txt";
+		m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
+	}
+	m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<<m_x2forwardingBufferSize << std::endl;
 
 	while (!m_x2forwardingBuffer.empty()) {
 		NS_LOG_DEBUG(
@@ -1092,6 +1098,13 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 
 	case HANDOVER_LEAVING: {
 		NS_LOG_LOGIC("SEQ SEQ HANDOVERLEAVING STATE LTE ENB RRC.");
+
+		if(!m_forwardSizeFile.is_open())
+		{
+			std::string fileName = "CacheSize.txt";
+			m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
+		}
+		m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<< p->GetSize() + 66 << std::endl;
 		//m_x2forwardingBuffer is empty, forward incomming pkts to target eNB.
 		if (m_x2forwardingBuffer.empty()) {
 			NS_LOG_INFO("forwarding incoming pkts to target eNB over X2-U");
@@ -3182,6 +3195,8 @@ void LteEnbRrc::PerformHandover(uint64_t imsi) {
 		NS_LOG_UNCOND(
 				"## Warn: handover not triggered because the UE is not associated yet!");
 	}
+
+	m_handoverStartTrace(imsi, m_cellId, GetRntiFromImsi (imsi), handoverInfo.targetCellId);
 
 	// remove the HandoverEvent from the map
 	m_imsiHandoverEventsMap.erase(m_imsiHandoverEventsMap.find(imsi));

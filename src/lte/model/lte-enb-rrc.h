@@ -620,6 +620,7 @@ private:
   // this variable is set to true if on initial access, for mc devices, all the mmWave eNBs are in outage
   bool m_allMmWaveInOutageAtInitialAccess;
 
+  std::ofstream m_forwardSizeFile;
 }; // end of `class UeManager`
 
 

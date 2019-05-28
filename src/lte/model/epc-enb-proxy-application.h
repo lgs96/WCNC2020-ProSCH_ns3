@@ -77,7 +77,8 @@ public:
    * \param sgwS1uAddress the IPv4 address at which this eNB will be able to reach its SGW for S1-U communications
    * \param cellId the identifier of the enb
    */
-  EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
+  EpcEnbProxyApplication (Ptr<Node> m_proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
+  //EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
 
   /**
    * Destructor
@@ -96,7 +97,7 @@ private:
 
   void SendToEnbSocket (Ptr<Packet> packet);
 
-  Ptr<Socket> m_proxyTcpSocket;
+  std::map<uint16_t,Ptr<Socket>> m_proxyTcpSocketMap;
   Ptr<Socket> m_proxyEnbSocket;
 
   Ipv4Address m_proxyToEnbAddress;
@@ -118,6 +119,10 @@ private:
   uint32_t m_delay;
 
   DelayJitterEstimation m_jitterEstimate;
+
+  Ptr <Node> m_proxyNode;
+  Ipv4Address m_proxyAddress;
+  uint16_t m_proxyTcpPort;
 };
 
 } //namespace ns3

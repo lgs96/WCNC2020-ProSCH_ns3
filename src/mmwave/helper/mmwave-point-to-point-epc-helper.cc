@@ -67,7 +67,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWavePointToPointEpcHelper);
 MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   : m_gtpuUdpPort (2152),  // fixed by the standard
     m_s1apUdpPort (36412),
-	m_proxyTcpPort (8198),
+	m_proxyTcpPort (8200),
 	m_proxyUdpPort (8199),
 	m_enbProxyUdpPort (8434)
 {
@@ -293,7 +293,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   p2ph_proxy.SetDeviceAttribute ("DataRate", DataRateValue (DataRate(UINT64_MAX)));
   p2ph_proxy.SetDeviceAttribute ("Mtu", UintegerValue (30000));
   p2ph_proxy.SetChannelAttribute ("Delay", TimeValue(Seconds(0)));
-  NetDeviceContainer enbProxyDevices = p2ph.Install (enb, m_proxyNode);
+  NetDeviceContainer enbProxyDevices = p2ph_proxy.Install (enb, m_proxyNode);
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB after installing p2p dev: " << enb->GetObject<Ipv4> ()->GetNInterfaces ());
 
   m_proxyIpv4AddressHelper.NewNetwork ();
@@ -304,9 +304,9 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   Ipv4Address proxyAddress = enbProxyIpIfaces.GetAddress (1);
 
   // Process7: create proxy socket for proxyNode
-  Ptr<Socket> proxyTcpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::TcpSocketFactory"));
-  retval = proxyTcpSocket->Bind (InetSocketAddress (proxyAddress, m_proxyTcpPort));
-  NS_ASSERT (retval == 0);
+  //Ptr<Socket> proxyTcpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::TcpSocketFactory"));
+  //retval = proxyTcpSocket->Bind (InetSocketAddress (proxyAddress, m_proxyTcpPort));
+  //NS_ASSERT (retval == 0);
 
   Ptr<Socket> proxyUdpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::UdpSocketFactory"));
   retval = proxyUdpSocket->Bind (InetSocketAddress (proxyAddress, m_proxyUdpPort));
@@ -359,7 +359,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
 
   //Process7
   NS_LOG_INFO ("create EpcEnbProxyApplication");
-  Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (proxyTcpSocket,proxyUdpSocket,proxy_enbAddress); //need to add parameter
+  Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (m_proxyNode, proxyAddress, m_proxyTcpPort, proxyUdpSocket, proxy_enbAddress); //need to add parameter
   m_proxyNode->AddApplication (proxyApp);
   NS_ASSERT (m_proxyNode->GetNApplications () == 1);
   NS_ASSERT_MSG (m_proxyNode->GetApplication (0)->GetObject<EpcEnbProxyApplication> () != 0, "cannot retrieve EpcEnbProxyApplication");
@@ -383,8 +383,8 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   
   m_sgwPgwApp->AddEnb (cellId, enbAddress, sgwAddress);
 
-  if(cellId == 1)
-	  m_traceProxy = proxyTcpSocket->GetObject<TcpSocketBase>();
+  //if(cellId == 1)
+  //	m_traceProxy = proxyTcpSocket->GetObject<TcpSocketBase>();
 }
 
 

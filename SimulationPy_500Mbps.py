@@ -50,7 +50,7 @@ throughputSet = ['500Mbps']
 schemeSet = ['X2','Proxy','PBH']
 whichScheme = 1
 paramsSet = []
-for  i in range(260,280,1):
+for  i in range(340,360,1):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]

@@ -58,21 +58,27 @@ void
 EpcEnbProxyApplication::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  m_proxyTcpSocket = 0;
+  for(auto it = m_proxyTcpSocketMap.begin(); it != m_proxyTcpSocketMap.end(); it++)
+  {
+	  it->second = 0;
+  }
   m_proxyEnbSocket = 0;
 }
 
 
-EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress)
-  : m_proxyTcpSocket (proxyTcpSocket),
+EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Node> proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress)
+  : //m_proxyTcpSocket (proxyTcpSocket),
 	m_proxyEnbSocket (proxyEnbSocket),
     m_proxyToEnbAddress (proxyToEnbAddress),
-    m_proxyToEnbUdpPort (8434) // fixed by the standard
+    m_proxyToEnbUdpPort (8434),
+    m_proxyNode (proxyNode),
+	m_proxyAddress (proxyAddress),
+	m_proxyTcpPort (proxyTcpPort)// fixed by the standard
 {
-  NS_LOG_FUNCTION (this << proxyTcpSocket << proxyEnbSocket << proxyToEnbAddress);
+  NS_LOG_FUNCTION (this << proxyNode << proxyAddress << proxyTcpPort<< proxyEnbSocket << proxyToEnbAddress);
   //m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
   m_proxyEnbSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromEnbSocket, this));
-  m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
+  //m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
   m_totalRx = 0;
   m_lastTotalRx = 0;
   m_currentAvailable = 0;
@@ -119,8 +125,11 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
   m_jitterEstimate.PrepareTx(packet);
 
   NS_LOG_LOGIC("Packet size before remove header: "<<packet->GetSize());
+  GtpuHeader tempGtpuHeader;
   Ipv4Header tempIpv4Header;
   TcpHeader tempTcpHeader;
+
+  packet -> RemoveHeader (tempGtpuHeader);
   packet -> RemoveHeader (tempIpv4Header);
   packet -> RemoveHeader (tempTcpHeader);
 
@@ -147,8 +156,17 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
   {
 	//Start Proxy TCP communication
 	NS_LOG_LOGIC("First packet from Server");
+
+	Ptr<Socket> proxyTcpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::TcpSocketFactory"));
+	int retval = proxyTcpSocket->Bind (InetSocketAddress (m_proxyAddress, m_proxyTcpPort));
+	m_proxyTcpPort++;
+	NS_ASSERT (retval == 0);
+	proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
+
 	Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
-    m_proxyTcpSocket->Connect(tcpToEnbAddress);
+    proxyTcpSocket->Connect(tcpToEnbAddress);
+
+    m_proxyTcpSocketMap.insert(std::make_pair(srcPort,proxyTcpSocket));
 
     //Send SYN|ACK packet to server, set SYN|ACK packet
     SequenceNumber32 dataSeqNum = SequenceNumber32(0);
@@ -159,10 +177,12 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
     Ptr<Packet> ackPacket = Create<Packet> ();
     ackPacket->AddHeader(newTcpHeader);
     ackPacket->AddHeader(newIpv4Header);
+    ackPacket->AddHeader(tempGtpuHeader);
 
     NS_LOG_LOGIC("Packet size: "<<packet->GetSize());
     NS_LOG_LOGIC("Ipv4 Header: "<<newIpv4Header);
     NS_LOG_LOGIC("Tcp Header: "<<newTcpHeader);
+    NS_LOG_LOGIC("Gtpu Header: "<<tempGtpuHeader);
 
     uint32_t flags = 0;
     m_proxyEnbSocket->SendTo (ackPacket, flags, InetSocketAddress (m_proxyToEnbAddress, m_proxyToEnbUdpPort));
@@ -175,10 +195,12 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
   //#3 receive data packet
   else
   {
+
+	Ptr<Socket> proxyTcpSocket = m_proxyTcpSocketMap.find(srcPort)->second;
 	//Send data packet from proxy tcp to user
-	m_proxyTcpSocket->Send(packet);
+	proxyTcpSocket->Send(packet);
 	//Set advertise window
-	Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
+	Ptr<TcpTxBuffer> proxyTxBuffer = proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
 
 	uint32_t awndSize = proxyTxBuffer->Available()-m_delay*m_departureRate;
 
@@ -202,6 +224,7 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
 	Ptr<Packet> ackPacket = Create<Packet> ();
 	ackPacket->AddHeader(newTcpHeader);
 	ackPacket->AddHeader(newIpv4Header);
+	ackPacket->AddHeader(tempGtpuHeader);
 
 	m_totalRx += dataSize;
 
@@ -226,8 +249,8 @@ EpcEnbProxyApplication::GetArrivalRate ()
 void
 EpcEnbProxyApplication::GetDepartureRate ()
 {
-	NS_LOG_FUNCTION (this);
-	m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
+	//NS_LOG_FUNCTION (this);
+	/*m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
 	m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.1);
 	if(m_currentAvailable < m_lastAvailable)
 	{
@@ -235,7 +258,8 @@ EpcEnbProxyApplication::GetDepartureRate ()
 	}
 	m_count_dep++;
 	m_lastAvailable = m_currentAvailable;
-	//std::cout<<"Departure rate is "<<m_departureRate<<std::endl;
+	//std::cout<<"Departure rate is "<<m_departureRate<<std::endl;*/
+	m_departureRate = 0;
 	Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetDepartureRate,this);
 }
 

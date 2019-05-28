@@ -293,7 +293,7 @@ private:
   Ipv4Address m_proxyAddress;
   Ptr<VirtualNetDevice> m_tunProxyDevice;
 
-
+  std::map<Ipv4Address,uint32_t> m_teidMap;
 };
 
 } //namespace ns3

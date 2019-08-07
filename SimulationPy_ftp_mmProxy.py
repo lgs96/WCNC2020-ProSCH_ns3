@@ -22,7 +22,7 @@ def start_simulation(data):
 		pass
 
 	try:
-		subprocess.check_call('./waf --cwd=%s --command-template="%%s --downloadSize=%s --SourceRate=%s --X2LinkDelay=%s --serverDelay=%s --channelVariant=%s --bufferSize=%s" --run ictc2019_sub6' % (location,downloadSize,sourceRate, x2Delay, serverDelay, channel,bufferSize),shell=True)	
+		subprocess.check_call('./waf --cwd=%s --command-template="%%s --downloadSize=%s --SourceRate=%s --X2LinkDelay=%s --serverDelay=%s --channelVariant=%s --bufferSize=%s" --run ictc2019_mmBS' % (location,downloadSize,sourceRate, x2Delay, serverDelay, channel,bufferSize),shell=True)	
 	except:
 		start_simulation(data)
 #if len(sys.argv) != 5:
@@ -57,7 +57,7 @@ schemeSet = ['noProxy','mmProxy','sub6Proxy']
 channelSet = ['0','1']
 bufferSizeSet = ['10485760','1048576']
 
-whichScheme = 2 
+whichScheme = 1 
 
 paramsSet = []
 scheme = schemeSet[whichScheme]

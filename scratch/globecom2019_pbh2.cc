@@ -241,13 +241,13 @@ MyApp::RandomPacket(void)
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
  }
 */
-
+/*
  static void
  RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
  {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
  }
- 
+ */
 
 
 
@@ -1057,14 +1057,14 @@ main (int argc, char *argv[])
 			}
 		}
 	}
-	AsciiTraceHelper asciiTraceHelper;
+	//AsciiTraceHelper asciiTraceHelper;
 /*
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
-*/
+
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("proxyRtt.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream2));
-/*
+
 	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("proxySst.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh, stream3));
 

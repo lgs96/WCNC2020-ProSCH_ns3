@@ -200,6 +200,11 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    UintegerValue (10000),
                    MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_x2LinkMtu),
                    MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("ProxyBufferSize",
+		   "The size of TCP proxy buffer.",
+		   UintegerValue (10*1024*1024),
+		   MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_proxyBufferSize),
+	           MakeUintegerChecker<uint32_t> ()) 
   ;
   return tid;
 }
@@ -359,7 +364,7 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
 
   //Process7
   NS_LOG_INFO ("create EpcEnbProxyApplication");
-  Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (m_proxyNode, proxyAddress, m_proxyTcpPort, proxyUdpSocket, proxy_enbAddress); //need to add parameter
+  Ptr<EpcEnbProxyApplication> proxyApp = CreateObject<EpcEnbProxyApplication> (m_proxyNode, proxyAddress, m_proxyTcpPort, proxyUdpSocket, proxy_enbAddress, m_proxyBufferSize); //need to add parameter
   m_proxyNode->AddApplication (proxyApp);
   NS_ASSERT (m_proxyNode->GetNApplications () == 1);
   NS_ASSERT_MSG (m_proxyNode->GetApplication (0)->GetObject<EpcEnbProxyApplication> () != 0, "cannot retrieve EpcEnbProxyApplication");
@@ -383,8 +388,8 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
   
   m_sgwPgwApp->AddEnb (cellId, enbAddress, sgwAddress);
 
-  //if(cellId == 1)
-  //	m_traceProxy = proxyTcpSocket->GetObject<TcpSocketBase>();
+  if(cellId == 1)
+    m_traceProxy = proxyApp->m_proxyTcpSocketMap;
 }
 
 

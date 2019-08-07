@@ -77,7 +77,7 @@ public:
    * \param sgwS1uAddress the IPv4 address at which this eNB will be able to reach its SGW for S1-U communications
    * \param cellId the identifier of the enb
    */
-  EpcEnbProxyApplication (Ptr<Node> m_proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
+  EpcEnbProxyApplication (Ptr<Node> m_proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress, uint32_t proxyBufferSize);
   //EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
 
   /**
@@ -91,13 +91,13 @@ public:
   //void RecvFromS1uSocket (Ptr<Socket> socket);
 
   void GetArrivalRate ();
-  void GetDepartureRate ();
+  void GetDepartureRate (Ptr <Socket> proxyTcpSocket);
+
+  std::map<uint16_t,Ptr<Socket>> m_proxyTcpSocketMap;
 
 private:
 
   void SendToEnbSocket (Ptr<Packet> packet);
-
-  std::map<uint16_t,Ptr<Socket>> m_proxyTcpSocketMap;
   Ptr<Socket> m_proxyEnbSocket;
 
   Ipv4Address m_proxyToEnbAddress;
@@ -116,13 +116,14 @@ private:
   uint32_t m_departureRate;
   uint32_t m_currentAvailable;
   uint32_t m_lastAvailable;
-  uint32_t m_delay;
-
+  uint32_t m_delay;  
   DelayJitterEstimation m_jitterEstimate;
 
   Ptr <Node> m_proxyNode;
   Ipv4Address m_proxyAddress;
   uint16_t m_proxyTcpPort;
+  uint32_t m_proxyBufferSize;
+
 };
 
 } //namespace ns3

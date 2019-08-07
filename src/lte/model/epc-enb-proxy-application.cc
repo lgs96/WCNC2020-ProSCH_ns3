@@ -1,4 +1,4 @@
-/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+ /*/*-*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab
@@ -41,7 +41,24 @@
 #include "eps-bearer-tag.h"
 
 
+
+
+
 namespace ns3 {
+
+static void
+Ssthresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSsthresh, uint32_t newSsthresh)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
+}
+
+static void
+RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
+}
+
+
 
 NS_LOG_COMPONENT_DEFINE ("EpcEnbProxyApplication");
 
@@ -51,6 +68,7 @@ EpcEnbProxyApplication::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::EpcEnbProxyApplication")
     .SetParent<Object> ()
     .SetGroupName("Lte");
+          
   return tid;
 }
 
@@ -66,14 +84,15 @@ EpcEnbProxyApplication::DoDispose (void)
 }
 
 
-EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Node> proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress)
+EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Node> proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress,uint32_t proxyBufferSize)
   : //m_proxyTcpSocket (proxyTcpSocket),
-	m_proxyEnbSocket (proxyEnbSocket),
+    m_proxyEnbSocket (proxyEnbSocket),
     m_proxyToEnbAddress (proxyToEnbAddress),
     m_proxyToEnbUdpPort (8434),
     m_proxyNode (proxyNode),
-	m_proxyAddress (proxyAddress),
-	m_proxyTcpPort (proxyTcpPort)// fixed by the standard
+    m_proxyAddress (proxyAddress),
+    m_proxyTcpPort (proxyTcpPort),
+    m_proxyBufferSize (proxyBufferSize)// fixed by the standard
 {
   NS_LOG_FUNCTION (this << proxyNode << proxyAddress << proxyTcpPort<< proxyEnbSocket << proxyToEnbAddress);
   //m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
@@ -86,8 +105,7 @@ EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Node> proxyNode, Ipv4Address
   m_count = 0;
   m_count_dep = 0;
   //Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
-  Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate,this);
-  m_delay = 0.02;
+  m_delay = 0;
 }
 
 
@@ -161,9 +179,24 @@ EpcEnbProxyApplication::RecvFromEnbSocket (Ptr<Socket> socket)
 	int retval = proxyTcpSocket->Bind (InetSocketAddress (m_proxyAddress, m_proxyTcpPort));
 	m_proxyTcpPort++;
 	NS_ASSERT (retval == 0);
-	proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
+	proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(m_proxyBufferSize);
 
-	Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
+	std::ostringstream fileName;
+	fileName<<"proxyRtt"<<srcPort<<".txt";
+	AsciiTraceHelper asciiTraceHelper;
+	Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
+	proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange,stream));
+
+	std::ostringstream fileName2;
+	fileName2<<"proxySst"<<srcPort<<".txt";
+	AsciiTraceHelper asciiTraceHelper2;
+	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper2.CreateFileStream (fileName2.str ().c_str ());
+	proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh,stream2));
+
+
+  	Simulator::Schedule(Simulator::Now() + Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate, this, proxyTcpSocket);
+    
+    Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
     proxyTcpSocket->Connect(tcpToEnbAddress);
 
     m_proxyTcpSocketMap.insert(std::make_pair(srcPort,proxyTcpSocket));
@@ -247,20 +280,20 @@ EpcEnbProxyApplication::GetArrivalRate ()
 }
 
 void
-EpcEnbProxyApplication::GetDepartureRate ()
+EpcEnbProxyApplication::GetDepartureRate (Ptr <Socket> proxyTcpSocket)
 {
-	//NS_LOG_FUNCTION (this);
-	/*m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
-	m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.1);
-	if(m_currentAvailable < m_lastAvailable)
+	NS_LOG_FUNCTION (this);
+	m_currentAvailable = proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
+	m_departureRate = (m_lastAvailable - m_currentAvailable)/(double)(0.1);
+	if(m_currentAvailable > m_lastAvailable)
 	{
 		m_departureRate = 0;
 	}
 	m_count_dep++;
 	m_lastAvailable = m_currentAvailable;
-	//std::cout<<"Departure rate is "<<m_departureRate<<std::endl;*/
-	m_departureRate = 0;
-	Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetDepartureRate,this);
+	//std::cout<<"Current: "<<m_currentAvailable<<" Departure rate is "<<m_departureRate<<std::endl;
+	//m_departureRate = 0;
+	Simulator::Schedule(MilliSeconds(100),&EpcEnbProxyApplication::GetDepartureRate,this,proxyTcpSocket);
 }
 
 void 

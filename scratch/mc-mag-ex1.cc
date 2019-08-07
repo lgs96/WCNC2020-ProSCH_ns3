@@ -326,7 +326,7 @@ RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> p
 {
 	ack_throughput[i] += 54*8;
 }
-
+/*
 	static void
 GetRx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
 {
@@ -338,7 +338,7 @@ GetTx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const Tc
 {
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetSequenceNumber() << std::endl;
 }
-
+*/
 	static void
 RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 {
@@ -1010,7 +1010,7 @@ main (int argc, char *argv[])
 			}
 		}
 	}
-	AsciiTraceHelper asciiTraceHelper;
+/*	AsciiTraceHelper asciiTraceHelper;
 
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
@@ -1029,7 +1029,7 @@ main (int argc, char *argv[])
 
 	Ptr<OutputStreamWrapper> stream6 = asciiTraceHelper.CreateFileStream ("proxyRto.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTO", MakeBoundCallback (&RTOChange, stream6));
-
+*/
 	mmwaveHelper -> EnableTraces();
 	// Start applications
 	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*1000));

@@ -43,6 +43,7 @@
 #include <ns3/epc-helper.h>
 #include <ns3/core-network-stats-calculator.h>
 #include <ns3/epc-enb-proxy-application.h>
+#include "ns3/internet-module.h"
 
 namespace ns3 {
 
@@ -98,7 +99,7 @@ public:
   virtual Ipv4InterfaceContainer AssignUeIpv4Address (NetDeviceContainer ueDevices);
   virtual Ipv4Address GetUeDefaultGatewayAddress ();
 
-  Ptr <TcpSocketBase> m_traceProxy;
+  std::map <uint16_t,Ptr<Socket>> m_traceProxy;
 
 
 private:
@@ -239,6 +240,8 @@ private:
   uint16_t m_proxyTcpPort;
   uint16_t m_proxyUdpPort;
   uint16_t m_enbProxyUdpPort;
+
+  uint32_t m_proxyBufferSize;
 
   Ptr<VirtualNetDevice> m_tunProxyDevice;
 

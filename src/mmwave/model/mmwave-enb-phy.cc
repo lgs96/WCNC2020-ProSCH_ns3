@@ -767,6 +767,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
     	txPowerDensity = (powerTxW / (m_phyMacConfig->GetSystemBandwidth()));
 	    NS_LOG_LOGIC("Linear UE Tx power = " << powerTxW);
 	    NS_LOG_LOGIC("System bandwidth = " << m_phyMacConfig->GetSystemBandwidth());
+	    //std::cout<<"System bandwidth = " <<m_phyMacConfig->GetSystemBandwidth()<<std::endl;
 	    NS_LOG_LOGIC("txPowerDensity = " << txPowerDensity);
 		// create tx psd
 		Ptr<SpectrumValue> txPsd =						// it is the eNB that dictates the conf, m_listOfSubchannels contains all the subch

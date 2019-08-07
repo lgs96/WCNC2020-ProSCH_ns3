@@ -50,12 +50,12 @@ def start_simulation(data):
 buildingNumSet =['80']
 #x2DelaySet = ['1', '5', '10']
 x2DelaySet = ['1','5','10','20']
-sourceRateSet = ['1000Mbps','500Mbps','300Mbps','100Mbps']
-downloadSizeSet = ['100','300','500']
-serverDelaySet = ['30','1']
+sourceRateSet = ['1000Mbps']
+downloadSizeSet = ['10','50','100','300']
+serverDelaySet = ['30']
 schemeSet = ['noProxy','mmProxy','sub6Proxy']
-channelSet = ['0','1']
-bufferSizeSet = ['10485760','1048576']
+channelSet = ['0']
+bufferSizeSet = ['10485760']
 
 whichScheme = 2 
 
@@ -85,7 +85,7 @@ for  i in range(len(downloadSizeSet)):
 # run)
 
 
-for i in range(0,len(paramsSet)):
+for i in range(len(paramsSet)):
 	start_simulation(paramsSet[i])
 #start_simulation(paramsSet[0])
 

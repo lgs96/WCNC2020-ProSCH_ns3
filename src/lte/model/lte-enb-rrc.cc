@@ -2766,7 +2766,7 @@ namespace ns3 {
 						MakeTimeChecker ())
 				.AddAttribute ("OutageThreshold",
 						"SNR threshold for outage events [dB]",
-						DoubleValue (-5.0),
+						DoubleValue (-10.0),
 						MakeDoubleAccessor (&LteEnbRrc::m_outageThreshold),
 						MakeDoubleChecker<long double> (-10000.0, 10.0))
 

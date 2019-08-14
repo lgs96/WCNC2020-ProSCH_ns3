@@ -596,7 +596,7 @@ main (int argc, char *argv[])
 	std::cout << "Goodsol Lee of SNU, Korea " <<std::endl;
 	std::cout << "gslee2@netlab.snu.ac.kr" << std::endl;
 
-	double simTime = 10.5;
+	double simTime = 20.5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -608,24 +608,24 @@ main (int argc, char *argv[])
 	double  mmeLatency=15.0;
 	//	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double EnbTxPower = 30;
-	double UeTxPower = 25;
+	double EnbTxPower = 25;
+	double UeTxPower = 20;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
-	uint16_t Velocity = 10;
+	uint16_t Velocity = 20;
 	std::string scheduler ="MmWaveFlexTtiMacScheduler";
 	std::string pathLossModel = "BuildingsObstaclePropagationLossModel";
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = false;
+	bool ReadBuilding = true;
 	bool isInCar = true;
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 80;
 	double x2Latency= 10;
 	int BuildingIndex = 8;	
-	string sourceRateString = "500Mbps";
+	string sourceRateString = "1000Mbps";
 
 	// Command line arguments
 	CommandLine cmd;
@@ -689,7 +689,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (15 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -775,12 +775,12 @@ main (int argc, char *argv[])
 	//	std::ofstream f ("enb_topology.txt");
 
 	Vector mmw1Position = Vector(0.0,0.0, 35);  ///28Ghz //path 0
-	Vector mmw2Position = Vector(0.0, 50.0, 35); //28Ghz // path 0
-	Vector mmw3Position = Vector(0.0, 100.0, 35); //28Ghz // path 0
+	Vector mmw2Position = Vector(0.0, 200.0, 35); //28Ghz // path 0
+	Vector mmw3Position = Vector(0.0, 400.0, 35); //28Ghz // path 0
 
-	Vector mmw4Position = Vector(100.0, 0.0, 35); //28Ghz // path 1
-	Vector mmw5Position = Vector(100.0,50.0, 35);  ///28Ghz //path 1
-	Vector mmw6Position = Vector(100.0, 100, 35); //28Ghz // path 1
+	Vector mmw4Position = Vector(200.0, 0.0, 35); //28Ghz // path 1
+	Vector mmw5Position = Vector(200.0,200.0, 35);  ///28Ghz //path 1
+	Vector mmw6Position = Vector(200.0, 400, 35); //28Ghz // path 1
 	//Vector mmw7Position = Vector (100.0, 60,25);
 	//Vector mmw8Position = Vector(100.0, 90, 25); //73Ghz // path 1
 	// Vector mmw7Position = Vector(0.0, 40, 12); //73Ghz // path 1
@@ -806,7 +806,7 @@ main (int argc, char *argv[])
 
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
 	//for(uint16_t i =0 ; i<ueNodes.GetN(); i++){
-	uePositionAlloc->Add(Vector(50 ,0,1.5));
+	uePositionAlloc->Add(Vector(100 ,0,1.5));
 	//uePositionAlloc->Add(Vector(50 ,51,1.5));
 
 	//	uePositionAlloc->Add(Vector(52 ,100,1.5));
@@ -828,9 +828,9 @@ main (int argc, char *argv[])
 	if(!ReadBuilding)
 	{
 		int Building_xlim_low = 5;
-		int Building_xlim_high = 95;
+		int Building_xlim_high = 195;
 		int Building_ylim_low = 5;
-		int Building_ylim_high = 95;
+		int Building_ylim_high = 395;
 
 		Ptr<Building> building1;
 		//	ofstream file("building_topology.txt");
@@ -1076,7 +1076,7 @@ main (int argc, char *argv[])
 */
 
 
-	//mmwaveHelper -> EnableTraces();
+	mmwaveHelper -> EnableTraces();
 	// Start applications
 	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (UINT32_MAX));
 	serverApps.Start (Seconds (0.001));

@@ -332,6 +332,8 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
 
       if(!m_enableHoldBuffer||sourceCellId == m_allowedCellId){
     	  NS_LOG_INFO ("Txon Buffer: New packet added");
+	  if(m_enableHoldBuffer)
+	  NS_LOG_UNCOND(Simulator::Now()<<" Forwarded!");
       	  m_txonBuffer.push_back (p);
       	  m_txonBufferSize += p->GetSize ();
       	  NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );

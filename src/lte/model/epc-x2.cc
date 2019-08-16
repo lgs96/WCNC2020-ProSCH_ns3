@@ -287,7 +287,7 @@ namespace ns3 {
 			{
 				if (messageType == EpcX2Header::InitiatingMessage)
 				{
-					if(m_isMinimum && !m_isMmWave)
+					if(!m_isMmWave)
 					{
 						NS_LOG_LOGIC("Recv X2 message: RELAY HANDOVER REQUEST");
 
@@ -346,7 +346,7 @@ namespace ns3 {
 				}
 				else if (messageType == EpcX2Header::SuccessfulOutcome)
 				{
-					if(m_isMinimum && !m_isMmWave)
+					if(!m_isMmWave)
 					{
 						NS_LOG_LOGIC("Recv X2 message: RELAY HANDOVER REQUEST ACK");
 
@@ -1135,7 +1135,7 @@ namespace ns3 {
 			{
 				if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
 				{
-					if(m_isMinimum && !m_isMmWave)
+					if(!m_isMmWave)
 					{
 						params.sourceCellId = cellsInfo->m_remoteCellId;
 						params.targetCellId = gtpu.GetSequenceNumber();
@@ -1143,7 +1143,7 @@ namespace ns3 {
 					}
 					else
 					{
-						if(m_isMinimum && gtpu.GetSequenceNumber != 0)
+						if(gtpu.GetSequenceNumber () != 0)
 						{
 							params.sourceCellId = gtpu.GetSequenceNumber ();
 						}
@@ -1166,7 +1166,7 @@ namespace ns3 {
 				//Process4 -->forwarding to the true path
 				else if (gtpu.GetMessageType() == EpcX2Header::EndMarker)
 				{
-					if(m_isMinimum && !m_isMmWave)
+					if(!m_isMmWave)
 					{
 						params.sourceCellId = cellsInfo->m_localCellId;
 						params.targetCellId = gtpu.GetSequenceNumber();
@@ -1348,7 +1348,7 @@ namespace ns3 {
 
 			// gsoul, minimum connected topology
 
-			if(!(m_isMinimum && m_isMmWave))
+			if(!m_isMmWave)
 				socketInfo = m_x2InterfaceSockets [params.targetCellId];
 			else
 				socketInfo = m_x2InterfaceSockets [m_relayCellId];
@@ -1521,7 +1521,7 @@ namespace ns3 {
 			Ptr<Socket> localSocket;
 			Ipv4Address remoteIpAddr;
 
-			if(!(m_isMinimum && m_isMmWave))
+			if(!(m_isMmWave))
 			{
 				localSocket = m_x2InterfaceSockets [params.sourceCellId]->m_localCtrlPlaneSocket;
 				remoteIpAddr = m_x2InterfaceSockets [params.sourceCellId]->m_remoteIpAddr;
@@ -1923,7 +1923,7 @@ namespace ns3 {
 			// gsoul, minimum connected topology
 
 			Ptr<X2IfaceInfo> socketInfo;
-			if(!(m_isMinimum && m_isMmWave))
+			if(!(m_isMmWave))
 			{
 				socketInfo = m_x2InterfaceSockets [params.targetCellId];
 			}
@@ -1942,7 +1942,7 @@ namespace ns3 {
 			gtpu.SetMessageType(EpcX2Header::McForwardDownlinkData);
 			gtpu.SetLength (params.ueData->GetSize () + gtpu.GetSerializedSize () - 8); /// \todo This should be done in GtpuHeader
 		
-			if(!(m_isMinimum && m_isMmWave))
+			if(!(m_isMmWave))
  			{
 			  gtpu.SetSequenceNumber (params.sourceCellId);
 			}
@@ -1976,7 +1976,7 @@ namespace ns3 {
 			NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
 					"Missing infos for targetCellId = " << params.targetCellId);
 			Ptr<X2IfaceInfo> socketInfo;
-			if(!(m_isMinimum && m_isMmWave))
+			if(!(m_isMmWave))
 				socketInfo = m_x2InterfaceSockets [params.targetCellId];
 			else
 				socketInfo = m_x2InterfaceSockets [m_relayCellId];

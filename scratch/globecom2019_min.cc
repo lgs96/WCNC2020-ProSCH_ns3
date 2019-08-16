@@ -546,7 +546,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteUeRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcX2Header", LOG_FUNCTION);
-       // LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
+        //LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
 	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
@@ -600,7 +600,7 @@ main (int argc, char *argv[])
 	bool tcp = true, dl= true, ul=false;
 	//double x2Latency = 10
 	double  mmeLatency=15.0;
-	bool isEnablePdcpReordering = false;
+	bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
 	double EnbTxPower = 25;
 	double UeTxPower = 20;
@@ -616,11 +616,11 @@ main (int argc, char *argv[])
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 100;
-	double x2Latency= 10;
+	double x2Latency= 5;
 	int BuildingIndex = 8 ;	
 	string sourceRateString = "1000Mbps";
 	bool isMinimum = false;
-        bool ReadBuilding = true;
+        bool ReadBuilding = false;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -686,7 +686,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(5)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (15 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));

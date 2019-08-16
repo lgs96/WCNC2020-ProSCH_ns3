@@ -2478,7 +2478,11 @@ TypeId LteEnbRrc::GetTypeId(void) {
 					"trace fired when measurement report is received from mmWave cells, for each cell, for each UE",
 					MakeTraceSourceAccessor(
 							&LteEnbRrc::m_notifyMmWaveSinrTrace),
-					"ns3::LteEnbRrc::NotifyMmWaveSinrTracedCallback");
+					"ns3::LteEnbRrc::NotifyMmWaveSinrTracedCallback")
+			.AddTraceSource("HandoverTrigger",
+					"Trace the time when handover is triggerd."
+					MakeTraceSourceAccessor(&LteEnbRrc::m_handoverTrigger),
+					"ns3::LteEnbRrc::HandoverTriggerCallback");
 	return tid;
 }
 

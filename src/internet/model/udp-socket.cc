@@ -40,7 +40,7 @@ UdpSocket::GetTypeId (void)
     .SetGroupName ("Internet")
     .AddAttribute ("RcvBufSize",
                    "UdpSocket maximum receive buffer size (bytes)",
-                   UintegerValue (131072),
+                   UintegerValue (15*1024*1024),
                    MakeUintegerAccessor (&UdpSocket::GetRcvBufSize,
                                          &UdpSocket::SetRcvBufSize),
                    MakeUintegerChecker<uint32_t> ())

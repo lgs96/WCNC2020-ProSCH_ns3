@@ -1522,6 +1522,8 @@ private:
 
   TracedCallback<uint64_t, uint16_t, long double> m_notifyMmWaveSinrTrace;
 
+  TracedCallback<uint16_t, uint16_t> m_handoverTrigger;
+
   bool m_ismmWave;
   bool m_interRatHoMode;
   bool m_firstReport;

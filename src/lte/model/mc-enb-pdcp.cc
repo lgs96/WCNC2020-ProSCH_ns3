@@ -249,7 +249,7 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   else if (m_useMmWaveConnection) 
   {
     // Do not add sender time stamp: we are not interested in adding X2 delay for MC connections
-    NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
+    NS_LOG_INFO(this << Simulator::Now()<< " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
     m_ueDataParams.ueData = p;
     m_epcX2PdcpProvider->SendMcPdcpPdu (m_ueDataParams);
     ///////////////////////////////////////////

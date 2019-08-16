@@ -167,6 +167,12 @@ public:
   typedef void (* ReceiveTracedCallback)
     (uint16_t sourceCellId, uint16_t targetCellId, uint32_t bytes, uint64_t delay, bool data);
 
+  /* gsoul
+   * Set relay node when we assume there is no interconnected backhaul between two eNBs
+   */
+
+  void DoSetRelayNode (uint16_t relayCellId);
+
 protected:
   // Interface provided by EpcX2SapProvider
   virtual void DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params);
@@ -245,6 +251,11 @@ private:
 
   bool m_isMinimum;
 
+  /* gsoul
+   * relayCellId
+   */
+  uint16_t m_relayCellId;
+  bool m_isMmWave;
 };
 
 } //namespace ns3

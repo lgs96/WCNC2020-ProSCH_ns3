@@ -709,6 +709,7 @@ void UeManager::RecvHandoverRequestAck(
 	Ptr<Packet> encodedHandoverCommand = params.rrcContext;
 	LteRrcSap::RrcConnectionReconfiguration handoverCommand =
 			m_rrc->m_rrcSapUser->DecodeHandoverCommand(encodedHandoverCommand);
+
 	m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration(m_rnti,
 			handoverCommand);
 	SwitchToState(HANDOVER_LEAVING);
@@ -2823,6 +2824,7 @@ void LteEnbRrc::SetCellId(uint16_t cellId) {
 
 void LteEnbRrc::SetClosestLteCellId(uint16_t cellId) {
 	m_lteCellId = cellId;
+	m_x2SapProvider -> SetRelayNode (cellId);
 	NS_LOG_LOGIC("Closest Lte CellId set to " << m_lteCellId);
 }
 
@@ -2965,7 +2967,7 @@ void LteEnbRrc::TttBasedHandover(
 		{
 		  m_currentSinrFile.open(fileName.c_str(), std::ofstream::app);
 		}
-		m_currentSinrFile << Simulator::Now().GetSeconds()-0.5<<" "<<currentSinrDb<<std::endl;
+		m_currentSinrFile << Simulator::Now().GetSeconds()<<" "<<currentSinrDb<<std::endl;
 	}
 
 	// the UE was in outage, now a mmWave eNB is available. It may be the one to which the UE is already attached or
@@ -3383,10 +3385,12 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 					&& alreadyAssociatedImsi) // no MmWaveCell can serve this UE
 					{
 				// outage, perform fast switching if MC device or hard handover
+				NS_LOG_UNCOND (Simulator::Now()<<" outage");
 				NS_LOG_INFO(
 						"----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
 				if (m_imsiUsingLte[imsi] == false) {
 					ueMan = GetUeManager(GetRntiFromImsi(imsi));
+					NS_LOG_UNCOND ("Switch to LTE");
 					NS_LOG_INFO("Switch to LTE stack");
 					bool useMmWaveConnection = false;
 					m_imsiUsingLte[imsi] = !useMmWaveConnection;

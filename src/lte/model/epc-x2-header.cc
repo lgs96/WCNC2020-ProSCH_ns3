@@ -152,11 +152,12 @@ EpcX2Header::SetNumberOfIes (uint32_t numberOfIes)
 NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverRequestHeader);
 
 EpcX2HandoverRequestHeader::EpcX2HandoverRequestHeader ()
-  : m_numberOfIes (1 + 1 + 1 + 1 + 1 + 1),
-    m_headerLength (6 + 5 + 12 + (3 + 4 + 8 + 8 + 4) + 1 + 4),
+  : m_numberOfIes (1 + 1 + 1 + 1 + 1 + 1 + 1),
+    m_headerLength (6 + 5 + 12 + (3 + 4 + 8 + 8 + 4) + 1 + 4 + 2),
     m_oldEnbUeX2apId (0xfffa),
     m_cause (0xfffa),
     m_targetCellId (0xfffa),
+	m_sourceCellId (0xfffa),
     m_mmeUeS1apId (0xfffffffa),
     m_isMc (0xfa)
 {
@@ -169,6 +170,7 @@ EpcX2HandoverRequestHeader::~EpcX2HandoverRequestHeader ()
   m_headerLength = 0;
   m_oldEnbUeX2apId = 0xfffb;
   m_cause = 0xfffb;
+  m_sourceCellId = 0xfffb;
   m_targetCellId = 0xfffb;
   m_mmeUeS1apId = 0xfffffffb;
   m_isMc = 0xfb;
@@ -219,6 +221,7 @@ EpcX2HandoverRequestHeader::Serialize (Buffer::Iterator start) const
   i.WriteU8 (8);                    // length of TARGET_CELLID
   i.WriteHtonU32 (0x123456);        // fake PLMN
   i.WriteHtonU32 (m_targetCellId << 4);
+  i.WriteHtonU16 (m_sourceCellId);
 
   i.WriteHtonU16 (14);              // id = UE_CONTEXT_INFORMATION
   i.WriteU8 (0);                    // criticality = REJECT
@@ -309,6 +312,10 @@ EpcX2HandoverRequestHeader::Deserialize (Buffer::Iterator start)
   i.ReadNtohU32 ();
   m_targetCellId = i.ReadNtohU32 () >> 4;
   m_headerLength += 12;
+  m_numberOfIes++;
+
+  m_sourceCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
   m_numberOfIes++;
 
   i.ReadNtohU16 ();
@@ -485,6 +492,19 @@ EpcX2HandoverRequestHeader::SetTargetCellId (uint16_t targetCellId)
 {
   m_targetCellId = targetCellId;
 }
+
+uint16_t
+EpcX2HandoverRequestHeader::GetSourceCellId () const
+{
+  return m_sourceCellId;
+}
+
+void
+EpcX2HandoverRequestHeader::SetSourceCellId (uint16_t sourceCellId)
+{
+  m_sourceCellId = sourceCellId;
+}
+
 
 uint32_t
 EpcX2HandoverRequestHeader::GetMmeUeS1apId () const
@@ -1403,10 +1423,12 @@ EpcX2NotifyCoordinatorHandoverFailedHeader::GetNumberOfIes () const
 NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverRequestAckHeader);
 
 EpcX2HandoverRequestAckHeader::EpcX2HandoverRequestAckHeader ()
-  : m_numberOfIes (1 + 1 + 1 + 1),
-    m_headerLength (2 + 2 + 4 + 4),
+  : m_numberOfIes (1 + 1 + 1 + 1 + 1 + 1),
+    m_headerLength (2 + 2 + 4 + 4 + 2 + 2),
     m_oldEnbUeX2apId (0xfffa),
-    m_newEnbUeX2apId (0xfffa)
+    m_newEnbUeX2apId (0xfffa),
+	m_targetCellId (0xfffa),
+	m_sourceCellId (0xfffa) //gsoul
 {
 }
 
@@ -1416,6 +1438,8 @@ EpcX2HandoverRequestAckHeader::~EpcX2HandoverRequestAckHeader ()
   m_headerLength = 0;
   m_oldEnbUeX2apId = 0xfffb;
   m_newEnbUeX2apId = 0xfffb;
+  m_targetCellId = 0xfffb;
+  m_sourceCellId = 0xfffb;
   m_erabsAdmittedList.clear ();
   m_erabsNotAdmittedList.clear ();
 }
@@ -1467,6 +1491,9 @@ EpcX2HandoverRequestAckHeader::Serialize (Buffer::Iterator start) const
       i.WriteHtonU16 (m_erabsNotAdmittedList [j].erabId);
       i.WriteHtonU16 (m_erabsNotAdmittedList [j].cause);
     }
+
+  i.WriteHtonU16 (m_targetCellId);
+  i.WriteHtonU16 (m_sourceCellId);
 }
 
 uint32_t
@@ -1512,6 +1539,11 @@ EpcX2HandoverRequestAckHeader::Deserialize (Buffer::Iterator start)
       m_erabsNotAdmittedList.push_back (erabItem);
       m_headerLength += 4;
     }
+
+  m_targetCellId = i.ReadNtohU16 ();
+  m_sourceCellId = i.ReadNtohU16 ();
+  m_headerLength += 4;
+  m_numberOfIes += 2;
 
   return GetSerializedSize ();
 }
@@ -1584,6 +1616,30 @@ void
 EpcX2HandoverRequestAckHeader::SetNewEnbUeX2apId (uint16_t x2apId)
 {
   m_newEnbUeX2apId = x2apId;
+}
+
+uint16_t
+EpcX2HandoverRequestAckHeader::GetTargetCellId () const
+{
+  return m_targetCellId;
+}
+
+void
+EpcX2HandoverRequestAckHeader::SetTargetCellId (uint16_t targetCellId)
+{
+  m_targetCellId = targetCellId;
+}
+
+uint16_t
+EpcX2HandoverRequestAckHeader::GetSourceCellId () const
+{
+  return m_sourceCellId;
+}
+
+void
+EpcX2HandoverRequestAckHeader::SetSourceCellId (uint16_t sourceCellId)
+{
+  m_sourceCellId = sourceCellId;
 }
 
 std::vector <EpcX2Sap::ErabAdmittedItem> 
@@ -2454,6 +2510,7 @@ EpcX2ResourceStatusUpdateHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
 }
+
 
 ////////////////
 

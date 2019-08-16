@@ -338,6 +338,7 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
       	  NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
       }
       else{
+	  NS_LOG_UNCOND (Simulator::Now()<<" Hold!");
     	  NS_LOG_INFO ("Hold Buffer: New packet added");
     	  m_holdBuffer.push_back (p);
     	  m_holdBufferSize += p->GetSize ();
@@ -428,6 +429,7 @@ LteRlcAm::DoGetEndMarker()
   m_waitingEndMarker = true;
   m_getEndMarker = Simulator::Schedule(Seconds(0.001),&LteRlcAm::FreeHoldBuffer,this);
   */
+  NS_LOG_UNCOND(Simulator::Now()<<" target cell gets end marker");
   m_allowedCellId = 0xfffa;
   m_enableHoldBuffer = false;
   //Transfer hold buffer's packets to tx on  buffer

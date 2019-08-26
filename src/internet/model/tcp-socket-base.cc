@@ -3350,19 +3350,19 @@ namespace ns3 {
 			if (!m_history.empty ())
 			{
 				RttHistory& h = m_history.front ();
-				//if (!h.retx && ackSeq >= (h.seq + SequenceNumber32 (h.count)))
-				//{ // Ok to use this sample
-				if (m_timestampEnabled && tcpHeader.HasOption (TcpOption::TS))
-				{
-					Ptr<const TcpOptionTS> ts;
-					ts = DynamicCast<const TcpOptionTS> (tcpHeader.GetOption (TcpOption::TS));
-					m = TcpOptionTS::ElapsedTimeFromTsValue (ts->GetEcho ());
+				if (!h.retx && ackSeq >= (h.seq + SequenceNumber32 (h.count)))
+				{ // Ok to use this sample
+					if (m_timestampEnabled && tcpHeader.HasOption (TcpOption::TS))
+					{
+						Ptr<const TcpOptionTS> ts;
+						ts = DynamicCast<const TcpOptionTS> (tcpHeader.GetOption (TcpOption::TS));
+						m = TcpOptionTS::ElapsedTimeFromTsValue (ts->GetEcho ());
+					}
+					else
+					{
+						m = Simulator::Now () - h.time; // Elapsed time
+					}
 				}
-				else
-				{
-					m = Simulator::Now () - h.time; // Elapsed time
-				}
-				//}
 			}
 
 			// Now delete all ack history with seq <= ack
@@ -3671,8 +3671,9 @@ namespace ns3 {
 				m_proxyStart = m_txBuffer->HeadSequence();
 				std::cout<<"It's head sequence"<<std::endl;
 			}
-			NS_LOG_LOGIC ("Proxy forwaridng is completed");
 			m_proxyFin = m_tcb->m_nextTxSequence;
+			SendPendingProxyData(true);
+			NS_LOG_LOGIC ("Proxy forwaridng is completed");
 			//std::cout<<"Proxy fin: "<<m_proxyFin<<" Tail: "<<m_txBuffer->TailSequence()<<std::endl;
 		}
 

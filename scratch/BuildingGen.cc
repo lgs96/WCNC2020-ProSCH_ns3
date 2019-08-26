@@ -26,15 +26,14 @@ using namespace std;
 
 int main()
 {
-	int BuildingIndex = 10;
-	int BuildingNum = 80;
+	int BuildingIndex = 20;
+	int BuildingNum = 100;
 	int Building_xlim_low = 5;
-	int Building_xlim_high = 95;
+	int Building_xlim_high = 195;
 	int Building_ylim_low = 5;
-	int Building_ylim_high = 95;
+	int Building_ylim_high = 395;
 
-	Ptr<Building> building1;
-	srand((unsigned int) time (NULL));
+	BuildingList::Iterator marker;
 
 	for(int  j = 0; j < BuildingIndex; j++){
 		for (int i = 0; i<BuildingNum; i++){
@@ -44,18 +43,28 @@ int main()
 			double xlength = rand()%6+1;
 			double ylength = rand()%6+1;
 
+			Ptr<Building> building1;
 			building1 = Create<Building>();
 			building1->SetBoundaries(Box(xcoordinate, xcoordinate + xlength, ycoordinate, ycoordinate + ylength,0,35));
 
-			std::ostringstream buildingfile;
-			buildingfile <<j+1<<"_BuildingPosition.txt";
-			AsciiTraceHelper asciiTraceHelper_build;
-			Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());
-
-			for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
-				Box box = (*it)->GetBoundaries();
-				*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;
-			}			
 		}
+	
+		int count = 0;
+
+		std::ostringstream buildingfile;
+		buildingfile <<j+1<<"_BuildingPosition.txt";	
+		AsciiTraceHelper asciiTraceHelper_build;
+		Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());		
+		
+		for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
+			if(count < j*BuildingNum)		
+				count = count+1;
+			else
+			{
+				//std::cout<<"write"<<std::endl;
+				Box box = (*it)->GetBoundaries();
+				*build_stream->GetStream() << box.xMin << ":" << box.xMax << ":" << box.yMin << ":" << box.yMax << std::endl;	
+			}
+		}	
 	}
 }

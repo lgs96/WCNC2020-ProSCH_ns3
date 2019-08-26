@@ -22,6 +22,7 @@
 
 #include "ns3/nstime.h"
 #include "ns3/packet.h"
+#include <fstream>
 
 namespace ns3 {
 
@@ -76,6 +77,14 @@ private:
   int64x64_t m_jitter; //!< Jitter estimation
   Time m_delay;        //!< Delay estimation
   Time m_ipdv;	       // Instantaneous packet delay variation;
+  std::ofstream file;
+  std::ofstream file2;
+  std::ofstream file3;
+  
+  std::string jitterFileName = "Jitter.txt";
+  std::string delayFileName = "Delay.txt";
+  std::string ipdvFileName = "Ipdv.txt";
+
 };
 
 } // namespace ns3

@@ -96,6 +96,8 @@ EpcX2::EpcX2 ()
   m_x2SapProvider = new EpcX2SpecificEpcX2SapProvider<EpcX2> (this);
   m_x2PdcpProvider = new EpcX2PdcpSpecificProvider<EpcX2> (this);
   m_x2RlcProvider = new EpcX2RlcSpecificProvider<EpcX2> (this);
+
+  m_shouldAdd = false;
 }
 
 EpcX2::~EpcX2 ()
@@ -215,22 +217,38 @@ EpcX2::AddX2Interface (uint16_t localCellId, Ipv4Address localX2Address, uint16_
   m_x2InterfaceCellIds [localX2uSocket] = Create<X2CellInfo> (localCellId, remoteCellId);
 }
 
-void
-EpcX2::DoAddTeidToBeForwarded(uint32_t gtpTeid, uint16_t targetCellId)
-{
-  NS_LOG_FUNCTION(this << " add an entry to the map of teids to be forwarded: teid " << gtpTeid << " targetCellId " << targetCellId);
-  NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
-  m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
-}
 
-void 
-EpcX2::DoRemoveTeidToBeForwarded(uint32_t gtpTeid)
-{
-  NS_LOG_FUNCTION(this << " remove and entry from the map of teids to be forwarded: teid " << gtpTeid);
-  NS_LOG_LOGIC(this<<" Do nothing in the Proxy based handover");
-  //NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end(), "TEID not in the map");
-  //m_teidToBeForwardedMap.erase(m_teidToBeForwardedMap.find(gtpTeid));
-}
+	void
+		EpcX2::DoAddTeidToBeForwarded(uint32_t gtpTeid, uint16_t targetCellId)
+		{
+			NS_LOG_FUNCTION(this << " add an entry to the map of teids to be forwarded: teid " << gtpTeid << " targetCellId " << targetCellId);
+			NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
+			/*if(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end())
+			{
+				m_shouldAdd = true;
+				m_addGtpId = gtpTeid;
+				m_addCellId = targetCellId;
+			}
+			else  
+			{*/
+				m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
+			//}
+		}
+
+	void 
+		EpcX2::DoRemoveTeidToBeForwarded(uint32_t gtpTeid)
+		{
+			NS_LOG_FUNCTION(this << " remove and entry from the map of teids to be forwarded: teid " << gtpTeid);
+			//NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end(), "TEID not in the map");
+			//m_teidToBeForwardedMap.erase(m_teidToBeForwardedMap.find(gtpTeid));
+			/*
+			if(m_shouldAdd)
+			{
+				m_shouldAdd = false;
+				m_teidToBeForwardedMap.insert(std::pair<uint32_t,uint16_t> (m_addGtpId, m_addCellId));
+			}
+			*/
+		}
 
 
 void 
@@ -254,7 +272,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
       packet->RemovePacketTag(epcX2Tag);
     }
 
-  m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+  //m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
 
   EpcX2Header x2Header;
   packet->RemoveHeader (x2Header);
@@ -270,6 +288,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST");
 
+          m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+ 
           EpcX2HandoverRequestHeader x2HoReqHeader;
           packet->RemoveHeader (x2HoReqHeader);
 
@@ -303,7 +323,9 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST ACK");
 
-          EpcX2HandoverRequestAckHeader x2HoReqAckHeader;
+          m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+          
+	  EpcX2HandoverRequestAckHeader x2HoReqAckHeader;
           packet->RemoveHeader (x2HoReqAckHeader);
 
           NS_LOG_INFO ("X2 HandoverRequestAck header: " << x2HoReqAckHeader);
@@ -329,6 +351,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
         {
           NS_LOG_LOGIC ("Recv X2 message: HANDOVER PREPARATION FAILURE");
 
+          m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+          
           EpcX2HandoverPreparationFailureHeader x2HoPrepFailHeader;
           packet->RemoveHeader (x2HoPrepFailHeader);
 
@@ -361,6 +385,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     {
 	  NS_LOG_LOGIC ("Recv X2 message: PREFETCHED HANDOVER REQUEST");
 
+          m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+          
 	  EpcX2HandoverRequestHeader x2HoReqHeader;
           packet->RemoveHeader (x2HoReqHeader);
 
@@ -450,6 +476,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
         {
           NS_LOG_LOGIC ("Recv X2 message: UE CONTEXT RELEASE");
 
+          m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+          
           EpcX2UeContextReleaseHeader x2UeCtxReleaseHeader;
           packet->RemoveHeader (x2UeCtxReleaseHeader);
 
@@ -647,7 +675,7 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
       packet->RemovePacketTag(epcX2Tag);
     }
-  m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
+  //m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
@@ -706,6 +734,8 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
     params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
     NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);
     DoSendMcPdcpPdu(params);
+  
+    m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
   }
 }
 

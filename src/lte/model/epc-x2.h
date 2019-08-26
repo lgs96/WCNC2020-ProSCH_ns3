@@ -235,6 +235,9 @@ private:
    */
   std::map <uint32_t, uint16_t> m_teidToBeForwardedMap;
 
+  bool m_shouldAdd;
+  uint32_t m_addGtpId;
+  uint16_t m_addCellId;
 };
 
 } //namespace ns3

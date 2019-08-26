@@ -30,6 +30,7 @@
 #include <ns3/buildings-module.h>
 #include <ns3/random-variable-stream.h>
 #include <ns3/lte-ue-net-device.h>
+#include "ns3/delay-jitter-estimation.h"
 
 #include <iostream>
 #include <ctime>
@@ -122,6 +123,7 @@ class MyApp : public Application
 		bool            m_running;
 		uint32_t        m_packetsSent;
 		bool		m_isRandom;
+		DelayJitterEstimation m_delayJitterEstimate;
 };
 
 MyApp::MyApp ()
@@ -189,6 +191,7 @@ MyApp::SendPacket (void)
 {
 	Ptr<Packet> packet = Create<Packet> (m_packetSize);
 	MyAppTag tag (Simulator::Now ());
+	m_delayJitterEstimate.PrepareTx(packet);
 
 	m_socket->Send (packet);
 	if (++m_packetsSent < m_nPackets)
@@ -241,16 +244,14 @@ MyApp::RandomPacket(void)
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
  }
 */
-
+/*
  static void
  RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
  {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
  }
  
-
-
-
+*/
 double instantPacketSize[100], packetRxTime[100], lastPacketRxTime[100];
 double sumPacketSize[100];
 
@@ -285,14 +286,14 @@ CalculateThroughput (Ptr<OutputStreamWrapper> stream, Ptr<PacketSink> sink, uint
 	Simulator::Schedule (MilliSeconds (100), &CalculateThroughput,stream,sink,i);
 }
 
-
+/*
 
 	static void 
 Ssthresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSsthresh, uint32_t newSsthresh)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
 }
-
+*/
 	void
 ChangeSpeed(Ptr<Node>  n, Vector speed)
 {
@@ -303,13 +304,7 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
 }
-
-	static void
-RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
-{
-	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
-}
-
+*/
 double ack_throughput[100];
 
 	static void
@@ -319,7 +314,7 @@ Reset_ack(Ptr<OutputStreamWrapper> stream, uint16_t i)
 	*stream->GetStream () << Simulator::Now().GetSeconds()<<"\t"<<ack_throughput[i]/1e5<<std::endl;	
 	ack_throughput[i] = 0;
 	Simulator::Schedule (MilliSeconds(100), &Reset_ack,stream,i);
-}*/
+}
 /*
 	static void
 RxChange (Ptr<OutputStreamWrapper> stream, uint16_t i, const Ptr<const Packet> packet, const TcpHeader &header, const Ptr<const TcpSocketBase> socket)
@@ -338,13 +333,13 @@ GetTx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const Tc
 {
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetSequenceNumber() << std::endl;
 }
-
-	static void
+*/
+/*	static void
 RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 {
 	*stream->GetStream () <<Simulator::Now().GetSeconds() << "\t" <<oldrto.GetSeconds()<<"\t"<<newrto.GetSeconds()<<std::endl;
-}
-
+}*/
+/*
 	static void
 Traces(uint16_t nodeNum)
 {
@@ -410,16 +405,16 @@ Traces(uint16_t nodeNum)
 	  Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream (fileSST.str ().c_str ());
 	  Config::ConnectWithoutContext (pathSST.str ().c_str (), MakeBoundCallback(&Ssthresh, stream4));
 
-	  Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetRx, stream5)); 	
-	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetTx, stream6));
+	  //Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetRx, stream5)); 	
+	  //Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetTx, stream6));
 
 	  Ptr<OutputStreamWrapper> stream7 = asciiTraceHelper.CreateFileStream (fileRTO.str ().c_str ());
 	  Config::ConnectWithoutContext (pathRTO.str ().c_str (), MakeBoundCallback(&RTOChange, stream7));
 	}	
 	else
 	{
-	  Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetTx, stream5)); 	
-	  Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
+	  //Config::ConnectWithoutContext (pathRx.str ().c_str (), MakeBoundCallback(&GetTx, stream5)); 	
+	  //Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
 	}
 }
 */
@@ -552,7 +547,7 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteUeRrcProtocolReal", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcX2Header", LOG_FUNCTION);
-       // LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
+        //LogComponentEnable("McEnbPdcp",LOG_LEVEL_LOGIC);
 	//	LogComponentEnable("McUePdcp",LOG_FUNCTION);
 	//	LogComponentEnable ("McUePdcp", LOG_LOGIC);
 	//LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
@@ -606,9 +601,9 @@ main (int argc, char *argv[])
 	bool tcp = true, dl= true, ul=false;
 	//double x2Latency = 10
 	double  mmeLatency=15.0;
-	//	bool isEnablePdcpReordering = true;
+	//bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double EnbTxPower = 25;
+	double EnbTxPower = 30;
 	double UeTxPower = 20;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905
@@ -618,14 +613,16 @@ main (int argc, char *argv[])
 	std::string X2dataRate = "100Gb/s";
 	uint32_t nPacket = 0xffffffff;
 	bool isRandom = true; //gsoul 180910 for random traffic generate
-	bool ReadBuilding = true;
 	bool isInCar = true;
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 100;
 	double x2Latency= 1;
-	int BuildingIndex = 8;	
+	int BuildingIndex = 1;	
 	string sourceRateString = "1000Mbps";
+	//bool isMinimum = false;
+        bool ReadBuilding = true;
+	double m_s1Delay = 0.030;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -641,17 +638,20 @@ main (int argc, char *argv[])
 	cmd.AddValue("harqEnabled", "harq enable or not", harqEnabled);
 	cmd.AddValue("typeOfSplitting", "splitting algorithm type",typeOfSplitting);
 	cmd.AddValue("nPacket", "number of packets" , nPacket);
-	
+	cmd.AddValue("ReadBuilding","Do you want to read buidling or create it?",ReadBuilding);
+
 	//Command for Proxy based handover
 	cmd.AddValue("X2LinkDelay" , "X2 link delay", x2Latency);
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
+	//cmd.AddValue("isMinimum","Is minimum topology?", isMinimum);	
+	cmd.AddValue("S1Delay", "s1 interface delay", m_s1Delay);
 
 	cmd.Parse(argc, argv);
 	// Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
 	Config::SetDefault("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(2));
-	//	Config::SetDefault("ns3::McUePdcp::EnableReordering", BooleanValue(isEnablePdcpReordering));
+	//Config::SetDefault("ns3::McUePdcp::EnableReordering", BooleanValue(isEnablePdcpReordering));
 	//	Config::SetDefault("ns3::McEnbPdcp::EnableDuplication", BooleanValue(isDuplication));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
@@ -668,7 +668,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue((uint32_t)100));
-	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
+	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10)));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkWidth",DoubleValue(13.889e6/5));//200MHz bandwidth
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	// Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
@@ -689,7 +689,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(5)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (15 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -699,6 +699,7 @@ main (int argc, char *argv[])
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
 	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
+	//Config::SetDefault ("ns3::EpcX2::IsMinimum",BooleanValue(isMinimum));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -742,7 +743,7 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.030)));
+		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (m_s1Delay)));
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 		//		p2ph.EnablePcapAll("Tcp_highspeed");		
 
@@ -780,7 +781,7 @@ main (int argc, char *argv[])
 
 	Vector mmw4Position = Vector(200.0, 0.0, 35); //28Ghz // path 1
 	Vector mmw5Position = Vector(200.0,200.0, 35);  ///28Ghz //path 1
-	Vector mmw6Position = Vector(200.0, 400, 35); //28Ghz // path 1
+	Vector mmw6Position = Vector(200.0,400, 35); //28Ghz // path 1
 	//Vector mmw7Position = Vector (100.0, 60,25);
 	//Vector mmw8Position = Vector(100.0, 90, 25); //73Ghz // path 1
 	// Vector mmw7Position = Vector(0.0, 40, 12); //73Ghz // path 1
@@ -1054,17 +1055,17 @@ main (int argc, char *argv[])
 			}
 		}
 	}
-	AsciiTraceHelper asciiTraceHelper;
-/*
+/*	AsciiTraceHelper asciiTraceHelper;
+
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("proxyCwnd.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
-*/
+
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("proxyRtt.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream2));
 
 	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("proxySst.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh, stream3));
-/*
+
 	Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("proxyRx.txt");
 	epcHelper->m_traceProxy->TraceConnectWithoutContext ("Rx", MakeBoundCallback (&GetRx, stream4));
 

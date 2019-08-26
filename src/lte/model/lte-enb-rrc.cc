@@ -1074,7 +1074,7 @@ namespace ns3 {
 					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq, newDelay, newInterval);
 					m_rrc->m_isPrefetchedEnbMap.find(m_mmWaveCellId)->second[m_imsi] = false;
 
-					m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
+					//m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
 
 					//Process9 reset bottlenck bandwidth
 					m_rrc->m_bottleneckBw = UINT32_MAX;
@@ -3465,7 +3465,7 @@ namespace ns3 {
 				{
 				  m_currentSinrFile.open(fileName.c_str(), std::ofstream::app);
 				}
-				m_currentSinrFile << Simulator::Now().GetSeconds()-0.5<<" "<<currentSinrDb<<std::endl;
+				m_currentSinrFile << Simulator::Now().GetSeconds()<<" "<<currentSinrDb<<std::endl;
 			}
 
 			// Process8: yes, this is for from outage to recovery situation
@@ -3787,6 +3787,10 @@ namespace ns3 {
 
 			// Process8
 			m_s1SapProvider-> DoSendProxyHoldRequest (m_delayX2);
+
+			// Trace Handover Triggered time
+			//m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+		        m_handoverStartTrace(imsi, m_cellId, GetRntiFromImsi (imsi), handoverInfo.targetCellId);		
 		}
 
 	void 

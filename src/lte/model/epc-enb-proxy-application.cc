@@ -205,10 +205,10 @@ namespace ns3 {
 						//Ptr<TcpSocketState> m_tcb = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb;	
 						//std::cout<<"Next seq: " << m_tcb->m_nextTxSequence << " proxyFin: " << m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin<<std::endl;	
 						m_tcb->m_nextTxSequence = m_startPoint;
-						std::cout<<"Prev: "<<m_tcb->m_nextTxSequence<<std::endl;
+						//std::cout<<"Prev: "<<m_tcb->m_nextTxSequence<<std::endl;
 						m_proxyTcpSocket->GetObject<TcpSocketBase>()->SendPendingProxyData(true);
 						m_startPoint = m_tcb->m_nextTxSequence;
-						std::cout<<"After: "<<m_tcb->m_nextTxSequence<<std::endl;
+						//std::cout<<"After: "<<m_tcb->m_nextTxSequence<<std::endl;
 
 						if(m_startPoint > m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin)
 						{

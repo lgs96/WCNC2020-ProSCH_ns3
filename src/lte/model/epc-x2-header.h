@@ -119,6 +119,9 @@ public:
   uint16_t GetTargetCellId () const;
   void SetTargetCellId (uint16_t targetCellId);
 
+  uint16_t GetSourceCellId () const;
+  void SetSourceCellId (uint16_t sourceCellId);
+
   uint32_t GetMmeUeS1apId () const;
   void SetMmeUeS1apId (uint32_t mmeUeS1apId);
 
@@ -144,6 +147,7 @@ private:
   uint16_t          m_oldEnbUeX2apId;
   uint16_t          m_cause;
   uint16_t          m_targetCellId;
+  uint16_t			m_sourceCellId;
   uint32_t          m_mmeUeS1apId;
   uint64_t          m_ueAggregateMaxBitRateDownlink;
   uint64_t          m_ueAggregateMaxBitRateUplink;
@@ -367,6 +371,12 @@ public:
   uint16_t GetNewEnbUeX2apId () const;
   void SetNewEnbUeX2apId (uint16_t x2apId);
 
+  uint16_t GetTargetCellId () const;
+  void SetTargetCellId (uint16_t targetCellId);
+
+  uint16_t GetSourceCellId () const;
+  void SetSourceCellId (uint16_t sourceCellId);
+
   std::vector <EpcX2Sap::ErabAdmittedItem> GetAdmittedBearers () const;
   void SetAdmittedBearers (std::vector <EpcX2Sap::ErabAdmittedItem> bearers);
 
@@ -382,6 +392,8 @@ private:
 
   uint16_t          m_oldEnbUeX2apId;
   uint16_t          m_newEnbUeX2apId;
+  uint16_t			m_targetCellId;
+  uint16_t			m_sourceCellId;
   std::vector <EpcX2Sap::ErabAdmittedItem>     m_erabsAdmittedList;
   std::vector <EpcX2Sap::ErabNotAdmittedItem>  m_erabsNotAdmittedList;
 };

@@ -123,15 +123,13 @@ DelayJitterEstimation::PrepareTx (Ptr<const Packet> packet)
   packet->AddByteTag (tag);
 }
 
-std::ofstream file;
-std::string fileName = "Ipdv.txt";
-
 void
 DelayJitterEstimation::RecordRx (Ptr<const Packet> packet)
 {
   DelayJitterEstimationTimestampTag tag;
   bool found;
   found = packet->FindFirstMatchingByteTag (tag);
+
   if (!found)
     {
       return;
@@ -142,16 +140,32 @@ DelayJitterEstimation::RecordRx (Ptr<const Packet> packet)
   	m_ipdv = Simulator::Now() - m_previousRx;
 	if(!file.is_open())
 	{
-		file.open(fileName.c_str(),std::ofstream::app);
+		file.open(jitterFileName.c_str(),std::ofstream::app);
 	}
-	//std::cout<<Simulator::Now().GetSeconds()<<" "<<m_ipdv<<std::endl;
-	file<<Simulator::Now().GetSeconds()<<" "<<m_ipdv.GetSeconds()<<std::endl;
+	if(!file2.is_open())
+	{
+		file2.open(delayFileName.c_str(),std::ofstream::app);
+	}
+	if(!file3.is_open())
+	{
+		file3.open(ipdvFileName.c_str(),std::ofstream::app);
+	}
   }
   Time delta = (Simulator::Now () - m_previousRx) - (tag.GetTxTime () - m_previousRxTx);
   m_jitter += (Abs (delta) - m_jitter) / 16;
   m_previousRx = Simulator::Now ();
   m_previousRxTx = tag.GetTxTime ();
   m_delay = Simulator::Now () - tag.GetTxTime ();
+  
+  if(m_previousRx!= 0)
+  {
+  	file<<Simulator::Now().GetSeconds()<<" "<<m_jitter/(1e9)<<std::endl;
+	file2<<Simulator::Now().GetSeconds()<<" "<<m_delay.GetSeconds()<<std::endl;
+	file3<<Simulator::Now().GetSeconds()<<" "<<m_ipdv.GetSeconds()<<std::endl;
+	file.close();
+	file2.close();
+	file3.close();
+  }
 }
 
 Time 

@@ -540,6 +540,10 @@ public:
   // Process3, send end marker to notify end of the packet forwarding from source cell
   //virtual void SendEndMarker (EndMarkerParams params) = 0;
 
+  /* gsoul
+   * Set relay node: interface
+   */
+  virtual void SetRelayNode (uint16_t relayCellId) = 0;
 };
 
 
@@ -646,6 +650,8 @@ public:
   virtual void ForwardRlcPdu (UeDataParams params);
 
   //virtual void SendEndMarker (EndMarkerParams params);
+
+  virtual void SetRelayNode (uint16_t relayCellId);
 
 private:
   EpcX2SpecificEpcX2SapProvider ();
@@ -818,6 +824,13 @@ EpcX2SpecificEpcX2SapProvider<C>::SendEndMarker(EndMarkerParams params)
 }
 */
 ///////////////////////////////////////
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SetRelayNode(uint16_t relayCellId)
+{
+  m_x2->DoSetRelayNode(relayCellId);
+}
 
 template <class C>
 class EpcX2SpecificEpcX2SapUser : public EpcX2SapUser

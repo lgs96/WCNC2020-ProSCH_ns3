@@ -393,6 +393,10 @@ public:
 
   void SendHoldBufferMsg (EpcX2SapUser::HoldBufferParams params);
 
+  void HoldUntilHandoverCompletion ();
+
+  void ReleaseBufferAfterHandover ();
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -499,6 +503,7 @@ private:
    */
   uint8_t Bid2Drbid (uint8_t bid);
 
+  void SendPacket (uint8_t bid, Ptr <Packet> p);
   /** 
    * Switch the UeManager to the given state
    * 
@@ -621,6 +626,8 @@ private:
   bool m_allMmWaveInOutageAtInitialAccess;
 
   std::ofstream m_forwardSizeFile;
+
+  std::list<std::pair<uint8_t, Ptr<Packet>>> m_packetBuffer;
 }; // end of `class UeManager`
 
 
@@ -656,6 +663,7 @@ public:
   virtual ~LteEnbRrc ();
 
 
+  //bool m_recvRelease;
   // inherited from Object
 protected:
   virtual void DoDispose (void);
@@ -1054,6 +1062,7 @@ public:
 
   void SetInterRatHoMode ();
   
+  // Process10
   std::ofstream m_currentSinrFile;
 
 private:
@@ -1563,7 +1572,6 @@ private:
   bool m_isEnd;
   bool m_isSecond;
   EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
-  //bool m_contextArrvied;
 }; // end of `class LteEnbRrc`
 
 

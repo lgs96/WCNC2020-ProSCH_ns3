@@ -55,7 +55,7 @@ LteRlcAm::LteRlcAm ()
 
   //Process1
   m_holdBufferSize = 0;
-
+  m_handoverBufferSize = 0;
   // LL HO
   m_transmittingRlcSduBufferSize = 0;
   m_txedRlcSduBuffer.resize (0);
@@ -109,6 +109,8 @@ LteRlcAm::LteRlcAm ()
   m_txonQueue = CreateObject<CoDelQueueDisc> ();
   m_txonQueue->Initialize ();
 
+  m_onHandover = false;
+
   m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(2), &LteRlcAm::BufferSizeTrace, this);
 }
 
@@ -122,7 +124,7 @@ LteRlcAm::BufferSizeTrace()
     m_bufferSizeFile.open(GetBufferSizeFilename().c_str(), std::ofstream::app);
     NS_LOG_LOGIC("File opened");
   }
-  m_bufferSizeFile << Simulator::Now().GetSeconds() << " " << m_rnti << " " << (uint16_t) m_lcid << " " << m_txonBufferSize <<" "<< m_holdBufferSize<<" "<< m_txonBufferSize + m_holdBufferSize << std::endl;
+  m_bufferSizeFile << Simulator::Now().GetSeconds() << " " << m_rnti << " " << (uint16_t) m_lcid << " " << m_txonBufferSize <<" "<< m_holdBufferSize<<" "<<m_handoverBufferSize<<" "<<m_txonBufferSize + m_holdBufferSize + m_handoverBufferSize << std::endl;
 
   m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(10), &LteRlcAm::BufferSizeTrace, this);
 }
@@ -213,6 +215,9 @@ LteRlcAm::DoDispose ()
   m_holdBuffer.clear ();
   m_holdBufferSize = 0;
 
+  m_handoverBuffer.clear ();
+  m_handoverBufferSize = 0;
+
   m_txedBuffer.clear ();
   m_txedBufferSize = 0;
   m_retxBuffer.clear ();
@@ -239,6 +244,8 @@ LteRlcAm::DoDispose ()
 
   m_traceBufferSizeEvent.Cancel();
   m_bufferSizeFile.close();
+
+  m_onHandover= false;
 
   LteRlc::DoDispose ();
 }
@@ -315,7 +322,7 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
 
   if(m_enableAqm == false)
   {
-    if (m_txonBufferSize + m_holdBufferSize + p->GetSize () <= m_maxTxBufferSize)
+    if (m_txonBufferSize + m_holdBufferSize +m_handoverBufferSize + p->GetSize () <= m_maxTxBufferSize)
     {
       /** Store arrival time */
       Time now = Simulator::Now ();
@@ -330,19 +337,37 @@ LteRlcAm::DoTransmitPdcpPdu_test1 (Ptr<Packet> p,uint16_t sourceCellId)
       tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
       p->AddPacketTag (tag);
 
-      if(!m_enableHoldBuffer||sourceCellId == m_allowedCellId){
-    	  NS_LOG_INFO ("Txon Buffer: New packet added");
-      	  m_txonBuffer.push_back (p);
-      	  m_txonBufferSize += p->GetSize ();
-      	  NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
-      	  NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+      if(m_onHandover){
+    	  if(!m_enableHoldBuffer||sourceCellId == m_allowedCellId){
+			  NS_LOG_INFO ("During handover: buffering..");
+			  m_handoverBuffer.push_back (p);
+			  m_handoverBufferSize += p->GetSize ();
+			  NS_LOG_LOGIC ("NumOfBuffers = " << m_handoverBuffer.size() );
+			  NS_LOG_LOGIC ("handoverBufferSize = " << m_handoverBufferSize);
+    	  }
+    	  else{
+			  NS_LOG_INFO ("Hold Buffer: New packet added");
+			  m_holdBuffer.push_back (p);
+			  m_holdBufferSize += p->GetSize ();
+			  NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
+			  NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
+		  }
       }
       else{
-    	  NS_LOG_INFO ("Hold Buffer: New packet added");
-    	  m_holdBuffer.push_back (p);
-    	  m_holdBufferSize += p->GetSize ();
-          NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
-          NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
+		  if(!m_enableHoldBuffer||sourceCellId == m_allowedCellId){
+			  NS_LOG_INFO ("Txon Buffer: New packet added");
+			  m_txonBuffer.push_back (p);
+			  m_txonBufferSize += p->GetSize ();
+			  NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
+			  NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+		  }
+		  else{
+			  NS_LOG_INFO ("Hold Buffer: New packet added");
+			  m_holdBuffer.push_back (p);
+			  m_holdBufferSize += p->GetSize ();
+			  NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
+			  NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
+		  }
       }
     }
     else
@@ -441,7 +466,7 @@ LteRlcAm::DoGetEndMarker()
      m_holdBuffer.erase (m_holdBuffer.begin());
      NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
    }
- 
+
   /** Report Buffer Status */
   DoReportBufferStatus ();
   m_rbsTimer.Cancel ();
@@ -455,22 +480,23 @@ LteRlcAm::FreeHoldBuffer(void)
   NS_LOG_FUNCTION(this);
   NS_LOG_LOGIC(Simulator::Now()<<" Free Hold Buffer. Real end of the handover");
 
-  m_allowedCellId = 0xfffa;
-  m_enableHoldBuffer = false;
-  m_waitingEndMarker = false;
-  m_previousInterval = Seconds(0);
-  m_maxInterval = Seconds(0);
+  m_onHandover = false;
 
   //Transfer hold buffer's packets to tx on  buffer
-  while (!m_holdBuffer.empty())
+  while (!m_handoverBuffer.empty())
   {
-    Ptr <Packet> p = *(m_holdBuffer.begin());
+    Ptr <Packet> p = *(m_handoverBuffer.begin());
     m_txonBuffer.push_back(p);
     m_txonBufferSize += p-> GetSize();
-    m_holdBufferSize -= (*(m_holdBuffer.begin()))->GetSize();
-    m_holdBuffer.erase (m_holdBuffer.begin());
-    NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
+    m_handoverBufferSize -= (*(m_handoverBuffer.begin()))->GetSize();
+    m_handoverBuffer.erase (m_handoverBuffer.begin());
+    NS_LOG_LOGIC (this <<" After transfer: handover buffer size = "<< m_handoverBufferSize);
   }
+
+  /** Report Buffer Status */
+  DoReportBufferStatus ();
+  m_rbsTimer.Cancel ();
+  m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
 }
 
 /**
@@ -2836,6 +2862,7 @@ LteRlcAm::DoReportBufferStatus (void)
 
   NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
   NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
+  NS_LOG_LOGIC ("handoverBufferSize = "<<m_handoverBufferSize);
   NS_LOG_LOGIC ("retxBufferSize = " << m_retxBufferSize);
   NS_LOG_LOGIC ("txedBufferSize = " << m_txedBufferSize);
   NS_LOG_LOGIC ("VT(A) = " << m_vtA);

@@ -709,6 +709,7 @@ void UeManager::RecvHandoverRequestAck(
 	Ptr<Packet> encodedHandoverCommand = params.rrcContext;
 	LteRrcSap::RrcConnectionReconfiguration handoverCommand =
 			m_rrc->m_rrcSapUser->DecodeHandoverCommand(encodedHandoverCommand);
+
 	m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration(m_rnti,
 			handoverCommand);
 	SwitchToState(HANDOVER_LEAVING);
@@ -859,7 +860,6 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 					txonBuffer.begin(), txonBuffer.end());
 			m_x2forwardingBufferSize += rlcAm->GetTransmittingRlcSduBufferSize()
 					+ txonBufferSize;
-
 			//Get the rlcAm
 			std::vector<Ptr<Packet> > rlcAmTxedSduBuffer =
 					rlcAm->GetTxedRlcSduBuffer();
@@ -917,14 +917,6 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 	NS_LOG_DEBUG(
 			this << " m_x2forw buffer size = " << m_x2forwardingBufferSize);
 	//Forwarding the packet inside m_x2forwardingBuffer to target eNB.
-	
-	if(!m_forwardSizeFile.is_open())
-	{
-	 	std::string fileName = "CacheSize.txt";
-		m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
-	}
-	m_forwardSizeFile << Simulator::Now().GetSeconds() << " " << m_x2forwardingBufferSize << std::endl;
-
 
 	// Prepare the variables for the LTE to MmWave DC forward
 	Ptr<McEnbPdcp> mcPdcp;
@@ -935,6 +927,13 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 		NS_ASSERT_MSG(mcPdcp->GetUseMmWaveConnection(),
 				"The McEnbPdcp is not forwarding data to the mmWave eNB, check if the switch happened!");
 	}
+
+	if(!m_forwardSizeFile.is_open())
+	{
+		std::string fileName = "CacheSize.txt";
+		m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
+	}
+	//m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<<m_x2forwardingBufferSize << std::endl;
 
 	while (!m_x2forwardingBuffer.empty()) {
 		NS_LOG_DEBUG(
@@ -1061,6 +1060,28 @@ LteRrcSap::RrcConnectionReconfiguration UeManager::GetRrcConnectionReconfigurati
 	return BuildRrcConnectionReconfiguration();
 }
 
+void
+UeManager::SendPacket (uint8_t bid, Ptr<Packet> p)
+{
+  NS_LOG_FUNCTION (this << p << (uint16_t) bid);
+  LtePdcpSapProvider::TransmitPdcpSduParameters params;
+  params.pdcpSdu = p;
+  params.rnti = m_rnti;
+  params.lcid = Bid2Lcid (bid);
+  uint8_t drbid = Bid2Drbid (bid);
+
+  std::map<uint8_t, Ptr<LteDataRadioBearerInfo>>::iterator it = m_drbMap.find(drbid);
+  if (it != m_drbMap.end ())
+  {
+	Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);
+	if (bearerInfo != NULL)
+	{
+	  LtePdcpSapProvider * pdcpSapProvider = bearerInfo -> m_pdcp -> GetLtePdcpSapProvider ();
+	  pdcpSapProvider->TransmitPdcpSdu (params);
+	}
+  }
+}
+
 void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	NS_LOG_FUNCTION(this << p << (uint16_t) bid);
 	switch (m_state) {
@@ -1075,7 +1096,6 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	case MC_CONNECTION_RECONFIGURATION:
 	case CONNECTION_REESTABLISHMENT:
 	case HANDOVER_PREPARATION:
-	case HANDOVER_JOINING:
 	case HANDOVER_PATH_SWITCH: {
 		NS_LOG_LOGIC("queueing data on PDCP for transmission over the air");
 		LtePdcpSapProvider::TransmitPdcpSduParameters params;
@@ -1098,18 +1118,23 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	}
 		break;
 
+
+	case HANDOVER_JOINING:
+		{
+			NS_LOG_LOGIC ("buffer packet during handover");
+			m_packetBuffer.push_back (std::make_pair(bid,p));
+		}
+		break;
+
 	case HANDOVER_LEAVING: {
 		NS_LOG_LOGIC("SEQ SEQ HANDOVERLEAVING STATE LTE ENB RRC.");
-		
+
 		if(!m_forwardSizeFile.is_open())
 		{
 			std::string fileName = "CacheSize.txt";
 			m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
 		}
-		std::cout<<"wowowow"<<std::endl;
-		m_forwardSizeFile << "wowowowowow"<<std::endl;
-		m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<< p->GetSize() + 66 << std::endl;
-
+		//m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<< p->GetSize() + 66 << std::endl;
 		//m_x2forwardingBuffer is empty, forward incomming pkts to target eNB.
 		if (m_x2forwardingBuffer.empty()) {
 			NS_LOG_INFO("forwarding incoming pkts to target eNB over X2-U");
@@ -1571,6 +1596,20 @@ void UeManager::RecvRrcConnectionReconfigurationCompleted(
 
 	case HANDOVER_JOINING: {
 		m_handoverJoiningTimeout.Cancel();
+
+		while(!m_packetBuffer.empty())
+		{
+		  NS_LOG_LOGIC ("dequeueing data from buffer");
+		  std::pair <uint8_t, Ptr<Packet>> bidPacket = m_packetBuffer.front ();
+		  uint8_t bid = bidPacket.first;
+		  Ptr <Packet> p = bidPacket.second;
+
+		  NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
+		  SendPacket (bid, p);
+
+		  m_packetBuffer.pop_front ();
+		}
+
 		if (!m_isMc) {
 			NS_LOG_INFO("Send PATH SWITCH REQUEST to the MME");
 			EpcEnbS1SapProvider::PathSwitchRequestParameters params;
@@ -1609,6 +1648,7 @@ void UeManager::RecvRrcConnectionReconfigurationCompleted(
 				PrepareHandover(m_queuedHandoverRequestCellId);
 			}
 		}
+		ReleaseBufferAfterHandover ();
 	}
 		break;
 
@@ -2220,6 +2260,32 @@ void UeManager::RecvNotifyLteMmWaveHandoverCompleted() {
 	}
 }
 
+void
+UeManager::HoldUntilHandoverCompletion()
+{
+	NS_LOG_FUNCTION (this);
+
+	for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+									rlcIt != m_rlcMap.end ();
+									++rlcIt)
+	{
+		rlcIt->second->m_rlc->GetObject<LteRlcAm>()->m_onHandover = true;
+	}
+}
+
+void
+UeManager::ReleaseBufferAfterHandover ()
+{
+	NS_LOG_FUNCTION (this);
+
+	for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+									rlcIt != m_rlcMap.end ();
+									++rlcIt)
+	{
+		rlcIt->second->m_rlc->GetObject<LteRlcAm>()->FreeHoldBuffer ();
+	}
+}
+
 ///////////////////////////////////////////
 // eNB RRC methods
 ///////////////////////////////////////////
@@ -2249,7 +2315,7 @@ LteEnbRrc::LteEnbRrc() :
 	m_lteCellId = 0;
 	m_isEnd = false;
 	m_isSecond = false;
-	//m_contextArrived =false;
+	//m_recvRelease = false;
 }
 
 LteEnbRrc::~LteEnbRrc() {
@@ -2349,7 +2415,7 @@ TypeId LteEnbRrc::GetTypeId(void) {
 					MakeTimeAccessor(
 							&LteEnbRrc::m_handoverLeavingTimeoutDuration),
 					MakeTimeChecker()).AddAttribute("OutageThreshold",
-					"SNR threshold for outage events [dB]", DoubleValue(-5.0),
+					"SNR threshold for outage events [dB]", DoubleValue(-15.0),
 					MakeDoubleAccessor(&LteEnbRrc::m_outageThreshold),
 					MakeDoubleChecker<long double>(-10000.0, 10.0))
 
@@ -2828,6 +2894,7 @@ void LteEnbRrc::SetCellId(uint16_t cellId) {
 
 void LteEnbRrc::SetClosestLteCellId(uint16_t cellId) {
 	m_lteCellId = cellId;
+	m_x2SapProvider -> SetRelayNode (cellId);
 	NS_LOG_LOGIC("Closest Lte CellId set to " << m_lteCellId);
 }
 
@@ -2962,10 +3029,7 @@ void LteEnbRrc::TttBasedHandover(
 	double currentSinrDb = 0;
 	if (alreadyAssociatedImsi
 			&& m_lastMmWaveCell.find(imsi) != m_lastMmWaveCell.end()) {
-		currentSinrDb =
-				10
-						* std::log10(
-								m_imsiCellSinrMap.find(imsi)->second[m_lastMmWaveCell[imsi]]);
+		currentSinrDb = 10* std::log10(m_imsiCellSinrMap.find(imsi)->second[m_lastMmWaveCell[imsi]]);
 		NS_LOG_DEBUG("Current SINR " << currentSinrDb);
 		// Process10
 		std::string fileName = "CurrentSinr.txt";
@@ -2973,7 +3037,7 @@ void LteEnbRrc::TttBasedHandover(
 		{
 		  m_currentSinrFile.open(fileName.c_str(), std::ofstream::app);
 		}
-		m_currentSinrFile << Simulator::Now().GetSeconds()-0.5<<" "<<currentSinrDb<<std::endl;
+		m_currentSinrFile << Simulator::Now().GetSeconds()<<" "<<currentSinrDb<<std::endl;
 	}
 
 	// the UE was in outage, now a mmWave eNB is available. It may be the one to which the UE is already attached or
@@ -3204,8 +3268,7 @@ void LteEnbRrc::PerformHandover(uint64_t imsi) {
 				"## Warn: handover not triggered because the UE is not associated yet!");
 	}
 
-	
-	m_handoverStartTrace(imsi, m_cellId, GetRntiFromImsi(imsi),handoverInfo.targetCellId);
+	m_handoverStartTrace(imsi, m_cellId, GetRntiFromImsi (imsi), handoverInfo.targetCellId);
 
 	// remove the HandoverEvent from the map
 	m_imsiHandoverEventsMap.erase(m_imsiHandoverEventsMap.find(imsi));
@@ -3392,10 +3455,12 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 					&& alreadyAssociatedImsi) // no MmWaveCell can serve this UE
 					{
 				// outage, perform fast switching if MC device or hard handover
+				NS_LOG_UNCOND (Simulator::Now()<<" outage");
 				NS_LOG_INFO(
 						"----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
 				if (m_imsiUsingLte[imsi] == false) {
 					ueMan = GetUeManager(GetRntiFromImsi(imsi));
+					NS_LOG_UNCOND ("Switch to LTE");
 					NS_LOG_INFO("Switch to LTE stack");
 					bool useMmWaveConnection = false;
 					m_imsiUsingLte[imsi] = !useMmWaveConnection;
@@ -3425,8 +3490,11 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 						|| m_handoverMode == DYNAMIC_TTT) {
 					m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
 					if(Simulator::Now().GetSeconds()>0.6)
-					TttBasedHandover(imsiIter, sinrDifference, maxSinrCellId,
-							maxSinrDb);
+					{
+						//std::cout<<Simulator::Now().GetSeconds()<<std::endl;
+						TttBasedHandover(imsiIter, sinrDifference, maxSinrCellId,
+								maxSinrDb);
+					}
 				} else {
 					NS_FATAL_ERROR("Unsupported HO mode");
 				}
@@ -3578,6 +3646,7 @@ void LteEnbRrc::UpdateUeHandoverAssociation() {
 					* std::log10((long double) currentSinr);
 			NS_LOG_INFO(
 					"MaxSinr " << maxSinrDb << " in cell " << maxSinrCellId << " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << currentSinrDb << " sinrDifference " << sinrDifference);
+
 			// check if MmWave cells are in outage. In this case the UE should handover to LTE cell
 			if (maxSinrDb < m_outageThreshold
 					|| (m_imsiUsingLte[imsi]
@@ -3898,6 +3967,7 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 	hbParams.targetCellId = req.targetCellId;
 
 	ueManager->SendHoldBufferMsg(hbParams);
+	ueManager->HoldUntilHandoverCompletion();
 
 	m_x2SapProvider->SendHandoverRequestAck(ackParams);
 
@@ -3999,15 +4069,14 @@ void LteEnbRrc::DoRecvUeContextRelease(
 
 		GetUeManager(rnti)->RecvUeContextRelease(params);
 		RemoveUe(rnti);
-
 		m_isSecond = false;
 	}
 	else{
 		NS_LOG_FUNCTION(this);
 
-		NS_LOG_LOGIC("Recv X2 message: UE CONTEXT RELEASE, BUT END MARKER NOT ARRIVED YET");
-
 		m_isSecond = true;
+
+		NS_LOG_LOGIC("Recv X2 message: UE CONTEXT RELEASE, BUT END MARKER NOT ARRIVED YET");
 
 		TempContextReleaseParams.oldEnbUeX2apId = params.oldEnbUeX2apId;
 		TempContextReleaseParams.newEnbUeX2apId = params.newEnbUeX2apId;

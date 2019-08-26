@@ -1354,6 +1354,30 @@ namespace ns3 {
 			NS_LOG_FUNCTION (this);
 			return BuildRrcConnectionReconfiguration ();
 		}
+      
+        void
+		UeManager::SendPacket (uint8_t bid, Ptr<Packet> p)
+		{
+		  NS_LOG_FUNCTION (this << p << (uint16_t) bid);
+		  LtePdcpSapProvider::TransmitPdcpSduParameters params;
+  		  params.pdcpSdu = p;
+		  params.rnti = m_rnti;
+		  params.lcid = Bid2Lcid (bid);
+		  uint8_t drbid = Bid2Drbid (bid);
+		
+		  std::map<uint8_t, Ptr<LteDataRadioBearerInfo>>::iterator it = m_drbMap.find(drbid);
+		  if (it != m_drbMap.end ())
+		  {
+		    Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);
+		    if (bearerInfo != NULL)
+		    {
+		      LtePdcpSapProvider * pdcpSapProvider = bearerInfo -> m_pdcp -> GetLtePdcpSapProvider ();
+		      pdcpSapProvider->TransmitPdcpSdu (params);
+		    }	
+		  }	
+		} 
+  
+
 
 	void
 		UeManager::SendData (uint8_t bid, Ptr<Packet> p)
@@ -1372,7 +1396,6 @@ namespace ns3 {
 				case MC_CONNECTION_RECONFIGURATION:
 				case CONNECTION_REESTABLISHMENT:
 				case HANDOVER_PREPARATION:
-				case HANDOVER_JOINING:
 				case HANDOVER_PATH_SWITCH:
 					{
 						NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
@@ -1404,6 +1427,13 @@ namespace ns3 {
 								pdcpSapProvider->TransmitPdcpSdu (params);
 							}
 						}
+					}
+					break;
+				case HANDOVER_JOINING:
+					{
+						NS_LOG_LOGIC ("buffer packet during handover");
+						NS_LOG_UNCOND ("flag1");
+						m_packetBuffer.push_back (std::make_pair(bid,p));
 					}
 					break;
 
@@ -1905,6 +1935,20 @@ namespace ns3 {
 				case HANDOVER_JOINING:
 					{
 						m_handoverJoiningTimeout.Cancel ();
+						
+						while(!m_packetBuffer.empty())
+						{
+						  NS_LOG_LOGIC ("dequeueing data from buffer");
+						  std::pair <uint8_t, Ptr<Packet>> bidPacket = m_packetBuffer.front ();
+						  uint8_t bid = bidPacket.first;
+						  Ptr <Packet> p = bidPacket.second;
+			
+						  NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
+						  SendPacket (bid, p);
+				
+						  m_packetBuffer.pop_front ();
+						}
+
 						if(!m_isMc)
 						{
 							NS_LOG_INFO ("Send PATH SWITCH REQUEST to the MME");
@@ -1946,6 +1990,7 @@ namespace ns3 {
 								PrepareHandover(m_queuedHandoverRequestCellId);
 							}
 						}
+						ReleaseBufferAfterHandover ();
 					}
 					break;
 
@@ -2616,6 +2661,33 @@ namespace ns3 {
 				default:
 					m_receivedLteMmWaveHandoverCompleted = true;
 					break;
+			}
+		}
+
+    void
+		UeManager::HoldUntilHandoverCompletion()
+		{
+			NS_LOG_FUNCTION (this);
+		
+			for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+											rlcIt != m_rlcMap.end ();
+											++rlcIt)
+			{
+				rlcIt->second->m_rlc->GetObject<LteRlcAm>()->m_onHandover = true;
+			}
+				
+		}
+
+	void
+		UeManager::ReleaseBufferAfterHandover ()
+		{
+			NS_LOG_FUNCTION (this);
+		
+			for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+											rlcIt != m_rlcMap.end ();
+											++rlcIt)
+			{
+				rlcIt->second->m_rlc->GetObject<LteRlcAm>()->ReleaseHoldBuffer ();
 			}
 		}
 
@@ -4516,6 +4588,8 @@ namespace ns3 {
 			NS_LOG_LOGIC ("targetCellId = " << ackParams.targetCellId);
 
 			m_x2SapProvider->SendHandoverRequestAck (ackParams);
+
+			ueManager->HoldUntilHandoverCompletion();
 		}
 
 	//Process8

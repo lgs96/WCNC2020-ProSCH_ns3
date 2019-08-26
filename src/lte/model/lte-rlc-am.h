@@ -86,10 +86,14 @@ public:
   ///< translate a vector of Rlc PDUs to Rlc SDUs 
   ///< and put the Rlc SDUs into m_transmittingRlcSdus.
   void  RlcPdusToRlcSdus (std::vector < RetxPdu >  Pdus);
-  
+
   std::vector < Ptr<Packet> > GetTxedRlcSduBuffer (){
     return m_txedRlcSduBuffer;
   }
+
+  void ReleaseHoldBuffer();
+
+  bool m_onHandover;
 
 private:
   //whether the last SDU in the txonBuffer is a complete SDU.
@@ -146,10 +150,12 @@ private:
 
   std::string GetBufferSizeFilename();
   void SetBufferSizeFilename(std::string filename);
-  void BufferSizeTrace();
+  void BufferSizeTrace (); 
 
 private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
+
+    std::vector < Ptr<Packet> > m_holdBuffer;
 
     struct RetxSegPdu
     {
@@ -179,6 +185,7 @@ private:
   std::map <uint32_t, Ptr <Packet> > m_transmittingRlcSduBuffer;
 
     uint32_t m_txonBufferSize;
+    uint32_t m_holdBufferSize;
     uint32_t m_retxBufferSize;
     uint32_t m_txedBufferSize;
 
@@ -281,7 +288,6 @@ private:
   EventId m_traceBufferSizeEvent;
 
   bool m_enableAqm;
-
 };
 
 } // namespace ns3

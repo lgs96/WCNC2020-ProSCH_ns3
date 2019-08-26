@@ -603,7 +603,7 @@ main (int argc, char *argv[])
 	double  mmeLatency=15.0;
 	//bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
-	double EnbTxPower = 30;
+	double EnbTxPower = 25;
 	double UeTxPower = 20;
 	uint16_t typeOfSplitting = 1; // 3 : p-split
 	//	bool isDuplication = false; //gsoul 180905

@@ -396,6 +396,10 @@ public:
 
   void SendRlcHead(uint16_t cellId,bool isLeaving);
 
+  void HoldUntilHandoverCompletion ();
+
+  void ReleaseBufferAfterHandover ();
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -502,6 +506,8 @@ private:
    * \return the corresponding Data Radio Bearer Id
    */
   uint8_t Bid2Drbid (uint8_t bid);
+
+  void SendPacket (uint8_t bid, Ptr <Packet> p);
 
   /** 
    * Switch the UeManager to the given state
@@ -627,6 +633,8 @@ private:
 
   // this variable is set to true if on initial access, for mc devices, all the mmWave eNBs are in outage
   bool m_allMmWaveInOutageAtInitialAccess;
+
+  std::list<std::pair<uint8_t, Ptr<Packet>>> m_packetBuffer;
 
 }; // end of `class UeManager`
 

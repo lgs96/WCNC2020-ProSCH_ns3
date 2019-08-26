@@ -943,7 +943,6 @@ public:
   virtual HandoverPreparationInfo DecodeHandoverPreparationInformation (Ptr<Packet> p) = 0;
   virtual Ptr<Packet> EncodeHandoverCommand (RrcConnectionReconfiguration msg) = 0;
   virtual RrcConnectionReconfiguration DecodeHandoverCommand (Ptr<Packet> p) = 0;
-
 };
 
 

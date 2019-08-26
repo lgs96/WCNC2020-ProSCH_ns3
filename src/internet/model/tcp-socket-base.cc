@@ -3672,8 +3672,7 @@ namespace ns3 {
 				std::cout<<"It's head sequence"<<std::endl;
 			}
 			m_proxyFin = m_tcb->m_nextTxSequence;
-			SendPendingProxyData(true);
-			NS_LOG_LOGIC ("Proxy forwaridng is completed");
+			NS_LOG_LOGIC ("Ready to forward packets");
 			//std::cout<<"Proxy fin: "<<m_proxyFin<<" Tail: "<<m_txBuffer->TailSequence()<<std::endl;
 		}
 

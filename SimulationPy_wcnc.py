@@ -19,8 +19,8 @@ def start_simulation(data):
 	try:
 		subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s  --S1Delay=%s --BuildingNum=%s --SourceRate=%s" --run wcnc2020' % (location,buildingIndex, x2_delay,s1_delay, buildingNum, throughput),shell=True)
 	except: 
-		#subprocess.check_call('rm -r %s'%(location),shell=True)
-		#start_simulation(data)
+		subprocess.check_call('rm -r %s'%(location),shell=True)
+		start_simulation(data)
 		pass
 
 #if len(sys.argv) != 5:
@@ -47,13 +47,13 @@ def start_simulation(data):
 
 buildingNumSet =['0','100']
 x2DelaySet = ['1','5','10','20']
-throughputSet = ['100Mbps','300Mbps','500Mbps','1000Mbps']
-s1DelaySet = ['1','30']
-schemeSet = ['X2','Proxy','PBH']
-whichScheme = 3
+throughputSet = ['1000Mbps']
+s1DelaySet = ['0.030']
+schemeSet = ['X2','ProxyMin','PBH']
+whichScheme = 1
 paramsSet = []
-for  i in range(1,20,1):
-	index = i
+for  i in range(20):
+	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]
 		for k in range(len(x2DelaySet)):

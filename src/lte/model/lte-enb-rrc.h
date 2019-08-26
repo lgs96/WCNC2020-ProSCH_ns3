@@ -499,6 +499,7 @@ private:
    */
   uint8_t Bid2Drbid (uint8_t bid);
 
+  void SendPacket (uint8_t bid, Ptr <Packet> p);
   /** 
    * Switch the UeManager to the given state
    * 
@@ -621,6 +622,8 @@ private:
   bool m_allMmWaveInOutageAtInitialAccess;
 
   std::ofstream m_forwardSizeFile;
+
+  std::list<std::pair<uint8_t, Ptr<Packet>>> m_packetBuffer;
 }; // end of `class UeManager`
 
 

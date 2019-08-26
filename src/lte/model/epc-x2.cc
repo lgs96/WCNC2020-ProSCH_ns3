@@ -99,6 +99,8 @@ namespace ns3 {
 
 		m_relayCellId = 0;
 		m_isMmWave = false;
+
+		m_shouldAdd = false;
 	}
 
 	EpcX2::~EpcX2 ()
@@ -227,18 +229,31 @@ namespace ns3 {
 		EpcX2::DoAddTeidToBeForwarded(uint32_t gtpTeid, uint16_t targetCellId)
 		{
 			NS_LOG_FUNCTION(this << " add an entry to the map of teids to be forwarded: teid " << gtpTeid << " targetCellId " << targetCellId);
-			NS_LOG_UNCOND(Simulator::Now()<<" Add "<<targetCellId);
-			NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
-			m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
+			//NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
+			if(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end())
+			{
+				m_shouldAdd = true;
+				m_addGtpId = gtpTeid;
+				m_addCellId = targetCellId;
+			}
+			else  
+			{
+				m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
+			}
 		}
 
 	void 
 		EpcX2::DoRemoveTeidToBeForwarded(uint32_t gtpTeid)
 		{
 			NS_LOG_FUNCTION(this << " remove and entry from the map of teids to be forwarded: teid " << gtpTeid);
-			NS_LOG_UNCOND(Simulator::Now()<<" Remove");
 			NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end(), "TEID not in the map");
 			m_teidToBeForwardedMap.erase(m_teidToBeForwardedMap.find(gtpTeid));
+
+			if(m_shouldAdd)
+			{
+				m_shouldAdd = false;
+				m_teidToBeForwardedMap.insert(std::pair<uint32_t,uint16_t> (m_addGtpId, m_addCellId));
+			}
 		}
 
 
@@ -272,7 +287,7 @@ namespace ns3 {
 			}
 			 */
 			packet->RemovePacketTag(epcX2Tag);
-			m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+			//m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
 			////////////////////////////////////////////////////////
 
 			EpcX2Header x2Header;
@@ -285,6 +300,7 @@ namespace ns3 {
 
 			if (procedureCode == EpcX2Header::HandoverPreparation)
 			{
+				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
 				if (messageType == EpcX2Header::InitiatingMessage)
 				{
 					if(!m_isMmWave)
@@ -467,6 +483,8 @@ namespace ns3 {
 			}
 			else if (procedureCode == EpcX2Header::UeContextRelease)
 			{
+				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+				
 				if (messageType == EpcX2Header::InitiatingMessage)
 				{
 					//Process4
@@ -599,6 +617,8 @@ namespace ns3 {
 			}
 			else if (procedureCode == EpcX2Header::RequestMcHandover)
 			{
+				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+				
 				NS_LOG_LOGIC ("Recv X2 message: REQUEST MC HANDOVER");
 
 				EpcX2McHandoverHeader x2mcHeader;
@@ -647,6 +667,8 @@ namespace ns3 {
 			}
 			else if (procedureCode == EpcX2Header::SecondaryCellHandoverCompleted)
 			{
+				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+				
 				NS_LOG_LOGIC ("Recv X2 message: SECONDARY CELL HANDOVER COMPLETED");
 
 				EpcX2SecondaryCellHandoverCompletedHeader x2hoHeader;
@@ -1107,7 +1129,10 @@ namespace ns3 {
 			return;
 			}
 			 */
-			m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
+			if(cellsInfo->m_remoteCellId != 1 && cellsInfo -> m_localCellId !=1)
+			{
+				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
+			}
 			packet->RemovePacketTag(epcX2Tag);
 			//m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 			///////////////////////////////
@@ -1137,6 +1162,7 @@ namespace ns3 {
 				{
 					if(!m_isMmWave)
 					{
+						m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 						params.sourceCellId = cellsInfo->m_remoteCellId;
 						params.targetCellId = gtpu.GetSequenceNumber();
 						DoSendMcPdcpPdu(params);
@@ -1145,6 +1171,7 @@ namespace ns3 {
 					{
 						if(gtpu.GetSequenceNumber () != 0)
 						{
+							m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 							params.sourceCellId = gtpu.GetSequenceNumber ();
 						}
 						// add PdcpTag
@@ -1166,6 +1193,7 @@ namespace ns3 {
 				//Process4 -->forwarding to the true path
 				else if (gtpu.GetMessageType() == EpcX2Header::EndMarker)
 				{
+					m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 					if(!m_isMmWave)
 					{
 						params.sourceCellId = cellsInfo->m_localCellId;
@@ -1202,6 +1230,7 @@ namespace ns3 {
 			}
 			else // the packet was received during a secondary cell HO, forward to the target cell , Process4
 			{
+				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 				params.sourceCellId = cellsInfo->m_remoteCellId;
 				params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
 				NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);

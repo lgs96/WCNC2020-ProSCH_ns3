@@ -933,7 +933,7 @@ void UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp,
 		std::string fileName = "CacheSize.txt";
 		m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
 	}
-	m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<<m_x2forwardingBufferSize << std::endl;
+	//m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<<m_x2forwardingBufferSize << std::endl;
 
 	while (!m_x2forwardingBuffer.empty()) {
 		NS_LOG_DEBUG(
@@ -1060,6 +1060,28 @@ LteRrcSap::RrcConnectionReconfiguration UeManager::GetRrcConnectionReconfigurati
 	return BuildRrcConnectionReconfiguration();
 }
 
+void
+UeManager::SendPacket (uint8_t bid, Ptr<Packet> p)
+{
+  NS_LOG_FUNCTION (this << p << (uint16_t) bid);
+  LtePdcpSapProvider::TransmitPdcpSduParameters params;
+  params.pdcpSdu = p;
+  params.rnti = m_rnti;
+  params.lcid = Bid2Lcid (bid);
+  uint8_t drbid = Bid2Drbid (bid);
+
+  std::map<uint8_t, Ptr<LteDataRadioBearerInfo>>::iterator it = m_drbMap.find(drbid);
+  if (it != m_drbMap.end ())
+  {
+	Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);
+	if (bearerInfo != NULL)
+	{
+	  LtePdcpSapProvider * pdcpSapProvider = bearerInfo -> m_pdcp -> GetLtePdcpSapProvider ();
+	  pdcpSapProvider->TransmitPdcpSdu (params);
+	}
+  }
+}
+
 void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	NS_LOG_FUNCTION(this << p << (uint16_t) bid);
 	switch (m_state) {
@@ -1074,7 +1096,6 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	case MC_CONNECTION_RECONFIGURATION:
 	case CONNECTION_REESTABLISHMENT:
 	case HANDOVER_PREPARATION:
-	case HANDOVER_JOINING:
 	case HANDOVER_PATH_SWITCH: {
 		NS_LOG_LOGIC("queueing data on PDCP for transmission over the air");
 		LtePdcpSapProvider::TransmitPdcpSduParameters params;
@@ -1097,6 +1118,13 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	}
 		break;
 
+	case HANDOVER_JOINING:
+	{
+		NS_LOG_LOGIC ("buffer packet during handover");
+		m_packetBuffer.push_back (std::make_pair(bid,p));
+	}
+	break;
+
 	case HANDOVER_LEAVING: {
 		NS_LOG_LOGIC("SEQ SEQ HANDOVERLEAVING STATE LTE ENB RRC.");
 
@@ -1105,7 +1133,7 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 			std::string fileName = "CacheSize.txt";
 			m_forwardSizeFile.open(fileName.c_str(), std::ofstream::app);
 		}
-		m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<< p->GetSize() + 66 << std::endl;
+		//m_forwardSizeFile << Simulator::Now().GetSeconds() <<" "<< p->GetSize() + 66 << std::endl;
 		//m_x2forwardingBuffer is empty, forward incomming pkts to target eNB.
 		if (m_x2forwardingBuffer.empty()) {
 			NS_LOG_INFO("forwarding incoming pkts to target eNB over X2-U");
@@ -1567,6 +1595,20 @@ void UeManager::RecvRrcConnectionReconfigurationCompleted(
 
 	case HANDOVER_JOINING: {
 		m_handoverJoiningTimeout.Cancel();
+
+		while(!m_packetBuffer.empty())
+		{
+		  NS_LOG_LOGIC ("dequeueing data from buffer");
+		  std::pair <uint8_t, Ptr<Packet>> bidPacket = m_packetBuffer.front ();
+		  uint8_t bid = bidPacket.first;
+		  Ptr <Packet> p = bidPacket.second;
+
+		  NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
+		  SendPacket (bid, p);
+
+		  m_packetBuffer.pop_front ();
+		}
+
 		if (!m_isMc) {
 			NS_LOG_INFO("Send PATH SWITCH REQUEST to the MME");
 			EpcEnbS1SapProvider::PathSwitchRequestParameters params;
@@ -2480,7 +2522,7 @@ TypeId LteEnbRrc::GetTypeId(void) {
 							&LteEnbRrc::m_notifyMmWaveSinrTrace),
 					"ns3::LteEnbRrc::NotifyMmWaveSinrTracedCallback")
 			.AddTraceSource("HandoverTrigger",
-					"Trace the time when handover is triggerd."
+					"Trace the time when handover is triggerd.",
 					MakeTraceSourceAccessor(&LteEnbRrc::m_handoverTrigger),
 					"ns3::LteEnbRrc::HandoverTriggerCallback");
 	return tid;

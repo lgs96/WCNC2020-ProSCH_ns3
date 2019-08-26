@@ -256,6 +256,10 @@ private:
    */
   uint16_t m_relayCellId;
   bool m_isMmWave;
+
+  bool m_shouldAdd;
+  uint32_t m_addGtpId;
+  uint16_t m_addCellId;
 };
 
 } //namespace ns3

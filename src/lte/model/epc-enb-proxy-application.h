@@ -79,7 +79,7 @@ public:
    * \param sgwS1uAddress the IPv4 address at which this eNB will be able to reach its SGW for S1-U communications
    * \param cellId the identifier of the enb
    */
-  EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress);
+  EpcEnbProxyApplication (Ptr<Node> proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress,uint32_t proxyBufferSize);
 
   /**
    * Destructor
@@ -93,9 +93,9 @@ public:
 
 
   //Process8
-  void ForwardingProxy (uint32_t seq, double delay, double interval);
-  void HoldProxyBuffer(double delay);
-  void DelayedHoldBuffer();
+  void ForwardingProxy (uint16_t srcPort, double delay, double interval);
+  void HoldProxyBuffer(uint16_t srcPort, double delay);
+  void DelayedHoldBuffer(uint16_t srcPort);
   void ReleaseProxyBuffer();
   void GetArrivalRate ();
   void GetDepartureRate ();
@@ -103,11 +103,12 @@ public:
   //Process_last
   void AddEnbApp (Ptr<EpcEnbApplication>epcApp);
 
+  std::map<uint16_t,Ptr<Socket>> m_proxyTcpSocketMap;
+
 private:
 
   void SendToEnbSocket (Ptr<Packet> packet);
 
-  Ptr<Socket> m_proxyTcpSocket;
   Ptr<Socket> m_proxyEnbSocket;
 
   Ipv4Address m_proxyToEnbAddress;
@@ -117,8 +118,6 @@ private:
   Ipv4Address m_source;
   Ipv4Address m_dest;
 
-  //Process8
-  bool m_holdBuffer;
   //Process9
   uint64_t m_totalRx;
   uint64_t m_lastTotalRx;
@@ -141,6 +140,15 @@ private:
   uint32_t m_delayedHighTx;
 
   DelayJitterEstimation m_jitterEstimate;
+
+  Ptr <Node> m_proxyNode;
+  Ipv4Address m_proxyAddress;
+  uint16_t m_proxyTcpPort;
+  uint32_t m_proxyBufferSize;
+
+  //Process8
+  bool m_holdBuffer;
+
 };
 
 } //namespace ns3

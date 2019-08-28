@@ -174,7 +174,7 @@ private:
 
   //Process8 just for definition
   void DoProxyForwardingRequest(uint32_t seq, double delay, double interval);
-  void DoProxyHoldRequest(double delay);
+  void DoProxyHoldRequest(uint32_t teid,double delay);
   void DoProxyReleaseRequest();
 
   /**
@@ -302,7 +302,8 @@ private:
   //Process8
   Ptr<EpcEnbProxyApplication> m_proxyApp;
 
-
+  std::map<uint32_t,uint16_t> m_teidPortMap;
+  std::map<Ipv4Address,uint32_t> m_ipv4TeidMap;
 };
 
 } //namespace ns3

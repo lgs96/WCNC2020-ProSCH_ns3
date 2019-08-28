@@ -421,7 +421,7 @@ Traces(uint16_t nodeNum)
 	int
 main (int argc, char *argv[])
 {
-	//ns3::Packet::EnablePrinting();
+	ns3::Packet::EnablePrinting();
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_LOGIC);
 	//LogComponentEnable("EpcUeNas", LOG_FUNCTION);
@@ -808,7 +808,7 @@ main (int argc, char *argv[])
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
 	//for(uint16_t i =0 ; i<ueNodes.GetN(); i++){
 	uePositionAlloc->Add(Vector(100 ,100,1.5));
-	//uePositionAlloc->Add(Vector(50 ,51,1.5));
+        //uePositionAlloc->Add(Vector(50 ,51,1.5));
 
 	//	uePositionAlloc->Add(Vector(52 ,100,1.5));
 	//	uePositionAlloc->Add(Vector(48 ,100,1.5));

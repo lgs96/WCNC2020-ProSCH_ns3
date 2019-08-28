@@ -330,9 +330,18 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 		  tempIpv4Header<<" Packet Size is "<<packet->GetSize());
 
   //Process7
-  m_toServerGtpuHeader = tempGtpuHeader;
+  //m_toServerGtpuHeader = tempGtpuHeader;
+  //packet->RemoveHeader (tempGtpuHeader);
 
-  packet->RemoveHeader (tempGtpuHeader);
+  if(m_ipv4TeidMap.find(tempIpv4Header.GetDestination())==m_ipv4TeidMap.end())
+  {
+    m_ipv4TeidMap.insert(std::make_pair(tempIpv4Header.GetDestination(),tempGtpuHeader.GetTeid()));
+  }
+  if(m_teidPortMap.find(tempGtpuHeader.GetTeid())==m_teidPortMap.end())
+  {
+	m_teidPortMap.insert(std::make_pair(tempGtpuHeader.GetTeid(),tempTcpHeader.GetDestinationPort()));
+	std::cout<<"Teid: "<<tempGtpuHeader.GetTeid()<<" "<<"Source port: "<<tempTcpHeader.GetDestinationPort()<<std::endl;
+  }
   SendToProxySocket(packet);
  /*
   //Process5
@@ -433,9 +442,12 @@ EpcEnbApplication::RecvFromProxySocket (Ptr<Socket> socket)
   NS_ASSERT (socket == m_proxySocket);
 
   Ptr<Packet> packet = socket->Recv();
+  GtpuHeader tempGtpuHeader;
+  packet->RemoveHeader(tempGtpuHeader);
+
   Ptr<Packet> pCopy = packet->Copy();
 
-  uint32_t teid = m_toServerGtpuHeader.GetTeid();
+  uint32_t teid = tempGtpuHeader.GetTeid();
 
   SendToS1uSocket(pCopy,teid);
 }
@@ -463,6 +475,7 @@ EpcEnbApplication::SendToS1uSocket (Ptr<Packet> packet, uint32_t teid)
   packet->AddHeader (gtpu);
   NS_LOG_LOGIC(" packet size: "<<packet->GetSize());
   uint32_t flags = 0;
+
   m_s1uSocket->SendTo (packet, flags, InetSocketAddress (m_sgwS1uAddress, m_gtpuUdpPort));
 }
 
@@ -590,7 +603,7 @@ EpcEnbApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& source,
   Ipv4Address ueAddr =  ipv4Header.GetDestination ();
   NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
 
-  uint32_t teid = m_toServerGtpuHeader.GetTeid ();
+  uint32_t teid = m_ipv4TeidMap.find(ipv4Header.GetDestination())->second;
 
   std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
   if (it != m_teidRbidMap.end ())
@@ -624,14 +637,16 @@ void
 EpcEnbApplication::DoProxyForwardingRequest(uint32_t seq, double delay, double interval)
 {
   NS_LOG_FUNCTION(this);
-  m_proxyApp -> ForwardingProxy (seq, delay, interval);
+  uint16_t srcPort = m_teidPortMap.find(seq)->second;
+  m_proxyApp -> ForwardingProxy (srcPort, delay, interval);
 }
 
 void
-EpcEnbApplication::DoProxyHoldRequest(double delay)
+EpcEnbApplication::DoProxyHoldRequest(uint32_t teid, double delay)
 {
   NS_LOG_FUNCTION(this);
-  m_proxyApp -> HoldProxyBuffer(delay);
+  uint16_t srcPort = m_teidPortMap.find(teid)->second;
+  m_proxyApp -> HoldProxyBuffer(srcPort, delay);
 }
 
 void

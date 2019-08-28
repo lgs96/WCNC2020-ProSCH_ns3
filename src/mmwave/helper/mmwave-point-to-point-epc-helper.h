@@ -226,6 +226,7 @@ private:
    */
   uint16_t m_x2LinkMtu;
 
+  
   /**
    *
    * Process7: Varaibles for proxy function
@@ -239,6 +240,8 @@ private:
   uint16_t m_proxyTcpPort;
   uint16_t m_proxyUdpPort;
   uint16_t m_enbProxyUdpPort;
+
+  uint32_t m_proxyBufferSize;
 
   Ptr<VirtualNetDevice> m_tunProxyDevice;
 

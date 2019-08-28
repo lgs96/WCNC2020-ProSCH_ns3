@@ -997,9 +997,9 @@ namespace ns3 {
 				//Process8: LTE as a centralized coordinater
 				else
 				{
+					uint32_t gtpTeid;
 					//std::cout<<Simulator::Now()<<" Proxy based handover: Received handover ack, start centralized handover"<<std::endl;
 					//#1 Path switching
-					
 					for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
 										it != m_drbMap.end (); ++it)
 					{
@@ -1013,6 +1013,9 @@ namespace ns3 {
 								dataParams.sourceCellId = m_rrc->GetCellId();
 								dataParams.targetCellId = params.targetCellId;
 								dataParams.gtpTeid = it->second->m_gtpTeid;
+				
+								gtpTeid = dataParams.gtpTeid;					
+
 								pdcp->SetUeDataParams(dataParams);
 								pdcp->SetMmWaveRnti(params.newEnbUeX2apId);
 								// Update TEIDs for receiving data eventually forwarded over X2-U
@@ -1071,14 +1074,13 @@ namespace ns3 {
 					std::cout<<"Forward from seq: "<<newSeq<<" delay: "<<newDelay<<" interval: "<<newInterval<<std::endl;
 
 					//#4 Request buffered TCP packet to send
-					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(newSeq, newDelay, newInterval);
+					m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(gtpTeid, newDelay, newInterval);
 					m_rrc->m_isPrefetchedEnbMap.find(m_mmWaveCellId)->second[m_imsi] = false;
 
 					//m_rrc->m_handoverStartTrace (m_imsi, m_rrc->m_cellId, m_rnti, handoverCommand.mobilityControlInfo.targetPhysCellId);
 
 					//Process9 reset bottlenck bandwidth
 					m_rrc->m_bottleneckBw = UINT32_MAX;
-
 				}
 			}
 			//Process8: when mmwave source cell receives ack signal
@@ -2691,6 +2693,13 @@ namespace ns3 {
 			}
 		}
 
+	std::map <uint8_t, Ptr<LteDataRadioBearerInfo>>
+		UeManager::GetDrbMap ()
+		{
+			NS_LOG_FUNCTION (this);
+			return m_drbMap;
+		}
+
 
 	///////////////////////////////////////////
 	// eNB RRC methods
@@ -3857,8 +3866,19 @@ namespace ns3 {
 			// remove the HandoverEvent from the map
 			m_imsiHandoverEventsMap.erase(m_imsiHandoverEventsMap.find(imsi));
 
+			Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
+			uint32_t gtpTeid;
+					
+			for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = ueMan->m_drbMap.begin ();	it != ueMan->m_drbMap.end (); ++it)
+			{
+		  	  if(!(it->second->m_isMc) || (it->second->m_isMc && m_lastMmWaveCell.find(imsi)->second != handoverInfo.targetCellId))
+			  {
+			    gtpTeid = it->second->m_gtpTeid;
+			    m_s1SapProvider-> DoSendProxyHoldRequest (gtpTeid,m_delayX2);
+			  }									
+            }
 			// Process8
-			m_s1SapProvider-> DoSendProxyHoldRequest (m_delayX2);
+			//m_s1SapProvider-> DoSendProxyHoldRequest (m_delayX2);
 
 			// Trace Handover Triggered time
 			//m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);

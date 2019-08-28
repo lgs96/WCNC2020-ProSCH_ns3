@@ -42,9 +42,20 @@
 #include "ns3/tcp-option.h"
 #include "ns3/tcp-option-ts.h"
 #include "ns3/delay-jitter-estimation.h"
-//#include "ns3/epc-enb-application.h"
 
 namespace ns3 {
+
+	static void
+		Ssthresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSsthresh, uint32_t newSsthresh)
+		{
+			*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
+		}
+
+	static void
+		RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
+		{
+			*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
+		}
 
 	NS_LOG_COMPONENT_DEFINE ("EpcEnbProxyApplication");
 
@@ -61,31 +72,38 @@ namespace ns3 {
 		EpcEnbProxyApplication::DoDispose (void)
 		{
 			NS_LOG_FUNCTION (this);
-			m_proxyTcpSocket = 0;
+			for(auto it = m_proxyTcpSocketMap.begin(); it != m_proxyTcpSocketMap.end(); it++)
+			{
+				it->second = 0;
+			}
 			m_proxyEnbSocket = 0;
 		}
 
 
-	EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Socket> proxyTcpSocket, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress)
-		: m_proxyTcpSocket (proxyTcpSocket),
+	EpcEnbProxyApplication::EpcEnbProxyApplication (Ptr<Node> proxyNode, Ipv4Address proxyAddress, uint16_t proxyTcpPort, Ptr<Socket> proxyEnbSocket, Ipv4Address proxyToEnbAddress,uint32_t proxyBufferSize)
+	    ://m_proxyTcpSocket (proxyTcpSocket),
 		m_proxyEnbSocket (proxyEnbSocket),
 		m_proxyToEnbAddress (proxyToEnbAddress),
 		m_proxyToEnbUdpPort (8434),
+		m_proxyNode (proxyNode),
+		m_proxyAddress (proxyAddress),
+		m_proxyTcpPort (proxyTcpPort),
+		m_proxyBufferSize (proxyBufferSize),
 		m_holdBuffer (false) // fixed by the standard
 	{
-		NS_LOG_FUNCTION (this << proxyTcpSocket << proxyEnbSocket << proxyToEnbAddress);
+		NS_LOG_FUNCTION (this << proxyNode << proxyAddress << proxyTcpPort<< proxyEnbSocket << proxyToEnbAddress);
 		//m_proxyTcpSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromTcpSocket, this));
 		m_proxyEnbSocket->SetRecvCallback (MakeCallback (&EpcEnbProxyApplication::RecvFromEnbSocket, this));
-		m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
+		//m_proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(15*1024*1024);
 		m_totalRx = 0;
 		m_lastTotalRx = 0;
 		m_currentAvailable = 0;
 		m_lastAvailable = 0;
 		m_count = 0;
 		m_count_dep = 0;
-		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
-		Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate,this);
-		m_delay = 0.03;
+		//Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
+		//Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate,this);
+		m_delay = 0;
 		m_forwardMode = false;
 		m_holdBufferCount = 0;
 		//m_temp = true;
@@ -127,12 +145,14 @@ namespace ns3 {
 			m_jitterEstimate.PrepareTx(packet);
 
 			NS_LOG_LOGIC("Packet size before remove header: "<<packet->GetSize());
+			GtpuHeader tempGtpuHeader;
 			Ipv4Header tempIpv4Header;
 			TcpHeader tempTcpHeader;
+
+			packet -> RemoveHeader (tempGtpuHeader);
 			packet -> RemoveHeader (tempIpv4Header);
 			packet -> RemoveHeader (tempTcpHeader);
 
-			m_Ipv4Header = tempIpv4Header;
 			Ipv4Header newIpv4Header = tempIpv4Header;
 			//Set Ipv4 Header
 			m_source = tempIpv4Header.GetDestination();
@@ -156,8 +176,29 @@ namespace ns3 {
 			{
 				//Start Proxy TCP communication
 				NS_LOG_LOGIC("First packet from Server");
+
+				Ptr<Socket> proxyTcpSocket = Socket::CreateSocket (m_proxyNode, TypeId::LookupByName ("ns3::TcpSocketFactory"));
+				int retval = proxyTcpSocket->Bind (InetSocketAddress (m_proxyAddress, m_proxyTcpPort));
+				m_proxyTcpPort++;
+				NS_ASSERT (retval == 0);
+				proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(m_proxyBufferSize);
+
+				std::ostringstream fileName;
+				fileName<<"proxyRtt"<<srcPort<<".txt";
+				AsciiTraceHelper asciiTraceHelper;
+				Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
+				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange,stream));
+
+				std::ostringstream fileName2;
+				fileName2<<"proxySst"<<srcPort<<".txt";
+				AsciiTraceHelper asciiTraceHelper2;
+				Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper2.CreateFileStream (fileName2.str ().c_str ());
+				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh,stream2));
+
 				Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
-				m_proxyTcpSocket->Connect(tcpToEnbAddress);
+				proxyTcpSocket->Connect(tcpToEnbAddress);
+
+				m_proxyTcpSocketMap.insert(std::make_pair(srcPort,proxyTcpSocket));
 
 				//Send SYN|ACK packet to server, set SYN|ACK packet
 				SequenceNumber32 dataSeqNum = SequenceNumber32(0);
@@ -168,6 +209,7 @@ namespace ns3 {
 				Ptr<Packet> ackPacket = Create<Packet> ();
 				ackPacket->AddHeader(newTcpHeader);
 				ackPacket->AddHeader(newIpv4Header);
+				ackPacket->AddHeader(tempGtpuHeader);
 
 				NS_LOG_LOGIC("Packet size: "<<packet->GetSize());
 				NS_LOG_LOGIC("Ipv4 Header: "<<newIpv4Header);
@@ -184,16 +226,20 @@ namespace ns3 {
 			//#3 receive data packet
 			else
 			{
-				if(m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer)
+				// Get specific Proxy Socket from sourcePort
+				Ptr<Socket> proxyTcpSocket = m_proxyTcpSocketMap.find(srcPort)->second;
+				Ptr<TcpSocketBase> proxySocketBase = proxyTcpSocket->GetObject<TcpSocketBase>();
+
+				if(proxySocketBase->m_proxyHoldBuffer)
 				{
 					NS_LOG_LOGIC("Hold buffer phase!!");
-					Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
+					Ptr<TcpTxBuffer> proxyTxBuffer = proxySocketBase->GetTxBuffer();
 					proxyTxBuffer->Add(packet);
 					//m_proxyTcpSocket->Send(packet);
 					//NS_ASSERT(isIn==true);
 					m_holdBufferCount++;
 					//std::cout<<Simulator::Now()<<" "<<m_holdBufferCount<<" buffered"<<std::endl;
-					Ptr<TcpSocketState> m_tcb = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb;	
+					Ptr<TcpSocketState> m_tcb = proxySocketBase->m_tcb;
 					//std::cout<<"Next seq: " << m_startPoint << " Head: " << proxyTxBuffer->HeadSequence()<<" Real next seq: "<<m_tcb->m_nextTxSequence<<std::endl;
 
 					if(m_forwardMode)
@@ -206,14 +252,14 @@ namespace ns3 {
 						//std::cout<<"Next seq: " << m_tcb->m_nextTxSequence << " proxyFin: " << m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin<<std::endl;	
 						m_tcb->m_nextTxSequence = m_startPoint;
 						//std::cout<<"Prev: "<<m_tcb->m_nextTxSequence<<std::endl;
-						m_proxyTcpSocket->GetObject<TcpSocketBase>()->SendPendingProxyData(true);
+						proxySocketBase->SendPendingProxyData(true);
 						m_startPoint = m_tcb->m_nextTxSequence;
 						//std::cout<<"After: "<<m_tcb->m_nextTxSequence<<std::endl;
 
-						if(m_startPoint > m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyFin)
+						if(m_startPoint > proxySocketBase->m_proxyFin)
 						{
 							std::cout<<"Now Tx: "<<m_tcb->m_nextTxSequence<<std::endl;
-							m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = false;
+							proxySocketBase->m_proxyHoldBuffer = false;
 							m_forwardMode = false;
 						}
 					}
@@ -237,6 +283,7 @@ namespace ns3 {
 					Ptr<Packet> ackPacket = Create<Packet> ();
 					ackPacket->AddHeader(newTcpHeader);
 					ackPacket->AddHeader(newIpv4Header);
+					ackPacket->AddHeader(tempGtpuHeader);
 
 					//std::cout<<"When hold buffer operating.. Seq " << AckNum << " is arrived, Tail sequence: "<< proxyTxBuffer->TailSequence() << std::endl;
 
@@ -251,10 +298,10 @@ namespace ns3 {
 
 					//			if(m_temp)
 
-					m_proxyTcpSocket->Send(packet);
+					proxyTcpSocket->Send(packet);
 
 					//Set advertise window
-					Ptr<TcpTxBuffer> proxyTxBuffer = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer();
+					Ptr<TcpTxBuffer> proxyTxBuffer = proxySocketBase->GetTxBuffer();
 
 					uint32_t awndSize = proxyTxBuffer->Available()-m_delay*m_departureRate;
 
@@ -278,6 +325,7 @@ namespace ns3 {
 					Ptr<Packet> ackPacket = Create<Packet> ();
 					ackPacket->AddHeader(newTcpHeader);
 					ackPacket->AddHeader(newIpv4Header);
+					ackPacket->AddHeader(tempGtpuHeader);
 
 					m_totalRx += dataSize;
 
@@ -303,7 +351,7 @@ namespace ns3 {
 		EpcEnbProxyApplication::GetDepartureRate ()
 		{
 			NS_LOG_FUNCTION (this);
-			m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
+			/*m_currentAvailable = m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetTxBuffer()->Available();
 			m_departureRate = (m_currentAvailable - m_lastAvailable)/(double)(0.05);
 			if(m_currentAvailable < m_lastAvailable)
 			{
@@ -312,8 +360,8 @@ namespace ns3 {
 			m_count_dep++;
 			m_lastAvailable = m_currentAvailable;
 			//std::cout<<"Departure rate is "<<m_departureRate<<std::endl;
-			Simulator::Schedule(MilliSeconds(50),&EpcEnbProxyApplication::GetDepartureRate,this);
-		}
+			Simulator::Schedule(MilliSeconds(50),&EpcEnbProxyApplication::GetDepartureRate,this);*/
+	     }
 
 	void
 		EpcEnbProxyApplication::SendToEnbSocket (Ptr<Packet> packet)
@@ -325,11 +373,11 @@ namespace ns3 {
 	
 	//Process_Last
 	void
-		EpcEnbProxyApplication::ForwardingProxy (uint32_t seq, double delay, double interval)
+		EpcEnbProxyApplication::ForwardingProxy (uint16_t srcPort, double delay, double interval)
 		{
 			NS_LOG_FUNCTION (this);
 			std::cout<<Simulator::Now()<<"Forwarding"<<std::endl;
-			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocket->GetObject<TcpSocketBase>();
+			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket -> GetTxBuffer();
 			
 			/*
@@ -364,33 +412,35 @@ namespace ns3 {
 
 	//Process8
 	void
-		EpcEnbProxyApplication::HoldProxyBuffer(double delay)
+		EpcEnbProxyApplication::HoldProxyBuffer(uint16_t srcPort, double delay)
 		{
 			NS_LOG_FUNCTION (this);
-			std::cout << Simulator::Now() <<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
-		
-			m_holdDelay = delay - (m_proxyTcpSocket->GetObject<TcpSocketBase>()->GetRecentRtt(Seconds(0))-2*delay)/2;			 
+			std::cout << Simulator::Now() <<" "<<srcPort<<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
+			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
+
+			m_holdDelay = delay - (tempSocket->GetRecentRtt(Seconds(0))-2*delay)/2;
 
 			if(m_holdDelay < 0)
 				m_holdDelay = 0;
 
-			SequenceNumber32 temp = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb->m_nextTxSequence;	
+			SequenceNumber32 temp = tempSocket->m_tcb->m_nextTxSequence;
 			m_prevHighTx = temp.GetValue();
 
 			std::cout <<"After " << NanoSeconds(m_holdDelay) <<" delayed holding start"<<std::endl;
-			Simulator::Schedule(NanoSeconds(m_holdDelay),&EpcEnbProxyApplication::DelayedHoldBuffer,this);
+			Simulator::Schedule(NanoSeconds(m_holdDelay),&EpcEnbProxyApplication::DelayedHoldBuffer,this,srcPort);
 		}
 
 	void
-		EpcEnbProxyApplication::DelayedHoldBuffer()
+		EpcEnbProxyApplication::DelayedHoldBuffer(uint16_t srcPort)
 		{
 			NS_LOG_FUNCTION (this);
+			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
 
-			SequenceNumber32 temp = m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_tcb->m_nextTxSequence;
+			SequenceNumber32 temp = tempSocket->m_tcb->m_nextTxSequence;
 			m_delayedHighTx = temp.GetValue();				
 
 			std::cout << Simulator::Now() <<"Delayed Hold Buffer"<<std::endl;	
-			m_proxyTcpSocket->GetObject<TcpSocketBase>()->m_proxyHoldBuffer = true;
+			tempSocket->m_proxyHoldBuffer = true;
 		}
 
 

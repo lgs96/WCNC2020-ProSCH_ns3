@@ -400,6 +400,10 @@ public:
 
   void ReleaseBufferAfterHandover ();
 
+  std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > GetDrbMap ();
+
+  std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -522,7 +526,7 @@ private:
    * The `DataRadioBearerMap` attribute. List of UE DataRadioBearerInfo by
    * DRBID.
    */
-  std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
+  //std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
   
   /**
    * Map the drb into a RLC (used for remote independent RLC in an MC setup)

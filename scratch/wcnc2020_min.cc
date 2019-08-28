@@ -613,7 +613,7 @@ main (int argc, char *argv[])
 	double x2Latency= 10;
 	int BuildingIndex = 1;	
 	string sourceRateString = "1000Mbps";
-	bool isMinimum = false;
+	bool isMinimum = true;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
 

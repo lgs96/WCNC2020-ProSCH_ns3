@@ -187,6 +187,7 @@ protected:
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
   //Process3 gsoul -> Process4 190304
+  virtual void DoRelayMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendEndMarker (EpcX2Sap::UeDataParams params);
 
   virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);

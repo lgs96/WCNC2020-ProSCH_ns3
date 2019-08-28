@@ -150,7 +150,7 @@ namespace ns3 {
 						MakeBooleanAccessor (&McUePdcp::m_alwaysLteUplink),
 						MakeBooleanChecker ())
 				.AddAttribute("EnableReordering", "Pdcp reordering function is eanble or not ",
-						BooleanValue(true),
+						BooleanValue(false),
 						MakeBooleanAccessor(&McUePdcp::m_isEnableReordering),
 						MakeBooleanChecker())
 				;

@@ -1129,10 +1129,11 @@ namespace ns3 {
 			return;
 			}
 			 */
+			/*
 			if(cellsInfo->m_remoteCellId != 1 && cellsInfo -> m_localCellId !=1)
 			{
 				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
-			}
+			}*/
 			packet->RemovePacketTag(epcX2Tag);
 			//m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 			///////////////////////////////
@@ -1160,12 +1161,12 @@ namespace ns3 {
 			{
 				if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
 				{
-					if(m_isMinimum && !m_isMmWave)
+					if(m_isMinimum && !m_isMmWave) //Relaying packets
 					{
 						m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 						params.sourceCellId = cellsInfo->m_remoteCellId;
 						params.targetCellId = gtpu.GetSequenceNumber();
-						DoSendMcPdcpPdu(params);
+						DoRelayMcPdcpPdu(params);
 					}
 					else
 					{
@@ -1975,12 +1976,55 @@ namespace ns3 {
 		
 			if(!m_isMinimum || !(m_isMmWave))
  			{
-			  gtpu.SetSequenceNumber (params.sourceCellId);
+			  gtpu.SetSequenceNumber (0);
 			}
 			else
 			{
  			  gtpu.SetSequenceNumber (params.targetCellId);
 			}
+
+			NS_LOG_INFO ("GTP-U header: " << gtpu);
+
+			Ptr<Packet> packet = params.ueData;
+			packet->AddHeader (gtpu);
+
+			EpcX2Tag tag (Simulator::Now());
+			packet->AddPacketTag (tag);
+
+			NS_LOG_INFO ("Forward MC UE DATA through X2 interface");
+			sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));  
+		}
+
+	void
+		EpcX2::DoRelayMcPdcpPdu(EpcX2Sap::UeDataParams params)
+		{
+			NS_LOG_FUNCTION (this);
+
+			NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+			NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+			NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
+
+			NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
+					"Missing infos for targetCellId = " << params.targetCellId);
+			// gsoul, minimum connected topology
+
+			Ptr<X2IfaceInfo> socketInfo;
+			
+			socketInfo = m_x2InterfaceSockets [params.targetCellId];
+
+			Ptr<Socket> sourceSocket = socketInfo->m_localUserPlaneSocket;
+			Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+			NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+			NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+			// add a message type to the gtpu header, so that it is possible to distinguish at receiver
+			GtpuHeader gtpu;
+			gtpu.SetTeid (params.gtpTeid);
+			gtpu.SetMessageType(EpcX2Header::McForwardDownlinkData);
+			gtpu.SetLength (params.ueData->GetSize () + gtpu.GetSerializedSize () - 8); /// \todo This should be done in GtpuHeader 			
+			
+ 			gtpu.SetSequenceNumber (params.sourceCellId);
 
 			NS_LOG_INFO ("GTP-U header: " << gtpu);
 
@@ -2025,7 +2069,15 @@ namespace ns3 {
 			gtpu.SetMessageType(EpcX2Header::EndMarker);
 			gtpu.SetLength (0 + gtpu.GetSerializedSize () - 8); /// \todo This should be done in GtpuHeader
 
-			gtpu.SetSequenceNumber (params.targetCellId);
+			if(!m_isMinimum || !(m_isMmWave))
+ 			{
+			  gtpu.SetSequenceNumber (0);
+			}
+			else
+			{
+ 			  gtpu.SetSequenceNumber (params.targetCellId);
+			}
+			
 			NS_LOG_INFO ("GTP-U header: " << gtpu);
 
 			Ptr<Packet> packet = new Packet();

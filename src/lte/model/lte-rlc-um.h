@@ -73,6 +73,7 @@ public:
     return m_txBufferSize;
   }
 
+  bool m_enableHoldBuffer;
 private:
   void ExpireReorderingTimer (void);
   void ExpireRbsTimer (void);

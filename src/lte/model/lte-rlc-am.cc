@@ -1292,6 +1292,19 @@ LteRlcAm::GetTxBuffer()
   std::vector < Ptr<Packet> > toBeReturned;
   if(!m_enableAqm)
   {
+    m_allowedCellId = 0xfffa;
+    m_enableHoldBuffer = false;
+    //Transfer hold buffer's packets to tx on  buffer
+    while (!m_holdBuffer.empty())
+    {
+      Ptr <Packet> p = *(m_holdBuffer.begin());
+      m_txonBuffer.push_back(p);
+      m_txonBufferSize += p-> GetSize();
+      m_holdBufferSize -= (*(m_holdBuffer.begin()))->GetSize();
+      m_holdBuffer.erase (m_holdBuffer.begin());
+      NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
+    }
+
     toBeReturned.insert(toBeReturned.begin(), m_txonBuffer.begin(), m_txonBuffer.end());
     m_txonBuffer.clear();
     m_txonBufferSize = 0;

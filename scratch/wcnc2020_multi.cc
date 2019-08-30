@@ -619,7 +619,7 @@ main (int argc, char *argv[])
 	int BuildingNum = 100;
 	double x2Latency= 1;
 	int BuildingIndex = 1;	
-	string sourceRateString = "1000Mbps";
+	string sourceRateString = "500Mbps";
 	//bool isMinimum = false;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
@@ -667,7 +667,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue((uint32_t)100));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue((uint32_t)200));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10)));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkWidth",DoubleValue(13.889e6/5));//200MHz bandwidth
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
@@ -725,7 +725,7 @@ main (int argc, char *argv[])
 	std::cout<<"Source rate: "<<sourceRateString<<std::endl;
 
 
-	uint16_t nodeNum = 1;
+	uint16_t nodeNum = 10;
 
 	Ptr<Node> pgw = epcHelper->GetPgwNode ();
 	NodeContainer remoteHostContainer;

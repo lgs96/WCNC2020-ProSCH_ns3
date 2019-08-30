@@ -98,13 +98,13 @@ public:
   void FreeHoldBuffer ();
 
   bool m_onHandover;
+  bool m_enableHoldBuffer;  
 
 private:
   //whether the last SDU in the txonBuffer is a complete SDU.
   bool is_fragmented;
 
   //Process1 gsoul
-  bool m_enableHoldBuffer;
   uint16_t m_allowedCellId;
   //Process3 gsoul
   EventId m_getEndMarker;

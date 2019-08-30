@@ -237,14 +237,21 @@ MyApp::RandomPacket(void)
 		m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket,this);	
 	}	
 }
-
+/*
+   static void
+   CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
+   {
+ *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
+ }
+*/
+/*
  static void
  RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
  {
  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
  }
  
-
+*/
 double instantPacketSize[100], packetRxTime[100], lastPacketRxTime[100];
 double sumPacketSize[100];
 
@@ -279,25 +286,25 @@ CalculateThroughput (Ptr<OutputStreamWrapper> stream, Ptr<PacketSink> sink, uint
 	Simulator::Schedule (MilliSeconds (100), &CalculateThroughput,stream,sink,i);
 }
 
-
+/*
 
 	static void 
 Ssthresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSsthresh, uint32_t newSsthresh)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
 }
-
+*/
 	void
 ChangeSpeed(Ptr<Node>  n, Vector speed)
 {
 	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
 }
-	static void
+/*	static void
 CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
 }
-
+*/
 double ack_throughput[100];
 
 	static void
@@ -327,12 +334,12 @@ GetTx (Ptr<OutputStreamWrapper> stream, const Ptr<const Packet> packet, const Tc
 	*stream->GetStream () << Simulator::Now().GetSeconds() << "\t" << header.GetSequenceNumber() << std::endl;
 }
 */
-	static void
+/*	static void
 RTOChange (Ptr <OutputStreamWrapper> stream, Time oldrto, Time newrto)
 {
 	*stream->GetStream () <<Simulator::Now().GetSeconds() << "\t" <<oldrto.GetSeconds()<<"\t"<<newrto.GetSeconds()<<std::endl;
-}
-
+}*/
+/*
 	static void
 Traces(uint16_t nodeNum)
 {
@@ -410,7 +417,7 @@ Traces(uint16_t nodeNum)
 	  //Config::ConnectWithoutContext (pathTx.str ().c_str (), MakeBoundCallback(&GetRx, stream6));	
 	}
 }
-
+*/
 	int
 main (int argc, char *argv[])
 {
@@ -584,7 +591,7 @@ main (int argc, char *argv[])
 	std::cout << "Goodsol Lee of SNU, Korea " <<std::endl;
 	std::cout << "gslee2@netlab.snu.ac.kr" << std::endl;
 
-	double simTime = 10.5;
+	double simTime = 11.5;
 	double interPacketInterval = 20;  // 500 microseconds
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
@@ -594,7 +601,7 @@ main (int argc, char *argv[])
 	bool tcp = true, dl= true, ul=false;
 	//double x2Latency = 10
 	double  mmeLatency=15.0;
-	bool isEnablePdcpReordering = true;
+	//bool isEnablePdcpReordering = true;
 	//	bool isEnableLteMmwave = false;
 	double EnbTxPower = 25;
 	double UeTxPower = 20;
@@ -610,7 +617,7 @@ main (int argc, char *argv[])
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 100;
-	double x2Latency= 10;
+	double x2Latency= 1;
 	int BuildingIndex = 1;	
 	string sourceRateString = "1000Mbps";
 	bool isMinimum = true;
@@ -644,7 +651,7 @@ main (int argc, char *argv[])
 	cmd.Parse(argc, argv);
 	// Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (ns3::LteEnbRrc::RLC_AM_ALWAYS));
 	Config::SetDefault("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(2));
-	Config::SetDefault("ns3::McUePdcp::EnableReordering", BooleanValue(isEnablePdcpReordering));
+	//Config::SetDefault("ns3::McUePdcp::EnableReordering", BooleanValue(isEnablePdcpReordering));
 	//	Config::SetDefault("ns3::McEnbPdcp::EnableDuplication", BooleanValue(isDuplication));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
@@ -676,14 +683,14 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
 	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (15*1024*1024));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (15*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (10*1024*1024));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(5)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (15 *1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate(X2dataRate)));
@@ -783,10 +790,10 @@ main (int argc, char *argv[])
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
 	enbPositionAlloc->Add (Vector ((double)30.0, -5, 35));
 	enbPositionAlloc->Add (mmw1Position);
-	enbPositionAlloc->Add (mmw3Position);
-	enbPositionAlloc->Add (mmw5Position);
 	enbPositionAlloc->Add (mmw2Position);
+	enbPositionAlloc->Add (mmw3Position);
 	enbPositionAlloc->Add (mmw4Position);
+	enbPositionAlloc->Add (mmw5Position);
 	enbPositionAlloc->Add (mmw6Position);
 	//	enbPositionAlloc->Add (mmw7Position);
 	//enbPositionAlloc->Add (mmw8Position);
@@ -801,7 +808,7 @@ main (int argc, char *argv[])
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
 	//for(uint16_t i =0 ; i<ueNodes.GetN(); i++){
 	uePositionAlloc->Add(Vector(100 ,100,1.5));
-	//uePositionAlloc->Add(Vector(50 ,51,1.5));
+        //uePositionAlloc->Add(Vector(50 ,51,1.5));
 
 	//	uePositionAlloc->Add(Vector(52 ,100,1.5));
 	//	uePositionAlloc->Add(Vector(48 ,100,1.5));
@@ -809,15 +816,18 @@ main (int argc, char *argv[])
 	//	uePositionAlloc->Add(Vector(52 ,50,1.5));
 	//	uePositionAlloc->Add(Vector(48 ,50,1.5));
 
-	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
-	uemobility.SetPositionAllocator(uePositionAlloc);
+	uemobility.SetPositionAllocator ("ns3::RandomBoxPositionAllocator",
+					"X", StringValue ("ns3::UniformRandomVariable[Min=10|Max=390]"),
+					"Y", StringValue ("ns3::UniformRandomVariable[Min=10|Max=190]"),
+					"Z", StringValue ("ns3::UniformRandomVariable[Min=1.5|Max=1.5]"));
+	uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+				     "Mode", StringValue ("Time"),
+				     "Time", StringValue ("1.5s"),
+				     "Speed", StringValue ("ns3::UniformRandomVariable[Min=18.0|Max=22.0]"),
+			             "Bounds", StringValue ("10|390|10|190"));
+
 	uemobility.Install (ueNodes);
 	uemobility.AssignStreams(ueNodes,0);
-
-	Simulator::Schedule(Seconds(0.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
-	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
-	Simulator::Schedule(Seconds(20.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
-
 
 	if(!ReadBuilding)
 	{
@@ -842,8 +852,6 @@ main (int argc, char *argv[])
 			//		file<<xcoordinate<<"\t"<<xcoordinate + xlength<<"\t"<<ycoordinate<<"\t"<<ycoordinate + ylength<<std::endl;
 		}
 	}
-
-
 	else if(ReadBuilding)
 	{
 
@@ -972,7 +980,7 @@ main (int argc, char *argv[])
 				remoteHostContainer.Get (u)->AddApplication (app);
 
 				double ueStartTime = 0.5;
-				double ueGapTime = 0.1;
+				double ueGapTime = 0.0;
 
 				std::ostringstream fileName;
 				fileName<<"UserData"<<u+1<<".txt";
@@ -987,11 +995,11 @@ main (int argc, char *argv[])
 				Simulator::Schedule (Seconds (ueStartTime+u*ueGapTime), &CalculateThroughput,stream_2,serverApps.Get(u)->GetObject<PacketSink>(),u);
 
 				//TCP server/user tracing for single user
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
-				Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
+				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u);
+				//Simulator::Schedule (Seconds (ueStartTime+0.001+u*ueGapTime), &Traces, u+8);
 
-				app->SetStartTime (Seconds (ueStartTime+(u)*ueGapTime));
-				app->SetStopTime (Seconds (simTime+0.1));
+				app->SetStartTime (Seconds (ueStartTime));
+				app->SetStopTime (Seconds (simTime-1));
 				dlPort ++;
 			}
 			if (ul)

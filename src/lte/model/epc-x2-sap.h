@@ -1155,7 +1155,8 @@ template <class C>
 void
 EpcX2RlcSpecificUser<C>::GetEndMarker (UeDataParams params)
 {
-  m_rlc->DoGetEndMarker();
+  if(m_rlc->m_enableHoldBuffer)
+  	m_rlc->DoGetEndMarker();
 }
 
 } // namespace ns3

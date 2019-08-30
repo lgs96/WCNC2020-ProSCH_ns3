@@ -1129,11 +1129,11 @@ namespace ns3 {
 			return;
 			}
 			 */
-			/*
+			
 			if(cellsInfo->m_remoteCellId != 1 && cellsInfo -> m_localCellId !=1)
 			{
 				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
-			}*/
+			}
 			packet->RemovePacketTag(epcX2Tag);
 			//m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 			///////////////////////////////
@@ -1231,13 +1231,14 @@ namespace ns3 {
 			}
 			else // the packet was received during a secondary cell HO, forward to the target cell , Process4
 			{
-				m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
+				//m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 				params.sourceCellId = cellsInfo->m_remoteCellId;
 				params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
 				NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);
 
 				if(gtpu.GetMessageType() == EpcX2Header::EndMarker)
 				{
+					std::cout<<"Get End marker from: "<<params.sourceCellId<<" to "<<params.targetCellId<<std::endl;
 					DoSendEndMarker(params);
 					m_x2SapUser->RecvEndMarker();
 				}
@@ -1340,6 +1341,7 @@ namespace ns3 {
 				NS_LOG_LOGIC("Forward from " << localCellId << " to " << params.targetCellId);
 				if(gtpu.GetMessageType() == EpcX2Header::EndMarker)
 				{
+					//std::cout<<"Get End marker form: "<<remoteCellId<<" to "<<params.targetCellId<<std::endl;
 					DoSendEndMarker(params);
 					m_x2SapUser->RecvEndMarker();
 				}

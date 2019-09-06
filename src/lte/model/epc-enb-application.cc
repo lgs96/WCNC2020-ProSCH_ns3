@@ -328,9 +328,9 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   //m_toServerGtpuHeader = tempGtpuHeader;
 
   //packet->RemoveHeader (tempGtpuHeader);
-  if(m_teidMap.find(tempIpv4Header.GetDestination())==m_teidMap.end())
+  if(m_ipv4TeidMap.find(tempIpv4Header.GetDestination())==m_ipv4TeidMap.end())
   {
-	  m_teidMap.insert(std::make_pair(tempIpv4Header.GetDestination(),tempGtpuHeader.GetTeid()));
+	  m_ipv4TeidMap.insert(std::make_pair(tempIpv4Header.GetDestination(),tempGtpuHeader.GetTeid()));
   }
   SendToProxySocket(packet);
  /*
@@ -594,7 +594,7 @@ EpcEnbApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& source,
   Ipv4Address ueAddr =  ipv4Header.GetDestination ();
   NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
 
-  uint32_t teid = m_teidMap.find(ipv4Header.GetDestination())->second;
+  uint32_t teid = m_ipv4TeidMap.find(ipv4Header.GetDestination())->second;
 
   std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
   if (it != m_teidRbidMap.end ())

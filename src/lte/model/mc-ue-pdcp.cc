@@ -133,7 +133,7 @@ namespace ns3 {
 				.SetParent<Object> ()
 				.SetGroupName("Lte")
 				.AddAttribute("ExpiredTime", "PDCP reordering time",
-						TimeValue(MilliSeconds(400)),
+						TimeValue(MilliSeconds(0)),
 						MakeTimeAccessor (&McUePdcp::expiredTime),
 						MakeTimeChecker ())
 				.AddTraceSource ("TxPDU",
@@ -150,7 +150,7 @@ namespace ns3 {
 						MakeBooleanAccessor (&McUePdcp::m_alwaysLteUplink),
 						MakeBooleanChecker ())
 				.AddAttribute("EnableReordering", "Pdcp reordering function is eanble or not ",
-						BooleanValue(true),
+						BooleanValue(false),
 						MakeBooleanAccessor(&McUePdcp::m_isEnableReordering),
 						MakeBooleanChecker())
 				;

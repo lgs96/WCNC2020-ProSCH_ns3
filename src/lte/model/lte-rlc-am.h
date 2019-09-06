@@ -97,12 +97,15 @@ public:
   void DoGetEndMarker ();
   void FreeHoldBuffer ();
 
+  bool m_onHandover;
+  bool m_enableHoldBuffer;
+
 private:
   //whether the last SDU in the txonBuffer is a complete SDU.
   bool is_fragmented;
 
   //Process1 gsoul
-  bool m_enableHoldBuffer;
+  //bool m_enableHoldBuffer;
   uint16_t m_allowedCellId;
   //Process3 gsoul
   EventId m_getEndMarker;
@@ -170,6 +173,7 @@ private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
     //Process1
     std::vector < Ptr<Packet> > m_holdBuffer;
+    std::vector < Ptr<Packet> > m_handoverBuffer;
 
     struct RetxSegPdu
     {
@@ -201,6 +205,7 @@ private:
     uint32_t m_txonBufferSize;
     //Process1
     uint32_t m_holdBufferSize;
+    uint32_t m_handoverBufferSize;
 
     uint32_t m_retxBufferSize;
     uint32_t m_txedBufferSize;

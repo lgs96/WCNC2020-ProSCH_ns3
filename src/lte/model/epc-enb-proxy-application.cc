@@ -105,7 +105,7 @@ namespace ns3 {
 		m_count = 0;
 		m_count_dep = 0;
 		//Simulator::Schedule(Seconds(0.5),&EpcEnbProxyApplication::GetArrivalRate,this);
-		m_delay = 0;
+		m_delay = 0.03;
 	}
 
 
@@ -237,7 +237,9 @@ namespace ns3 {
 
 				uint32_t awndSize = proxyTxBuffer->Available()-m_delay*m_departureRate;
 
-				if(proxyTxBuffer->Available() < m_delay*m_departureRate)
+				//std::cout<<"Max: "<<proxyTxBuffer->MaxBufferSize() <<" Avail: "<<proxyTxBuffer->Available()<<" Awnd: "<<awndSize<<std::endl;
+
+				if(proxyTxBuffer->Available() < m_delay*m_departureRate||awndSize<1400)
 				{
 					awndSize =packet->GetSize();
 				}

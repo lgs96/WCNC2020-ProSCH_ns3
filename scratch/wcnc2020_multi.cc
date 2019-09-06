@@ -619,7 +619,7 @@ main (int argc, char *argv[])
 	int BuildingNum = 100;
 	double x2Latency= 1;
 	int BuildingIndex = 1;	
-	string sourceRateString = "500Mbps";
+	string sourceRateString = "100Mbps";
 	//bool isMinimum = false;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
@@ -682,14 +682,14 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(0.1)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -697,7 +697,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	//Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
 	//Config::SetDefault ("ns3::EpcX2::IsMinimum",BooleanValue(isMinimum));
 
@@ -725,7 +725,7 @@ main (int argc, char *argv[])
 	std::cout<<"Source rate: "<<sourceRateString<<std::endl;
 
 
-	uint16_t nodeNum = 1;
+	uint16_t nodeNum = 10;
 
 	Ptr<Node> pgw = epcHelper->GetPgwNode ();
 	NodeContainer remoteHostContainer;
@@ -816,16 +816,18 @@ main (int argc, char *argv[])
 	//	uePositionAlloc->Add(Vector(52 ,50,1.5));
 	//	uePositionAlloc->Add(Vector(48 ,50,1.5));
 
+	uemobility.SetPositionAllocator ("ns3::RandomBoxPositionAllocator",
+					"X", StringValue ("ns3::UniformRandomVariable[Min=10|Max=390]"),
+					"Y", StringValue ("ns3::UniformRandomVariable[Min=10|Max=190]"),
+					"Z", StringValue ("ns3::UniformRandomVariable[Min=1.5|Max=1.5]"));
+	uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+				     "Mode", StringValue ("Time"),
+				     "Time", StringValue ("1.5s"),
+				     "Speed", StringValue ("ns3::UniformRandomVariable[Min=18.0|Max=22.0]"),
+			             "Bounds", StringValue ("10|390|10|190"));
 
-	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
-	uemobility.SetPositionAllocator(uePositionAlloc);
 	uemobility.Install (ueNodes);
 	uemobility.AssignStreams(ueNodes,0);
-
-	Simulator::Schedule(Seconds(0.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
-	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
-	Simulator::Schedule(Seconds(20.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
-
 
 	if(!ReadBuilding)
 	{

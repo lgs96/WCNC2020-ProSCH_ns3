@@ -619,8 +619,8 @@ main (int argc, char *argv[])
 	int BuildingNum = 100;
 	double x2Latency= 1;
 	int BuildingIndex = 1;	
-	string sourceRateString = "500Mbps";
-	//bool isMinimum = false;
+	string sourceRateString = "1000Mbps";
+	bool isMinimum = true;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
 
@@ -645,7 +645,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("BuildingNum", "number of buildings in scenario", BuildingNum);
 	cmd.AddValue("BuildingIndex", "index of bulidng text", BuildingIndex);
 	cmd.AddValue("SourceRate", "source data rate from server", sourceRateString);	
-	//cmd.AddValue("isMinimum","Is minimum topology?", isMinimum);	
+	cmd.AddValue("isMinimum","Is minimum topology?", isMinimum);	
 	cmd.AddValue("S1Delay", "s1 interface delay", m_s1Delay);
 
 	cmd.Parse(argc, argv);
@@ -667,7 +667,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue((uint32_t)200));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue((uint32_t)100));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10)));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkWidth",DoubleValue(13.889e6/5));//200MHz bandwidth
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
@@ -682,7 +682,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
@@ -697,9 +697,9 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	//Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
-	//Config::SetDefault ("ns3::EpcX2::IsMinimum",BooleanValue(isMinimum));
+	Config::SetDefault ("ns3::EpcX2::IsMinimum",BooleanValue(isMinimum));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::"+scheduler);
@@ -815,7 +815,18 @@ main (int argc, char *argv[])
 	//	uePositionAlloc->Add(Vector(50 ,110,1.5));
 	//	uePositionAlloc->Add(Vector(52 ,50,1.5));
 	//	uePositionAlloc->Add(Vector(48 ,50,1.5));
-
+/*
+	uemobility.SetPositionAllocator ("ns3::RandomBoxPositionAllocator",
+					"X", StringValue ("ns3::UniformRandomVariable[Min=10|Max=390]"),
+					"Y", StringValue ("ns3::UniformRandomVariable[Min=10|Max=190]"),
+					"Z", StringValue ("ns3::UniformRandomVariable[Min=1.5|Max=1.5]"));
+	uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+				     "Mode", StringValue ("Time"),
+				     "Time", StringValue ("1.5s"),
+				     "Speed", StringValue ("ns3::UniformRandomVariable[Min=18.0|Max=22.0]"),
+			             "Bounds", StringValue ("10|390|10|190"));
+*/
+	
 
 	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
 	uemobility.SetPositionAllocator(uePositionAlloc);

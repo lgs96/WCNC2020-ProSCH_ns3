@@ -1118,12 +1118,13 @@ void UeManager::SendData(uint8_t bid, Ptr<Packet> p) {
 	}
 		break;
 
+
 	case HANDOVER_JOINING:
-	{
-		NS_LOG_LOGIC ("buffer packet during handover");
-		m_packetBuffer.push_back (std::make_pair(bid,p));
-	}
-	break;
+		{
+			NS_LOG_LOGIC ("buffer packet during handover");
+			m_packetBuffer.push_back (std::make_pair(bid,p));
+		}
+		break;
 
 	case HANDOVER_LEAVING: {
 		NS_LOG_LOGIC("SEQ SEQ HANDOVERLEAVING STATE LTE ENB RRC.");
@@ -1647,6 +1648,7 @@ void UeManager::RecvRrcConnectionReconfigurationCompleted(
 				PrepareHandover(m_queuedHandoverRequestCellId);
 			}
 		}
+		ReleaseBufferAfterHandover ();
 	}
 		break;
 
@@ -2258,6 +2260,32 @@ void UeManager::RecvNotifyLteMmWaveHandoverCompleted() {
 	}
 }
 
+void
+UeManager::HoldUntilHandoverCompletion()
+{
+	NS_LOG_FUNCTION (this);
+
+	for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+									rlcIt != m_rlcMap.end ();
+									++rlcIt)
+	{
+		rlcIt->second->m_rlc->GetObject<LteRlcAm>()->m_onHandover = true;
+	}
+}
+
+void
+UeManager::ReleaseBufferAfterHandover ()
+{
+	NS_LOG_FUNCTION (this);
+
+	for ( std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator rlcIt = m_rlcMap.begin ();
+									rlcIt != m_rlcMap.end ();
+									++rlcIt)
+	{
+		rlcIt->second->m_rlc->GetObject<LteRlcAm>()->FreeHoldBuffer ();
+	}
+}
+
 ///////////////////////////////////////////
 // eNB RRC methods
 ///////////////////////////////////////////
@@ -2387,7 +2415,7 @@ TypeId LteEnbRrc::GetTypeId(void) {
 					MakeTimeAccessor(
 							&LteEnbRrc::m_handoverLeavingTimeoutDuration),
 					MakeTimeChecker()).AddAttribute("OutageThreshold",
-					"SNR threshold for outage events [dB]", DoubleValue(-15.0),
+					"SNR threshold for outage events [dB]", DoubleValue(-10.0),
 					MakeDoubleAccessor(&LteEnbRrc::m_outageThreshold),
 					MakeDoubleChecker<long double>(-10000.0, 10.0))
 
@@ -2520,11 +2548,7 @@ TypeId LteEnbRrc::GetTypeId(void) {
 					"trace fired when measurement report is received from mmWave cells, for each cell, for each UE",
 					MakeTraceSourceAccessor(
 							&LteEnbRrc::m_notifyMmWaveSinrTrace),
-					"ns3::LteEnbRrc::NotifyMmWaveSinrTracedCallback")
-			.AddTraceSource("HandoverTrigger",
-					"Trace the time when handover is triggerd.",
-					MakeTraceSourceAccessor(&LteEnbRrc::m_handoverTrigger),
-					"ns3::LteEnbRrc::HandoverTriggerCallback");
+					"ns3::LteEnbRrc::NotifyMmWaveSinrTracedCallback");
 	return tid;
 }
 
@@ -3943,6 +3967,7 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 	hbParams.targetCellId = req.targetCellId;
 
 	ueManager->SendHoldBufferMsg(hbParams);
+	ueManager->HoldUntilHandoverCompletion();
 
 	m_x2SapProvider->SendHandoverRequestAck(ackParams);
 

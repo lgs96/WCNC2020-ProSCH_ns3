@@ -393,6 +393,10 @@ public:
 
   void SendHoldBufferMsg (EpcX2SapUser::HoldBufferParams params);
 
+  void HoldUntilHandoverCompletion ();
+
+  void ReleaseBufferAfterHandover ();
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -1524,8 +1528,6 @@ private:
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
 
   TracedCallback<uint64_t, uint16_t, long double> m_notifyMmWaveSinrTrace;
-
-  TracedCallback<uint16_t, uint16_t> m_handoverTrigger;
 
   bool m_ismmWave;
   bool m_interRatHoMode;

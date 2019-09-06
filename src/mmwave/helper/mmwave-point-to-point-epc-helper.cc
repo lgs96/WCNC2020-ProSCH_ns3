@@ -202,7 +202,7 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("ProxyBufferSize",
 		   "The size of TCP proxy buffer.",
-		   UintegerValue (10*1024*1024),
+		   UintegerValue (8*1024*1024),
 		   MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_proxyBufferSize),
 	           MakeUintegerChecker<uint32_t> ()) 
   ;

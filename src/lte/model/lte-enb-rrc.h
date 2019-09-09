@@ -196,6 +196,7 @@ public:
    */
   void RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params);
 
+  void RecvHandoverRequestAckFromLte (EpcX2SapUser::HandoverRequestAckParams params);
   /** 
    * 
    * \return the HandoverPreparationInfo sent by the source eNB to the
@@ -1095,6 +1096,7 @@ private:
 
   void DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams params);
   void DoRecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params);
+  void DoRecvHandoverRequestAckFromLte (EpcX2SapUser::HandoverRequestAckParams params);
   void DoRecvHandoverPreparationFailure (EpcX2SapUser::HandoverPreparationFailureParams params);
   void DoRecvSnStatusTransfer (EpcX2SapUser::SnStatusTransferParams params);
   void DoRecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params);

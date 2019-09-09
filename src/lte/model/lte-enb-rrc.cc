@@ -689,6 +689,28 @@ std::vector<LteRlcAm::RetxPdu> UeManager::MergeBuffers(
 	return result;
 }
 
+void UeManager::RecvHandoverRequestAckFromLte(
+		EpcX2SapUser::HandoverRequestAckParams params) {
+	NS_LOG_FUNCTION(this);
+
+	// note: the Handover command from the target eNB to the source eNB
+	// is expected to be sent transparently to the UE; however, here we
+	// decode the message and eventually reencode it. This way we can
+	// support both a real RRC protocol implementation and an ideal one
+	// without actual RRC protocol encoding.
+
+	// TODO for MC devices, when performing handover between mmWave cells, forward the Rlc buffers
+
+	Ptr<Packet> encodedHandoverCommand = params.rrcContext->Copy();
+	LteRrcSap::RrcConnectionReconfiguration handoverCommand =
+			m_rrc->m_rrcSapUser->DecodeHandoverCommand(encodedHandoverCommand);
+
+	NS_LOG_UNCOND("Target: "<<handoverCommand.mobilityControlInfo.targetPhysCellId);	
+
+	m_rrc->m_rrcSapUser->SendRrcConnectionReconfigurationFromLte(m_rnti,
+			handoverCommand);
+	
+}
 void UeManager::RecvHandoverRequestAck(
 		EpcX2SapUser::HandoverRequestAckParams params) {
 	NS_LOG_FUNCTION(this);
@@ -706,18 +728,19 @@ void UeManager::RecvHandoverRequestAck(
 
 	// TODO for MC devices, when performing handover between mmWave cells, forward the Rlc buffers
 
-	Ptr<Packet> encodedHandoverCommand = params.rrcContext;
-	LteRrcSap::RrcConnectionReconfiguration handoverCommand =
-			m_rrc->m_rrcSapUser->DecodeHandoverCommand(encodedHandoverCommand);
+	//Ptr<Packet> encodedHandoverCommand = params.rrcContext;
+	//LteRrcSap::RrcConnectionReconfiguration handoverCommand =
+	//		m_rrc->m_rrcSapUser->DecodeHandoverCommand(encodedHandoverCommand);
 
-	m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration(m_rnti,
-			handoverCommand);
+	//m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration(m_rnti,
+	//		handoverCommand);
+	
 	SwitchToState(HANDOVER_LEAVING);
 	m_handoverLeavingTimeout = Simulator::Schedule(
 			m_rrc->m_handoverLeavingTimeoutDuration,
 			&LteEnbRrc::HandoverLeavingTimeout, m_rrc, m_rnti);
 	// TODO check the actions to be performed when timeout expires
-	NS_ASSERT(handoverCommand.haveMobilityControlInfo);
+	//NS_ASSERT(handoverCommand.haveMobilityControlInfo);
 	//m_rrc->m_handoverStartTrace(m_imsi, m_rrc->m_cellId, m_rnti,
 	//		handoverCommand.mobilityControlInfo.targetPhysCellId);
 
@@ -3905,6 +3928,7 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 	ackParams.newEnbUeX2apId = rnti;
 	ackParams.sourceCellId = req.sourceCellId;
 	ackParams.targetCellId = req.targetCellId;
+	//ackParams.imsi = GetImsiFromRnti(rnti);
 
 	for (std::vector<EpcX2Sap::ErabToBeSetupItem>::iterator it =
 			req.bearers.begin(); it != req.bearers.end(); ++it) {
@@ -3969,8 +3993,19 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 	ueManager->SendHoldBufferMsg(hbParams);
 	ueManager->HoldUntilHandoverCompletion();
 
+	EpcX2SapProvider::HandoverRequestAckParams ackParams_lte = ackParams;
+   	
+	NS_LOG_UNCOND("Sent Imsi: " << ackParams.oldEnbUeX2apId<<" Sent Rnti: "<<req.oldEnbUeX2apId<<" Sent cell: "<<handoverCommand.mobilityControlInfo.targetPhysCellId);
+
 	m_x2SapProvider->SendHandoverRequestAck(ackParams);
 
+	// LTE aided RRC connection reconfiguraiton
+	ackParams_lte.sourceCellId = m_lteCellId;
+	ackParams_lte.oldEnbUeX2apId =(uint16_t)GetImsiFromRnti(req.oldEnbUeX2apId);
+
+   	NS_LOG_UNCOND("Sent Imsi: " << ackParams_lte.oldEnbUeX2apId<<" Sent Rnti: "<<req.oldEnbUeX2apId<<" Sent cell: "<<handoverCommand.mobilityControlInfo.targetPhysCellId);
+
+	m_x2SapProvider->SendHandoverRequestAckToLte(ackParams_lte);
 }
 
 void LteEnbRrc::DoRecvHandoverRequestAck(
@@ -3990,6 +4025,24 @@ void LteEnbRrc::DoRecvHandoverRequestAck(
 	uint16_t rnti = params.oldEnbUeX2apId;
 	Ptr<UeManager> ueManager = GetUeManager(rnti);
 	ueManager->RecvHandoverRequestAck(params);
+}
+
+void LteEnbRrc::DoRecvHandoverRequestAckFromLte(
+		EpcX2SapUser::HandoverRequestAckParams params) {
+	
+	NS_LOG_FUNCTION(this);
+
+	NS_LOG_LOGIC("Recv X2 message: HANDOVER REQUEST ACK");
+
+	NS_LOG_LOGIC("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+	NS_LOG_LOGIC("newEnbUeX2apId = " << params.newEnbUeX2apId);
+	NS_LOG_LOGIC("sourceCellId = " << params.sourceCellId);
+	NS_LOG_LOGIC("targetCellId = " << params.targetCellId);
+
+	uint16_t imsi = params.oldEnbUeX2apId;
+	NS_LOG_UNCOND("Lte Imsi: "<<imsi);
+	Ptr<UeManager> ueManager = GetUeManager(GetRntiFromImsi(imsi));
+	ueManager->RecvHandoverRequestAckFromLte(params);
 }
 
 void LteEnbRrc::DoRecvSecondaryCellHandoverCompleted(

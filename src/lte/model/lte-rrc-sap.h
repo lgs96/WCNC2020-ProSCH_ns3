@@ -882,6 +882,10 @@ public:
    */
   virtual void SendRrcConnectionReconfiguration (uint16_t rnti, RrcConnectionReconfiguration msg) = 0;
 
+  //Process8
+
+  virtual void SendRrcConnectionReconfigurationFromLte (uint16_t rnti, RrcConnectionReconfiguration msg) = 0;
+
   /**
    * \brief Send an _RRCConnectionReestablishment_ message to a UE
    *        during an RRC connection re-establishment procedure
@@ -939,7 +943,6 @@ public:
   virtual HandoverPreparationInfo DecodeHandoverPreparationInformation (Ptr<Packet> p) = 0;
   virtual Ptr<Packet> EncodeHandoverCommand (RrcConnectionReconfiguration msg) = 0;
   virtual RrcConnectionReconfiguration DecodeHandoverCommand (Ptr<Packet> p) = 0;
-
 };
 
 
@@ -1252,6 +1255,8 @@ public:
   virtual void SendSystemInformation (SystemInformation msg);
   virtual void SendRrcConnectionSetup (uint16_t rnti, RrcConnectionSetup msg);
   virtual void SendRrcConnectionReconfiguration (uint16_t rnti, RrcConnectionReconfiguration msg);
+  //Process8
+  virtual void SendRrcConnectionReconfigurationFromLte (uint16_t rnti, RrcConnectionReconfiguration msg);
   virtual void SendRrcConnectionReestablishment (uint16_t rnti, RrcConnectionReestablishment msg);
   virtual void SendRrcConnectionReestablishmentReject (uint16_t rnti, RrcConnectionReestablishmentReject msg);
   virtual void SendRrcConnectionRelease (uint16_t rnti, RrcConnectionRelease msg);
@@ -1312,6 +1317,13 @@ void
 MemberLteEnbRrcSapUser<C>::SendRrcConnectionReconfiguration (uint16_t rnti, RrcConnectionReconfiguration msg)
 {
   m_owner->DoSendRrcConnectionReconfiguration (rnti, msg);
+}
+
+template <class C>
+void
+MemberLteEnbRrcSapUser<C>::SendRrcConnectionReconfigurationFromLte (uint16_t rnti, RrcConnectionReconfiguration msg)
+{
+  m_owner->DoSendRrcConnectionReconfiguration (rnti, msg, true);
 }
 
 template <class C>

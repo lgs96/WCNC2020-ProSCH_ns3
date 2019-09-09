@@ -401,13 +401,20 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, Lt
 		       msg);
 }
 
-void 
+void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {
-  Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
-		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
-		       GetUeRrcSapProvider (rnti), 
-		       msg);
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
+}
+
+// Process8
+void 
+MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg, bool fromLte)
+{
+  //Do nothing  
 }
 
 void 

@@ -411,6 +411,13 @@ LteUeRrc::GetCellId () const
   return m_cellId;
 }
 
+bool
+LteUeRrc::GetIsSecondaryRrc () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_isSecondaryRRC;
+}
+
 void 
 LteUeRrc::AddMmWaveCellId(uint16_t cellId)
 {
@@ -444,6 +451,7 @@ LteUeRrc::AddLteCellId(uint16_t cellId)
 bool
 LteUeRrc::SwitchLowerLayerProviders (uint16_t cellId)
 {
+  NS_LOG_FUNCTION(this<<" cellId: "<<cellId);
   if(m_isMmWaveCellMap.find(cellId) != m_isMmWaveCellMap.end())
   {
     if(m_isMmWaveCellMap.find(cellId)->second)
@@ -585,6 +593,7 @@ LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
   params.pdcpSdu = packet;
   params.rnti = m_rnti;
   params.lcid = it->second->m_logicalChannelIdentity;
+  params.toLte = false;
 
   NS_LOG_LOGIC (this << " RNTI=" << m_rnti << " sending packet " << packet
                      << " on DRBID " << (uint32_t) drbid
@@ -642,6 +651,8 @@ void
 LteUeRrc::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params)
 {
   NS_LOG_FUNCTION (this);
+ // params.pdcpSdu->Print(std::cout);
+ // std::cout<<std::endl;
   m_asSapUser->RecvData (params.pdcpSdu);
 }
 
@@ -980,7 +991,7 @@ void
 LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
 {
   NS_LOG_FUNCTION (this << " RNTI " << m_rnti);
-
+ 
   if (msg.haveSib2)
     {
       switch (m_state)
@@ -1090,7 +1101,6 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           }
           else
           {
-        	NS_LOG_LOGIC("Start non contention based RA");
             m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, mci.rachConfigDedicated.raPreambleIndex, mci.rachConfigDedicated.raPrachMaskIndex);
           }
           m_cphySapProvider->SetRnti (m_rnti);
@@ -1636,6 +1646,7 @@ LteUeRrc::CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid)
         pdcpParams.pdcpSdu = rlcSdu;
         pdcpParams.rnti = m_rnti;
         pdcpParams.lcid = lcid;
+        pdcpParams.toLte = false;
         pdcp->GetLtePdcpSapProvider()->TransmitPdcpSdu(pdcpParams);
 
       }

@@ -1018,7 +1018,7 @@ MmWaveUePhy::DoSetPa (double pa)
 void
 MmWaveUePhy::DoSynchronizeWithEnb (uint16_t cellId)
 {
-	NS_LOG_FUNCTION (this << cellId);
+	NS_LOG_UNCOND (this << cellId);
 	if (cellId == 0)
 	{
 		NS_FATAL_ERROR ("Cell ID shall not be zero");

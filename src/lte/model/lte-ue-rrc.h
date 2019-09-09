@@ -314,6 +314,8 @@ public:
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      State oldState, State newState);
 
+  // Process8
+  bool GetIsSecondaryRrc () const;
 
 private:
 

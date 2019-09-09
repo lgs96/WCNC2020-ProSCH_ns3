@@ -179,6 +179,7 @@ protected:
   virtual void DoSendRlcSetupRequest (EpcX2SapProvider::RlcSetupRequest params);
   virtual void DoSendRlcSetupCompleted (EpcX2SapProvider::UeDataParams);
   virtual void DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams params);
+  virtual void DoSendHandoverRequestAckToLte (EpcX2SapProvider::HandoverRequestAckParams params);
   virtual void DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFailureParams params);
   virtual void DoSendSnStatusTransfer (EpcX2SapProvider::SnStatusTransferParams params);
   virtual void DoSendUeContextRelease (EpcX2SapProvider::UeContextReleaseParams params);

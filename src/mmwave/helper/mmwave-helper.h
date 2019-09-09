@@ -81,6 +81,7 @@
 
 #include <ns3/buildings-obstacle-propagation-loss-model.h>
 #include <ns3/mmwave-3gpp-channel.h>
+#include <ns3/mmwave-lte-rrc-protocol-real.h>
 
 namespace ns3 {
 
@@ -285,6 +286,9 @@ private:
 	Ptr<McStatsCalculator> m_mcStats;
 	Ptr<MmWaveBearerStatsConnector> m_radioBearerStatsConnector;
   	Ptr<CoreNetworkStatsCalculator> m_cnStats;
+
+  	// Process8: Radio manager manages multiple radios
+  	std::map <uint64_t, std::map<bool,Ptr<MmWaveLteUeRrcProtocolReal>>> m_radioManager;
 
 };
 

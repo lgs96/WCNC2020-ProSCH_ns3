@@ -73,7 +73,7 @@ public:
     NotifyCoordinatorHandoverFailed = 17,
     SwitchConnection        = 18,
     SecondaryCellHandoverCompleted = 19,
-	EndMarker				= 20
+    EndMarker				= 20
   };
 
   enum TypeOfMessage_t {
@@ -81,7 +81,8 @@ public:
     SuccessfulOutcome       = 1,
     UnsuccessfulOutcome     = 2,
     McForwardDownlinkData   = 3, // added for MC functionalities
-    McForwardUplinkData     = 4
+    McForwardUplinkData     = 4,
+    SuccessfulOutcomeToLte  = 5
   };
 
 private:

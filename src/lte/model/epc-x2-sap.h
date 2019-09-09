@@ -274,6 +274,7 @@ public:
     uint16_t            newEnbUeX2apId;
     uint16_t            sourceCellId;
     uint16_t            targetCellId;
+    
     std::vector <ErabAdmittedItem> admittedBearers;
     std::vector <ErabNotAdmittedItem> notAdmittedBearers;
     Ptr<Packet>         rrcContext;
@@ -497,6 +498,8 @@ public:
 
   virtual void SendHandoverRequestAck (HandoverRequestAckParams params) = 0;
 
+  virtual void SendHandoverRequestAckToLte (HandoverRequestAckParams params) = 0;
+
   virtual void SendHandoverPreparationFailure (HandoverPreparationFailureParams params) = 0;
 
   virtual void SendSnStatusTransfer (SnStatusTransferParams params) = 0;
@@ -564,6 +567,8 @@ public:
 
   virtual void RecvHandoverRequestAck (HandoverRequestAckParams params) = 0;
 
+  virtual void RecvHandoverRequestAckFromLte (HandoverRequestAckParams params) = 0;
+
   virtual void RecvHandoverPreparationFailure (HandoverPreparationFailureParams params) = 0;
 
   virtual void RecvSnStatusTransfer (SnStatusTransferParams params) = 0;
@@ -610,6 +615,8 @@ public:
   virtual void SendHandoverRequest (HandoverRequestParams params);
 
   virtual void SendHandoverRequestAck (HandoverRequestAckParams params);
+
+  virtual void SendHandoverRequestAckToLte (HandoverRequestAckParams params);
 
   virtual void SendHandoverPreparationFailure (HandoverPreparationFailureParams params);
 
@@ -681,6 +688,13 @@ void
 EpcX2SpecificEpcX2SapProvider<C>::SendHandoverRequestAck (HandoverRequestAckParams params)
 {
   m_x2->DoSendHandoverRequestAck (params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendHandoverRequestAckToLte (HandoverRequestAckParams params)
+{
+  m_x2->DoSendHandoverRequestAckToLte (params);
 }
 
 template <class C>
@@ -846,6 +860,8 @@ public:
 
   virtual void RecvHandoverRequestAck (HandoverRequestAckParams params);
 
+  virtual void RecvHandoverRequestAckFromLte (HandoverRequestAckParams params);
+
   virtual void RecvHandoverPreparationFailure (HandoverPreparationFailureParams params);
 
   virtual void RecvSnStatusTransfer (SnStatusTransferParams params);
@@ -903,6 +919,13 @@ void
 EpcX2SpecificEpcX2SapUser<C>::RecvHandoverRequestAck (HandoverRequestAckParams params)
 {
   m_rrc->DoRecvHandoverRequestAck (params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvHandoverRequestAckFromLte (HandoverRequestAckParams params)
+{
+  m_rrc->DoRecvHandoverRequestAckFromLte (params);
 }
 
 template <class C>

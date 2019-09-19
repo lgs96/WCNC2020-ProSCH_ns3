@@ -47,6 +47,9 @@
 #include <ns3/epc-enb-application.h>
 #include "ns3/delay-jitter-estimation.h"
 
+#include <fstream>
+#include <string>
+
 namespace ns3 {
 class EpcEnbS1SapUser;
 class EpcEnbS1SapProvider;
@@ -103,6 +106,9 @@ public:
   //Process_last
   void AddEnbApp (Ptr<EpcEnbApplication>epcApp);
 
+  void CacheSizeTrace (uint32_t cacheSize);  
+  void AdditionalLoadTrace (uint32_t loadSize);
+
   std::map<uint16_t,Ptr<Socket>> m_proxyTcpSocketMap;
 
 private:
@@ -148,7 +154,11 @@ private:
 
   //Process8
   bool m_holdBuffer;
+  SequenceNumber32 m_bufferStart;
+  SequenceNumber32 m_bufferFin;
 
+  std::ofstream m_cacheSizeFile;  
+  std::ofstream m_loadSizeFile;
 };
 
 } //namespace ns3

@@ -258,9 +258,13 @@ namespace ns3 {
 
 						if(m_startPoint > proxySocketBase->m_proxyFin)
 						{
-							std::cout<<"Now Tx: "<<m_tcb->m_nextTxSequence<<std::endl;
+							NS_LOG_UNCOND("Now Tx: "<<m_tcb->m_nextTxSequence);
 							proxySocketBase->m_proxyHoldBuffer = false;
 							m_forwardMode = false;
+
+							m_bufferFin = m_tcb->m_nextTxSequence;						
+							std::cout<<"Forwarding cache size: "<<m_bufferFin<<" "<<m_bufferStart<<" "<<m_bufferFin-m_bufferStart<<std::endl;
+							CacheSizeTrace(m_bufferFin.GetValue()-m_bufferStart.GetValue());	
 						}
 					}
 
@@ -376,6 +380,12 @@ namespace ns3 {
 		EpcEnbProxyApplication::ForwardingProxy (uint16_t srcPort, double delay, double interval)
 		{
 			NS_LOG_FUNCTION (this);
+
+			if(m_proxyTcpSocketMap.find(srcPort)==m_proxyTcpSocketMap.end())
+			{
+				return;
+			}
+
 			std::cout<<Simulator::Now()<<"Forwarding"<<std::endl;
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
 			Ptr<TcpTxBuffer> proxyTxBuffer = tempSocket -> GetTxBuffer();
@@ -396,6 +406,7 @@ namespace ns3 {
 
 			m_startPoint = m_tcb->m_nextTxSequence - SequenceNumber32(newSeq);
 			m_startPoint = m_startPoint - SequenceNumber32(m_startPoint.GetValue()%m_tcb->m_segmentSize) + 1;
+			//m_bufferStart = m_startPoint;
 
 			//m_startPoint = proxyTxBuffer->HeadSequence();
 
@@ -417,15 +428,23 @@ namespace ns3 {
 			NS_LOG_FUNCTION (this);
 			std::cout << Simulator::Now() <<" "<<srcPort<<" Handover is prepared. Hold proxy buffer until path switching."<<std::endl;
 			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
+			Ptr<TcpSocketState> m_tcb = tempSocket->m_tcb;
+			//m_holdDelay = delay - (tempSocket->GetRecentRtt(Seconds(0))-2*delay)/2;
 
-			m_holdDelay = delay - (tempSocket->GetRecentRtt(Seconds(0))-2*delay)/2;
+			m_holdDelay = 0;
 
 			if(m_holdDelay < 0)
 				m_holdDelay = 0;
 
-			SequenceNumber32 temp = tempSocket->m_tcb->m_nextTxSequence;
-			m_prevHighTx = temp.GetValue();
+			//SequenceNumber32 temp = tempSocket->m_tcb->m_nextTxSequence;
+			//m_prevHighTx = temp.GetValue();
 
+			m_bufferStart = tempSocket->GetTxBuffer()->HeadSequence();
+			m_bufferFin = m_tcb->m_nextTxSequence;
+
+			AdditionalLoadTrace(m_bufferFin.GetValue()-m_bufferStart.GetValue());
+
+			std::cout<<"Additional load size: "<<m_bufferFin<<" "<<m_bufferStart<<" "<<m_bufferFin-m_bufferStart<<std::endl;		
 			std::cout <<"After " << NanoSeconds(m_holdDelay) <<" delayed holding start"<<std::endl;
 			Simulator::Schedule(NanoSeconds(m_holdDelay),&EpcEnbProxyApplication::DelayedHoldBuffer,this,srcPort);
 		}
@@ -434,13 +453,17 @@ namespace ns3 {
 		EpcEnbProxyApplication::DelayedHoldBuffer(uint16_t srcPort)
 		{
 			NS_LOG_FUNCTION (this);
-			Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
 
-			SequenceNumber32 temp = tempSocket->m_tcb->m_nextTxSequence;
-			m_delayedHighTx = temp.GetValue();				
+ 			if(m_proxyTcpSocketMap.find(srcPort)!=m_proxyTcpSocketMap.end())
+			{
+				Ptr<TcpSocketBase> tempSocket = m_proxyTcpSocketMap.find(srcPort)->second->GetObject<TcpSocketBase>();
 
-			std::cout << Simulator::Now() <<"Delayed Hold Buffer"<<std::endl;	
-			tempSocket->m_proxyHoldBuffer = true;
+				//SequenceNumber32 temp = tempSocket->m_tcb->m_nextTxSequence;
+				//m_delayedHighTx = temp.GetValue();				
+
+				std::cout << Simulator::Now() <<"Delayed Hold Buffer"<<std::endl;	
+				tempSocket->m_proxyHoldBuffer = true;
+			}
 		}
 
 
@@ -458,6 +481,36 @@ namespace ns3 {
 		{
 			NS_LOG_FUNCTION (this);
 			m_enbApp = epcApp;
+		}
+
+      
+
+	void
+		EpcEnbProxyApplication::CacheSizeTrace(uint32_t cacheSize)
+		{
+			NS_LOG_LOGIC("CacheSizeTrace: " << Simulator::Now().GetSeconds() << " " <<cacheSize);
+  			// write to file
+			std::string cacheSizeFileName = "CacheSize.txt";
+  			if(!m_cacheSizeFile.is_open())
+  			{
+    				m_cacheSizeFile.open(cacheSizeFileName.c_str(), std::ofstream::app);
+    				NS_LOG_LOGIC("File opened");
+  			}
+  			m_cacheSizeFile << Simulator::Now().GetSeconds() << " " << cacheSize << std::endl;
+		}		
+
+	void
+		EpcEnbProxyApplication::AdditionalLoadTrace(uint32_t loadSize)
+		{
+			NS_LOG_LOGIC("AdditionalLoadTrace: " << Simulator::Now().GetSeconds() << " " <<loadSize);
+  			// write to file
+			std::string loadSizeFileName = "LoadSize.txt";
+  			if(!m_loadSizeFile.is_open())
+  			{
+    				m_loadSizeFile.open(loadSizeFileName.c_str(), std::ofstream::app);
+    				NS_LOG_LOGIC("File opened");
+  			}
+  			m_loadSizeFile << Simulator::Now().GetSeconds() << " " << loadSize << std::endl;
 		}
 
 }  // namespace ns3

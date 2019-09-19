@@ -4793,8 +4793,12 @@ namespace ns3 {
 
 			//Process8
 			m_imsiRntiMap[GetImsiFromRnti(rnti)] = 0;
-			GetUeManager (rnti)->RecvUeContextRelease (params);
-			RemoveUe (rnti);
+			std::map<uint16_t,Ptr<UeManager>>::iterator it = m_ueMap.find(rnti);
+			if(it!=m_ueMap.end())
+			{
+				GetUeManager (rnti)->RecvUeContextRelease (params);
+				RemoveUe (rnti);
+			}
 		}
 
 	void

@@ -202,7 +202,7 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("ProxyBufferSize",
     		   "The size of TCP proxy buffer.",
-		   UintegerValue (10*1024*1024),
+		   UintegerValue (8*1024*1024),
 		   MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_proxyBufferSize),
 		   MakeUintegerChecker<uint32_t> ())
 	 ;
@@ -410,7 +410,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   // in case the RLC buffer is full, the forwarding of packets from the source eNB to the target eNB during a handover
   // or a switch may overflow the transmission queue of point to point devices. Therefore the following line increases
   // the size of tx queue in p2p devices. The parameter should be related to the maximum size of the RLC buffer.
-  p2ph.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(4294967295), "MaxBytes", UintegerValue(4294967295));
+  p2ph.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(UINT32_MAX), "MaxBytes", UintegerValue(UINT32_MAX));
   NetDeviceContainer enbDevices = p2ph.Install (enb1, enb2);
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #1 after installing p2p dev: " << enb1->GetObject<Ipv4> ()->GetNInterfaces ());
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #2 after installing p2p dev: " << enb2->GetObject<Ipv4> ()->GetNInterfaces ());

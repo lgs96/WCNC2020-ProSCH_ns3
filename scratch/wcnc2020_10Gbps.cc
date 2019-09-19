@@ -617,13 +617,13 @@ main (int argc, char *argv[])
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 100;
-	double x2Latency= 5;
-	int BuildingIndex = 1;	
+	double x2Latency= 1;
+	int BuildingIndex = 4;	
 	string sourceRateString = "500Mbps";
 	//bool isMinimum = false;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
-	std::string mmX2DataRate = "1Gb/s";
+	std::string mmX2DataRate = "10Gb/s";
 
 	// Command line arguments
 	CommandLine cmd;

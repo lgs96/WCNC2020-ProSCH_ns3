@@ -617,13 +617,12 @@ main (int argc, char *argv[])
 
 	///////////////////Command Variable//////////////////
 	int BuildingNum = 100;
-	double x2Latency= 5;
+	double x2Latency= 20;
 	int BuildingIndex = 1;	
-	string sourceRateString = "500Mbps";
+	string sourceRateString = "1000Mbps";
 	//bool isMinimum = false;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
-	std::string mmX2DataRate = "1Gb/s";
 
 	// Command line arguments
 	CommandLine cmd;
@@ -679,18 +678,18 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
-	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate (mmX2DataRate)));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate ("10Gb/s")));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	//	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (10*1024*1024));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));	
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (28 * 1024 * 1024));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(0.1)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
 	Config::SetDefault ("ns3::PointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
@@ -698,7 +697,7 @@ main (int argc, char *argv[])
 
 	//	Config::SetDefault("ns3::McEnbPdcp::numberOfAlgorithm",UintegerValue(typeOfSplitting));
 	//	Config::SetDefault("ns3::McEnbPdcp::enableLteMmWaveDC", BooleanValue(isEnableLteMmwave));
-	//Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar",BooleanValue(isInCar));
 	//Config::SetDefault ("ns3::EpcX2::IsMinimum",BooleanValue(isMinimum));
 

@@ -44,13 +44,13 @@ QueueBase::GetTypeId (void)
                                     QUEUE_MODE_PACKETS, "QUEUE_MODE_PACKETS"))
     .AddAttribute ("MaxPackets",
                    "The maximum number of packets accepted by this queue.",
-                   UintegerValue (100),
+                   UintegerValue (UINT32_MAX),
                    MakeUintegerAccessor (&QueueBase::SetMaxPackets,
                                          &QueueBase::GetMaxPackets),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MaxBytes",
                    "The maximum number of bytes accepted by this queue.",
-                   UintegerValue (100 * 65535),
+                   UintegerValue (UINT32_MAX),
                    MakeUintegerAccessor (&QueueBase::SetMaxBytes,
                                          &QueueBase::GetMaxBytes),
                    MakeUintegerChecker<uint32_t> ())

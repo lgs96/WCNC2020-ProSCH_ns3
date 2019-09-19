@@ -26,8 +26,9 @@ using namespace std;
 
 int main()
 {
-	int BuildingIndex = 20;
-	int BuildingNum = 100;
+	int BuildingStart = 100;
+	int BuildingIndex = 200;
+	int BuildingNum = 500;
 	int Building_xlim_low = 5;
 	int Building_xlim_high = 195;
 	int Building_ylim_low = 5;
@@ -35,7 +36,7 @@ int main()
 
 	BuildingList::Iterator marker;
 
-	for(int  j = 0; j < BuildingIndex; j++){
+	for(int  j = BuildingStart; j < BuildingIndex; j++){
 		for (int i = 0; i<BuildingNum; i++){
 
 			double xcoordinate = (double)((int)rand()%(Building_xlim_high-Building_xlim_low)+Building_xlim_low);
@@ -57,7 +58,7 @@ int main()
 		Ptr<OutputStreamWrapper> build_stream = asciiTraceHelper_build.CreateFileStream(buildingfile.str().c_str());		
 		
 		for (BuildingList::Iterator it = BuildingList::Begin(); it != BuildingList::End(); ++it) {
-			if(count < j*BuildingNum)		
+			if(count < (j-BuildingStart)*BuildingNum)		
 				count = count+1;
 			else
 			{

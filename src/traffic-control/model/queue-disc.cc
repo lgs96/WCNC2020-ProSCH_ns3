@@ -399,6 +399,7 @@ QueueDisc::Drop (Ptr<const QueueDiscItem> item)
   m_nTotalDroppedBytes += item->GetSize ();
 
   NS_LOG_LOGIC ("m_traceDrop (p)");
+  NS_LOG_UNCOND("Drop in traffic controller");
   m_traceDrop (item);
 
   NotifyParentDrop (item);

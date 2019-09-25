@@ -1221,11 +1221,15 @@ namespace ns3 {
 				else if (gtpu.GetMessageType() == EpcX2Header::EndMarker)
 				{
 					m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
-					if(m_isMinimum && !m_isMmWave)
-					{
+					if(m_isMinimum && !m_isMmWave &&(cellsInfo->m_localCellId != gtpu.GetSequenceNumber())
+					{						
 						params.sourceCellId = cellsInfo->m_localCellId;
 						params.targetCellId = gtpu.GetSequenceNumber();
 						DoSendEndMarker(params);
+					}
+					else if(!m_isMmWave && cellsInfo->m_localCellId == gtpu.GetSequenceNumber())
+					{
+						m_x2SapUser->MmToLteGetEndMarker(params.gtpTeid);
 					}
 					else
 					{

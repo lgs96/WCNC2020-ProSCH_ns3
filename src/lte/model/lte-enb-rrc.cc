@@ -1966,6 +1966,12 @@ void UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection) {
 					params.drbid = it->first;
 					m_rrc->m_x2SapProvider->SendSwitchConnectionToMmWave(
 							params);
+
+					EpcX2SapProvider::HoldBufferParams hbParams;
+					hbParams.sourceCellId = m_mmWaveCellId;
+					hbParams.targetCellId = m_rrc->m_cellId;
+
+					SendHoldBufferMsg(hbParams);
 				}
 
 			} else {
@@ -2024,6 +2030,12 @@ void UeManager::RecvConnectionSwitchToMmWave(bool useMmWaveConnection,
 					rlc->GetEpcX2RlcUser());
 		}
 
+		EpcX2Sap::UeDataParams endParams;
+		endParams.sourceCellId = m_rrc->GetCellId();
+		endParams.targetCellId = m_rlcMap.find(drbid)->second->targetCellId; // the LTE cell
+		endParams.gtpTeid = m_rlcMap.find(drbid)->second->gtpTeid;
+		m_rrc->m_x2SapProvider->SendEndMarker(endParams);
+	
 		m_rrc->m_cmacSapProvider->AddLc(m_rlcMap.find(drbid)->second->lcinfo,
 				rlc->GetLteMacSapUser());
 	}
@@ -2438,7 +2450,7 @@ TypeId LteEnbRrc::GetTypeId(void) {
 					MakeTimeAccessor(
 							&LteEnbRrc::m_handoverLeavingTimeoutDuration),
 					MakeTimeChecker()).AddAttribute("OutageThreshold",
-					"SNR threshold for outage events [dB]", DoubleValue(-10.0),
+					"SNR threshold for outage events [dB]", DoubleValue(-1.0),
 					MakeDoubleAccessor(&LteEnbRrc::m_outageThreshold),
 					MakeDoubleChecker<long double>(-10000.0, 10.0))
 
@@ -3887,7 +3899,7 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 	NS_LOG_LOGIC("oldEnbUeX2apId = " << req.oldEnbUeX2apId);
 	NS_LOG_LOGIC("sourceCellId = " << req.sourceCellId);
 	NS_LOG_LOGIC("targetCellId = " << req.targetCellId);
-	NS_LOG_LOGIC("mmeUeS1apId = " << req.mmeUeS1apId);
+	NS_LOG_UNCOND("mmeUeS1apId = " << req.mmeUeS1apId);
 	NS_LOG_INFO("isMc = " << req.isMc);
 
 	NS_ASSERT(req.targetCellId == m_cellId);
@@ -3975,7 +3987,40 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 	Ptr<Packet> encodedHandoverCommand = m_rrcSapUser->EncodeHandoverCommand(
 			handoverCommand);
 
-	ackParams.rrcContext = encodedHandoverCommand;
+
+	LteRrcSap::RrcConnectionReconfiguration handoverCommand_lte =
+			ueManager->GetRrcConnectionReconfigurationForHandover();
+	handoverCommand_lte.haveMobilityControlInfo = true;
+	handoverCommand_lte.mobilityControlInfo.targetPhysCellId = m_cellId;
+	handoverCommand_lte.mobilityControlInfo.haveCarrierFreq = true;
+	handoverCommand_lte.mobilityControlInfo.carrierFreq.dlCarrierFreq = m_dlEarfcn;
+	handoverCommand_lte.mobilityControlInfo.carrierFreq.ulCarrierFreq = m_ulEarfcn;
+	handoverCommand_lte.mobilityControlInfo.haveCarrierBandwidth = true;
+	handoverCommand_lte.mobilityControlInfo.carrierBandwidth.dlBandwidth =
+			m_dlBandwidth;
+	handoverCommand_lte.mobilityControlInfo.carrierBandwidth.ulBandwidth =
+			m_ulBandwidth;
+	handoverCommand_lte.mobilityControlInfo.newUeIdentity = rnti;
+	handoverCommand_lte.mobilityControlInfo.haveRachConfigDedicated = true;
+	handoverCommand_lte.mobilityControlInfo.rachConfigDedicated.raPreambleIndex =
+			anrcrv.raPreambleId;
+	handoverCommand_lte.mobilityControlInfo.rachConfigDedicated.raPrachMaskIndex =
+			anrcrv.raPrachMaskIndex;
+
+	LteEnbCmacSapProvider::RachConfig rc_lte = m_cmacSapProvider->GetRachConfig();
+	handoverCommand_lte.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles =
+			rc_lte.numberOfRaPreambles;
+	handoverCommand_lte.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax =
+			rc_lte.preambleTransMax;
+	handoverCommand_lte.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize =
+			rc_lte.raResponseWindowSize;
+
+	Ptr<Packet> encodedHandoverCommand_lte = m_rrcSapUser->EncodeHandoverCommand(
+			handoverCommand);
+
+	EpcX2SapProvider::HandoverRequestAckParams ackParams_lte = ackParams;
+	
+	ackParams_lte.rrcContext = encodedHandoverCommand_lte;
 
 	NS_LOG_LOGIC("Send X2 message: HANDOVER REQUEST ACK");
 
@@ -3992,19 +4037,18 @@ void LteEnbRrc::DoRecvHandoverRequest(EpcX2SapUser::HandoverRequestParams req) {
 
 	ueManager->SendHoldBufferMsg(hbParams);
 	ueManager->HoldUntilHandoverCompletion();
-
-	EpcX2SapProvider::HandoverRequestAckParams ackParams_lte = ackParams;
    	
 	NS_LOG_UNCOND("Sent Imsi: " << ackParams.oldEnbUeX2apId<<" Sent Rnti: "<<req.oldEnbUeX2apId<<" Sent cell: "<<handoverCommand.mobilityControlInfo.targetPhysCellId);
 
-	m_x2SapProvider->SendHandoverRequestAck(ackParams);
-
 	// LTE aided RRC connection reconfiguraiton
 	ackParams_lte.sourceCellId = m_lteCellId;
-	ackParams_lte.oldEnbUeX2apId =(uint16_t)GetImsiFromRnti(req.oldEnbUeX2apId);
-
+	ackParams_lte.oldEnbUeX2apId =(uint16_t)GetImsiFromRnti(rnti);
+	NS_LOG_UNCOND("IMSI: "<<GetImsiFromRnti(req.oldEnbUeX2apId));
    	NS_LOG_UNCOND("Sent Imsi: " << ackParams_lte.oldEnbUeX2apId<<" Sent Rnti: "<<req.oldEnbUeX2apId<<" Sent cell: "<<handoverCommand.mobilityControlInfo.targetPhysCellId);
 
+	//m_x2SapProvider->SendHandoverRequestAckToLte(ackParams_lte);
+	m_x2SapProvider->SendHandoverRequestAck(ackParams);
+	
 	m_x2SapProvider->SendHandoverRequestAckToLte(ackParams_lte);
 }
 
@@ -4363,7 +4407,7 @@ uint16_t LteEnbRrc::AddUe(UeManager::State state) {
 	Ptr<UeManager> ueManager = CreateObject<UeManager>(this, rnti, state);
 	m_ueMap.insert(std::pair<uint16_t, Ptr<UeManager> >(rnti, ueManager));
 	ueManager->Initialize();
-	NS_LOG_DEBUG(
+	NS_LOG_INFO(
 			this << " New UE RNTI " << rnti << " cellId " << m_cellId << " srs CI " << ueManager->GetSrsConfigurationIndex ());
 	m_newUeContextTrace(m_cellId, rnti);
 	return rnti;

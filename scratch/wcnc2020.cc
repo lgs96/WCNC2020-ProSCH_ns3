@@ -616,10 +616,10 @@ main (int argc, char *argv[])
 	bool isInCar = true;
 
 	///////////////////Command Variable//////////////////
-	int BuildingNum = 200;
-	double x2Latency= 10;
-	int BuildingIndex = 1;	
-	string sourceRateString = "5Mbps";
+	int BuildingNum = 100;
+	double x2Latency= 5;
+	int BuildingIndex = 13;	
+	string sourceRateString = "500Mbps";
 	//bool isMinimum = false;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;

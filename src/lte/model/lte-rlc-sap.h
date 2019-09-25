@@ -58,6 +58,8 @@ public:
    * when upper PDCP entity has a PDCP PDU ready to send
    */
   virtual void TransmitPdcpPdu (TransmitPdcpPduParameters params) = 0;
+
+  virtual void GetEndMarker () = 0;
 };
 
 
@@ -92,6 +94,7 @@ public:
   // Interface implemented from LteRlcSapProvider
   virtual void TransmitPdcpPdu (TransmitPdcpPduParameters params);
 
+  virtual void GetEndMarker ();
 private:
   LteRlcSpecificLteRlcSapProvider ();
   C* m_rlc;
@@ -114,6 +117,11 @@ void LteRlcSpecificLteRlcSapProvider<C>::TransmitPdcpPdu (TransmitPdcpPduParamet
   m_rlc->DoTransmitPdcpPdu (params.pdcpPdu);
 }
 
+template <class C>
+void LteRlcSpecificLteRlcSapProvider<C>::GetEndMarker ()
+{
+  m_rlc->DoGetEndMarker();
+}
 ///////////////////////////////////////
 
 template <class C>

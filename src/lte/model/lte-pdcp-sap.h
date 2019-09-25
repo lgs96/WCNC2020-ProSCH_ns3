@@ -127,7 +127,7 @@ void LtePdcpSpecificLtePdcpSapProvider<C>::TransmitPdcpSdu (TransmitPdcpSduParam
   }
   else if(params.toLte)
   {
-	m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
+    m_pdcp->DoTransmitPdcpSdu (params.pdcpSdu);
   }
   else
   {

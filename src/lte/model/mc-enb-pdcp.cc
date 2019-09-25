@@ -245,6 +245,31 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
     NS_LOG_LOGIC("Params.pdcpPdu " << params.pdcpPdu);
 
     m_rlcSapProvider->TransmitPdcpPdu (params);
+
+    if(m_previousParams.targetCellId == UINT16_MAX)
+    {
+      NS_LOG_INFO (this<<" Initial setup for end marker");
+      m_previousParams.sourceCellId = m_ueDataParams.sourceCellId;
+      m_previousParams.targetCellId = m_ueDataParams.targetCellId;
+      m_previousParams.gtpTeid = m_ueDataParams.gtpTeid;
+      NS_LOG_INFO (this<<"Source Cell Id: "<<m_previousParams.sourceCellId);
+      NS_LOG_INFO (this<<"Target Cell Id: "<<m_previousParams.targetCellId);
+      NS_LOG_INFO (this<<"GtpTeid: "<<m_previousParams.gtpTeid);
+    }
+    else if(m_ueDataParams.targetCellId != m_previousParams.targetCellId)
+    {
+      NS_LOG_INFO (this<<" Send end marker from McPdcp");
+      NS_LOG_INFO (this<<" TargetCellId is "<<m_previousParams.targetCellId);
+      NS_LOG_INFO (this<<"Source Cell Id: "<<m_previousParams.sourceCellId);
+      NS_LOG_INFO (this<<"Target Cell Id: "<<m_previousParams.targetCellId);
+      NS_LOG_INFO (this<<"GtpTeid: "<<m_previousParams.gtpTeid);
+      m_previousParams.ueData = NULL;
+      //m_epcX2PdcpProvider -> SendEndMarker (m_previousParams);
+      //m_rlcSapProvider->GetEndMarker();
+      m_previousParams.sourceCellId = m_ueDataParams.sourceCellId;
+      m_previousParams.targetCellId = m_ueDataParams.targetCellId;
+      m_previousParams.gtpTeid = m_ueDataParams.gtpTeid;
+    }
   } 
   else if (m_useMmWaveConnection) 
   {

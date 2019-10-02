@@ -14,9 +14,9 @@ def start_simulation(data):
 	throughput = data[4]
 	scheme = data[5]
 	location = scheme+"_"+str(buildingIndex)+"index_"+x2_delay+"ms_"+s1_delay+"ms_"+buildingNum+"buildings_"+throughput
-	subprocess.check_call('mkdir %s'%(location),shell=True)
-	subprocess.check_call('cp %s %s/%s'%(str(buildingIndex)+"_BuildingPosition.txt",location,str(buildingIndex)+"_BuildingPosition.txt"),shell=True)
-	try:
+	try:	
+		subprocess.check_call('mkdir %s'%(location),shell=True)
+		subprocess.check_call('cp %s %s/%s'%("BuildingFolder/"+str(buildingIndex)+"_BuildingPosition.txt",location,str(buildingIndex)+"_BuildingPosition.txt"),shell=True)
 		subprocess.check_call('./waf --cwd=%s --command-template="%%s --BuildingIndex=%d --X2LinkDelay=%s  --S1Delay=%s --BuildingNum=%s --SourceRate=%s" --run wcnc2020_min' % (location,buildingIndex, x2_delay,s1_delay, buildingNum, throughput),shell=True)
 	except: 
 		#subprocess.check_call('rm -r %s'%(location),shell=True)
@@ -49,11 +49,11 @@ buildingNumSet =['100']
 x2DelaySet = ['1','5','10','20']
 throughputSet = ['500Mbps']
 s1DelaySet = ['0.030']
-schemeSet = ['X2Min','Proxy','PBH']
+schemeSet = ['X2Min','ProxyMin','PBH']
 whichScheme = 0
 paramsSet = []
-for  i in range(1,20,1):
-	index = i
+for  i in range(200):
+	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]
 		for k in range(len(x2DelaySet)):

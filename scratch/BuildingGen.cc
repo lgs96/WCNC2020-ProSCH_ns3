@@ -26,8 +26,8 @@ using namespace std;
 
 int main()
 {
-	int BuildingStart = 100;
-	int BuildingIndex = 200;
+	int BuildingStart = 200;
+	int BuildingIndex = 300;
 	int BuildingNum = 500;
 	int Building_xlim_low = 5;
 	int Building_xlim_high = 195;

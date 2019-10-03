@@ -1289,4 +1289,9 @@ LteRlcUmLowLat::TriggerReceivePdcpPdu(Ptr<Packet> p)
   }
 }
 
+void
+LteRlcUmLowLat::Reconfiguration()
+{
+}
+
 } // namespace ns3

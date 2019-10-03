@@ -159,12 +159,12 @@ DelayJitterEstimation::RecordRx (Ptr<const Packet> packet)
   
   if(m_previousRx!= 0)
   {
-  	file<<Simulator::Now().GetSeconds()<<" "<<m_jitter/(1e9)<<std::endl;
+  //	file<<Simulator::Now().GetSeconds()<<" "<<m_jitter/(1e9)<<std::endl;
 	file2<<Simulator::Now().GetSeconds()<<" "<<m_delay.GetSeconds()<<std::endl;
-	file3<<Simulator::Now().GetSeconds()<<" "<<m_ipdv.GetSeconds()<<std::endl;
-	file.close();
+  //	file3<<Simulator::Now().GetSeconds()<<" "<<m_ipdv.GetSeconds()<<std::endl;
+  //	file.close();
 	file2.close();
-	file3.close();
+  //	file3.close();
   }
 }
 

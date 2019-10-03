@@ -1228,4 +1228,10 @@ LteRlcUm::ExpireRbsTimer (void)
     }
 }
 
+void
+LteRlcUm::Reconfiguration()
+{
+
+}
+
 } // namespace ns3

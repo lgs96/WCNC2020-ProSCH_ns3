@@ -179,10 +179,14 @@ public:
 
   /// \todo MRE What is the sense to duplicate all the interfaces here???
   // NB to avoid the use of multiple inheritance
-  
+
+  virtual void Reconfiguration() = 0; 
+ 
 protected:
   // Interface forwarded by LteRlcSapProvider
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p) = 0;
+
+  //virtual void Reconfiguration() = 0;
 
   LteRlcSapUser* m_rlcSapUser;
   LteRlcSapProvider* m_rlcSapProvider;
@@ -246,7 +250,7 @@ public:
   virtual void DoReceivePdu (Ptr<Packet> p);
   virtual void DoSendMcPdcpSdu (EpcX2Sap::UeDataParams params);
 
-
+  virtual void Reconfiguration();
 
 private:
   void ReportBufferStatus ();

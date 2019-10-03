@@ -111,6 +111,7 @@ public:
 
   virtual ~UeManager (void);
 
+  bool m_hold;
   // inherited from Object
 protected:
   virtual void DoInitialize ();
@@ -398,12 +399,13 @@ public:
 
   void HoldUntilHandoverCompletion ();
 
-  void ReleaseBufferAfterHandover ();
+  void ReleaseBufferAfterHandover (bool isTargetCell);
 
   std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > GetDrbMap ();
 
   std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
 
+  //bool m_hold;
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);

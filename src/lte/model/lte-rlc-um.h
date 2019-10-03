@@ -70,6 +70,8 @@ public:
     return m_txBufferSize;
   }
 
+  virtual void Reconfiguration();  
+
 private:
   void ExpireReorderingTimer (void);
   void ExpireRbsTimer (void);

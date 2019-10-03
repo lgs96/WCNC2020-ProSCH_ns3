@@ -58,6 +58,7 @@ public:
 
   virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
 
+  virtual void Reconfiguration();
 private:
   void ExpireRbsTimer (void);
   void DoReportBufferStatus ();

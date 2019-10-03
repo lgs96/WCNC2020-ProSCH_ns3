@@ -342,6 +342,7 @@ McEnbPdcp::DoReceiveMcPdcpPdu (EpcX2Sap::UeDataParams params)
 void
 McEnbPdcp::SwitchConnection (bool useMmWaveConnection)
 {
+  NS_LOG_UNCOND(Simulator::Now()<<" Does PDCP switch to mmWave? "<<useMmWaveConnection);
   m_useMmWaveConnection = useMmWaveConnection;
 }
 

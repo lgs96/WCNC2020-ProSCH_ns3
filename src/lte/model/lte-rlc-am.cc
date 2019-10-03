@@ -267,7 +267,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
         NS_LOG_INFO ("Txon Buffer: New packet added");
         m_txonBuffer.push_back (p);
         m_txonBufferSize += p->GetSize ();
-        NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
+        NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size());
         NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
       }
       else
@@ -275,7 +275,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
         NS_LOG_INFO ("Buffer packets during handover");
         m_holdBuffer.push_back (p);
     	m_holdBufferSize += p->GetSize ();
-    	NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size() );
+    	NS_LOG_LOGIC ("NumOfBuffers = " << m_holdBuffer.size());
     	NS_LOG_LOGIC ("holdBufferSize = " << m_holdBufferSize);
       }
     }
@@ -317,7 +317,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 }
 
 void
-LteRlcAm::ReleaseHoldBuffer()
+LteRlcAm::ReleaseHoldBuffer(bool isTargetCell)
 {
   NS_LOG_FUNCTION(this);
 /*Process3 -> Process4
@@ -327,25 +327,45 @@ LteRlcAm::ReleaseHoldBuffer()
   */
   m_onHandover = false;
   //Transfer hold buffer's packets to tx on  buffer
+  DoReportBufferStatus ();
+  m_rbsTimer.Cancel ();
+  m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
 
-  NS_LOG_UNCOND(Simulator::Now()<<" Hold buffer size: "<<m_holdBufferSize);
+  if(isTargetCell)
+    NS_LOG_UNCOND(Simulator::Now()<<" Hold buffer size: "<<m_holdBufferSize);
+  else
+    NS_LOG_UNCOND(Simulator::Now()<<" Release hold buffer: "<<m_holdBufferSize);
 
-  while (!m_holdBuffer.empty())
-   {
-     Ptr <Packet> p = *(m_holdBuffer.begin());
-     m_txonBuffer.push_back(p);
-     m_txonBufferSize += p-> GetSize();
-     m_holdBufferSize -= (*(m_holdBuffer.begin()))->GetSize();
-     m_holdBuffer.erase (m_holdBuffer.begin());
-     NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
-   }
-
+  if(isTargetCell)
+  {
+  	while (!m_holdBuffer.empty())
+ 	{
+    	  Ptr <Packet> p = *(m_holdBuffer.begin());
+   	  m_txonBuffer.push_back(p);
+  	  m_txonBufferSize += p-> GetSize();
+  	  m_holdBufferSize -= (*(m_holdBuffer.begin()))->GetSize();
+	  m_holdBuffer.erase (m_holdBuffer.begin());
+          NS_LOG_LOGIC (this <<" After transfer: hold buffer size = "<< m_holdBufferSize);
+   	}
+  }
   /** Report Buffer Status */
   DoReportBufferStatus ();
   m_rbsTimer.Cancel ();
   m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);
 }
 
+void
+LteRlcAm::Reconfiguration ()
+{
+  NS_LOG_FUNCTION(this);
+  
+  // State variables: receiving side
+  m_vrR  = 0;
+  m_vrMr = m_vrR + m_windowSize;
+  m_vrX  = 0;
+  m_vrMs = 0;
+  m_vrH  = 0; 
+}
 
 void 
 LteRlcAm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)

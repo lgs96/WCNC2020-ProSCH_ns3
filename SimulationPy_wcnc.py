@@ -53,7 +53,7 @@ s1DelaySet = ['0.030']
 schemeSet = ['X2','Proxy','PBH']
 whichScheme = 2
 paramsSet = []
-for  i in range(82,200):
+for  i in range(200):
 	index = i+1
 	for j in range(len(buildingNumSet)):
 		buildingNum = buildingNumSet[j]

@@ -91,7 +91,8 @@ public:
     return m_txedRlcSduBuffer;
   }
 
-  void ReleaseHoldBuffer();
+  void ReleaseHoldBuffer(bool isTargetCell);
+  void Reconfiguration ();
 
   bool m_onHandover;
 

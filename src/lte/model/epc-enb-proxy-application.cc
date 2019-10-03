@@ -50,13 +50,13 @@ namespace ns3 {
 		{
 			*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
 		}
-
+	/*
 	static void
 		RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
 		{
 			*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
 		}
-
+	*/
 	NS_LOG_COMPONENT_DEFINE ("EpcEnbProxyApplication");
 
 	TypeId
@@ -182,19 +182,19 @@ namespace ns3 {
 				m_proxyTcpPort++;
 				NS_ASSERT (retval == 0);
 				proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(m_proxyBufferSize);
-
+				/*
 				std::ostringstream fileName;
 				fileName<<"proxyRtt"<<srcPort<<".txt";
 				AsciiTraceHelper asciiTraceHelper;
 				Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
 				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange,stream));
-
+				*/
 				std::ostringstream fileName2;
 				fileName2<<"proxySst"<<srcPort<<".txt";
 				AsciiTraceHelper asciiTraceHelper2;
 				Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper2.CreateFileStream (fileName2.str ().c_str ());
 				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh,stream2));
-
+				
 				Address tcpToEnbAddress (InetSocketAddress(m_source,srcPort));
 				proxyTcpSocket->Connect(tcpToEnbAddress);
 
@@ -314,7 +314,7 @@ namespace ns3 {
 						awndSize =1400;
 					}
 
-					NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize);
+					NS_LOG_LOGIC("Proxy tcp's awnd size is "<< awndSize<<" available buffer: "<<proxyTxBuffer->Available());
 					//std::cout<<"awndSize = "<<awndSize<<std::endl;
 
 					//std::cout<<"Tail Sequence: "<<proxyTxBuffer->TailSequence() << std::endl;

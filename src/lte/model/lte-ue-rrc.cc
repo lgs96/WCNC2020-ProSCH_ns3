@@ -722,7 +722,7 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
         // this trace is used to keep a consistent trace of the cell to which the UE is connected
         {
           NS_LOG_UNCOND("DoNotifyRandomAccessSuccessful at time " << Simulator::Now().GetSeconds());
-          m_switchToMmWaveTrace(m_imsi, m_cellId, m_rnti);
+          m_switchToMmWaveTrace(m_imsi, m_cellId, m_rnti);	  
         }
       }
       break;
@@ -1258,6 +1258,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
           {
             // get the RLC buffer content and forward it to the m_rlcMap RLC!
             CopyRlcBuffers(m_drbMap.find(*iter)->second->m_rlc, pdcp, lcid);
+            //(*iter)->second->m_rlc->Reconfiguration();	  
           } 
 
           // reset the LTE RLC
@@ -1869,6 +1870,7 @@ LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uin
           {
             // get the RLC buffer content and store it in this RLC
             CopyRlcBuffers(m_rlcMap.find(dtamIt->drbIdentity)->second->m_rlc, drbInfo->m_pdcp, drbInfo->m_logicalChannelIdentity);
+	    m_rlcMap.find(dtamIt->drbIdentity)->second->m_rlc->Reconfiguration();
           } 
           m_rlcMap[dtamIt->drbIdentity] = rlcInfo;
           

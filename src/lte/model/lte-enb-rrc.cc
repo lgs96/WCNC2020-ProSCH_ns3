@@ -159,6 +159,7 @@ namespace ns3 {
 		m_maxx2forwardingBufferSize (2*1024),
 		m_allMmWaveInOutageAtInitialAccess (false)
 	{ 
+		m_hold = false;
 		NS_LOG_FUNCTION (this);
 	}
 
@@ -830,9 +831,22 @@ namespace ns3 {
 				std::cout<<"RLC buffer size: "<<rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()
 				<<" "<<rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxedBufferSize()
 				<<" "<<rlcIt->second->m_rlc->GetObject<LteRlcAm>()->GetRetxBufferSize()<<std::endl;
-
-				ForwardRlcBuffers(rlcIt->second->m_rlc, 0, rlcIt->second->gtpTeid, 0, 1, 0);
+				ForwardRlcBuffers(rlcIt->second->m_rlc, 0, rlcIt->second->gtpTeid, 0, cellId, 0);
 			}
+
+			for ( std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator drbIt = m_drbMap.begin ();
+				drbIt != m_drbMap.end ();
+			++drbIt)
+			{
+				std::cout<<"RLC buffer size: "<<drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize()
+				<<" "<<drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxedBufferSize()
+				<<" "<<drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetRetxBufferSize()<<std::endl;
+				ForwardRlcBuffers(drbIt->second->m_rlc, drbIt->second->m_pdcp, drbIt->second->m_gtpTeid, 0, 0, 0);
+				SwitchToState(CONNECTED_NORMALLY);
+			}
+			
+			HoldUntilHandoverCompletion();
+			m_hold = true;
 		}
 	}
 
@@ -1248,7 +1262,7 @@ namespace ns3 {
 				NS_ASSERT_MSG(bid > 0, "Bid can't be 0");
 				NS_ASSERT_MSG(mcPdcp->GetUseMmWaveConnection(), "The McEnbPdcp is not forwarding data to the mmWave eNB, check if the switch happened!");
 			}
-
+			NS_LOG_UNCOND("X2 forwarding size: "<<m_x2forwardingBufferSize);
 			while (!m_x2forwardingBuffer.empty())
 			{
 				NS_LOG_DEBUG(this << " Forwarding m_x2forwardingBuffer to target eNB, gtpTeid = " << gtpTeid );
@@ -1434,7 +1448,7 @@ namespace ns3 {
 				case HANDOVER_JOINING:
 					{
 						NS_LOG_LOGIC ("buffer packet during handover");
-						NS_LOG_UNCOND ("flag1");
+						NS_LOG_LOGIC ("flag1");
 						m_packetBuffer.push_back (std::make_pair(bid,p));
 					}
 					break;
@@ -1992,7 +2006,7 @@ namespace ns3 {
 								PrepareHandover(m_queuedHandoverRequestCellId);
 							}
 						}
-						ReleaseBufferAfterHandover ();
+						ReleaseBufferAfterHandover (true);
 					}
 					break;
 
@@ -2224,6 +2238,7 @@ namespace ns3 {
 			LteRrcSap::RrcConnectionSwitch msg;
 			msg.rrcTransactionIdentifier = GetNewRrcTransactionIdentifier();
 			std::vector<uint8_t> drbidVector;
+			
 			for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it =  m_drbMap.begin ();
 					it != m_drbMap.end ();
 					++it)
@@ -2244,6 +2259,9 @@ namespace ns3 {
 						{
 							NS_LOG_INFO("UeManager: forward LTE RLC buffers to mmWave");
 							ForwardRlcBuffers(it->second->m_rlc, it->second->m_pdcp, it->second->m_gtpTeid, 1, 0, it->first);
+														
+						    	m_rrc->m_s1SapProvider-> DoSendProxyHoldRequest (it->second->m_gtpTeid,0);	
+							m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(it->second->m_gtpTeid, 0, 0);
 							// create a new rlc instance!
 
 							// reset RLC and LC
@@ -2294,6 +2312,9 @@ namespace ns3 {
 							params.useMmWaveConnection = useMmWaveConnection;
 							params.drbid = it->first;
 							m_rrc->m_x2SapProvider->SendSwitchConnectionToMmWave(params);
+	
+							m_rrc->m_s1SapProvider-> DoSendProxyHoldRequest (it->second->m_gtpTeid,0);
+							m_rrc->m_s1SapProvider->DoSendProxyForwardingRequest(it->second->m_gtpTeid, 0, 0);
 						}
 
 					}     
@@ -2681,7 +2702,7 @@ namespace ns3 {
 		}
 
 	void
-		UeManager::ReleaseBufferAfterHandover ()
+		UeManager::ReleaseBufferAfterHandover (bool isTargetCell)
 		{
 			NS_LOG_FUNCTION (this);
 		
@@ -2689,7 +2710,7 @@ namespace ns3 {
 											rlcIt != m_rlcMap.end ();
 											++rlcIt)
 			{
-				rlcIt->second->m_rlc->GetObject<LteRlcAm>()->ReleaseHoldBuffer ();
+				rlcIt->second->m_rlc->GetObject<LteRlcAm>()->ReleaseHoldBuffer (isTargetCell);
 			}
 		}
 
@@ -3566,7 +3587,7 @@ namespace ns3 {
 						// it is on LTE, but now the last used MmWave cell is not in outage
 					{
 						// switch back to MmWave
-						NS_LOG_INFO("----- on LTE, switch to lastMmWaveCell " << m_lastMmWaveCell[imsi] << " at time " << Simulator::Now().GetSeconds());
+						NS_LOG_UNCOND("----- on LTE, switch to lastMmWaveCell " << m_lastMmWaveCell[imsi] << " at time " << Simulator::Now().GetSeconds());
 						Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
 						bool useMmWaveConnection = true;
 						m_imsiUsingLte[imsi] = !useMmWaveConnection;
@@ -3576,15 +3597,19 @@ namespace ns3 {
 						// it is on LTE, but now a MmWave cell different from the last used is not in outage, so we need to handover
 					{
 						// already using LTE connection
-						NS_LOG_INFO("----- on LTE, switch to new MmWaveCell " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
+						NS_LOG_UNCOND("----- on LTE, switch to new MmWaveCell " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
 						// trigger ho via X2
-						EpcX2SapProvider::SecondaryHandoverParams params;
+					/*	EpcX2SapProvider::SecondaryHandoverParams params;
 						params.imsi = imsi;
 						params.targetCellId = maxSinrCellId;
 						params.oldCellId = m_lastMmWaveCell[imsi];
-						m_x2SapProvider->SendMcHandoverRequest(params);
+					*/	//m_x2SapProvider->SendMcHandoverRequest(params);
 
-						m_mmWaveCellSetupCompleted[imsi] = false;
+						Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
+						handoverNeeded = true;
+						ueMan -> SendRlcHead (0,true);
+						ueMan -> ReleaseBufferAfterHandover (false);
+						//m_mmWaveCellSetupCompleted[imsi] = false;
 					}  
 				}
 				else
@@ -3849,6 +3874,8 @@ namespace ns3 {
 					m_prefetchedHandoverRequestMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)->second.targetCellId = handoverInfo.targetCellId;
 					m_x2SapProvider->SendHandoverRequest (
 							m_prefetchedHandoverRequestMap.find(m_lastMmWaveCell[imsi])->second.find(imsi)->second);
+					
+						
 
 					m_mmWaveCellSetupCompleted[imsi] = false;    
 				}
@@ -3876,7 +3903,7 @@ namespace ns3 {
 			    gtpTeid = it->second->m_gtpTeid;
 			    m_s1SapProvider-> DoSendProxyHoldRequest (gtpTeid,m_delayX2);
 			  }									
-            }
+            		}
 			// Process8
 			//m_s1SapProvider-> DoSendProxyHoldRequest (m_delayX2);
 
@@ -4050,11 +4077,11 @@ namespace ns3 {
 					if ((maxSinrDb < m_outageThreshold || (m_imsiUsingLte[imsi] && maxSinrDb < m_outageThreshold + 2)) && alreadyAssociatedImsi) // no MmWaveCell can serve this UE
 					{
 						// outage, perform fast switching if MC device or hard handover
-						NS_LOG_INFO("----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
+						NS_LOG_UNCOND("----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
 						if(m_imsiUsingLte[imsi] == false) 
 						{
 							ueMan = GetUeManager(GetRntiFromImsi(imsi));
-							NS_LOG_INFO("Switch to LTE stack");
+							NS_LOG_UNCOND("Switch to LTE stack");
 							bool useMmWaveConnection = false; 
 							m_imsiUsingLte[imsi] = !useMmWaveConnection;
 							ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
@@ -4071,7 +4098,7 @@ namespace ns3 {
 						}
 						else
 						{
-							NS_LOG_INFO("Already on LTE");
+							NS_LOG_UNCOND("Already on LTE");
 							ueMan = GetUeManager(GetRntiFromImsi(imsi));
 							if(ueMan->GetAllMmWaveInOutageAtInitialAccess())
 							{
@@ -4305,7 +4332,7 @@ namespace ns3 {
 			NS_LOG_LOGIC("Rnti " << rnti);
 			//SendHandoverRequest(rnti, params.targetCellId);
 			//std::cout<<Simulator::Now()<<" Ready to leave"<<std::endl;
-			//GetUeManager(rnti)->SendRlcHead(0,false);
+			GetUeManager(rnti)->SendRlcHead(1,true);
 			//Simulator::Schedule(NanoSeconds(m_delayX2),&LteEnbRrc::SelfLeaving,this,rnti);
 		}
 
@@ -4313,7 +4340,7 @@ namespace ns3 {
 		LteEnbRrc::SelfLeaving(uint16_t rnti)
 		{
 			std::cout<<Simulator::Now()<<" Self leaving"<<std::endl;
-			GetUeManager(rnti)->SendRlcHead(0,true);
+			GetUeManager(rnti)->SendRlcHead(1,true);
 		}
 
 	bool
@@ -4797,8 +4824,9 @@ namespace ns3 {
 			if(it!=m_ueMap.end())
 			{
 				GetUeManager (rnti)->RecvUeContextRelease (params);
+				GetUeManager (rnti)->ReleaseBufferAfterHandover(false);
 				RemoveUe (rnti);
-			}
+			}	
 		}
 
 	void

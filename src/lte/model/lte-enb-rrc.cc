@@ -3492,8 +3492,8 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 					NS_LOG_UNCOND ("Switch to LTE");
 					NS_LOG_INFO("Switch to LTE stack");
 					bool useMmWaveConnection = false;
-					m_enableHoldBufferMap.insert(std::make_pair(GetRntiFromImsi(imsi),true));
 					m_imsiUsingLte[imsi] = !useMmWaveConnection;
+					m_enableHoldBufferMap.insert(std::make_pair(GetRntiFromImsi(imsi),true));
 					ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
 					//m_switchEnabled = false;
 					//Simulator::Schedule(MilliSeconds(50), &LteEnbRrc::EnableSwitching, this, imsi);

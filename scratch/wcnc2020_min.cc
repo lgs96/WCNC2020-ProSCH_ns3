@@ -623,6 +623,7 @@ main (int argc, char *argv[])
 	bool isMinimum = true;
         bool ReadBuilding = true;
 	double m_s1Delay = 0.030;
+	std::string mmX2DataRate = "10Gb/s";
 
 	// Command line arguments
 	CommandLine cmd;
@@ -678,7 +679,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(x2Latency)));
-	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate ("10Gb/s")));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate (mmX2DataRate)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(0)));
 	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
@@ -815,7 +816,7 @@ main (int argc, char *argv[])
 	//	uePositionAlloc->Add(Vector(50 ,110,1.5));
 	//	uePositionAlloc->Add(Vector(52 ,50,1.5));
 	//	uePositionAlloc->Add(Vector(48 ,50,1.5));
-
+/*
 	uemobility.SetPositionAllocator ("ns3::RandomBoxPositionAllocator",
 					"X", StringValue ("ns3::UniformRandomVariable[Min=10|Max=390]"),
 					"Y", StringValue ("ns3::UniformRandomVariable[Min=10|Max=190]"),
@@ -825,9 +826,18 @@ main (int argc, char *argv[])
 				     "Time", StringValue ("1.5s"),
 				     "Speed", StringValue ("ns3::UniformRandomVariable[Min=18.0|Max=22.0]"),
 			             "Bounds", StringValue ("10|390|10|190"));
+*/
+	
 
+	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+	uemobility.SetPositionAllocator(uePositionAlloc);
 	uemobility.Install (ueNodes);
 	uemobility.AssignStreams(ueNodes,0);
+
+	Simulator::Schedule(Seconds(0.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
+	Simulator::Schedule(Seconds(10.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,-Velocity,0));
+	Simulator::Schedule(Seconds(20.5),&ChangeSpeed, ueNodes.Get(0),Vector(0,Velocity,0));
+
 
 	if(!ReadBuilding)
 	{

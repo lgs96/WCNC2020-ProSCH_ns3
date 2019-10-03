@@ -594,6 +594,7 @@ public:
   virtual void RecvEndMarker () = 0;
 
   virtual void LteGetEndMarker (uint32_t gtpTeid) = 0;
+
 };
 
 ///////////////////////////////////////
@@ -1164,8 +1165,9 @@ template <class C>
 void
 EpcX2RlcSpecificUser<C>::GetEndMarker (UeDataParams params)
 {
-  if(m_rlc->m_enableHoldBuffer)
+  if(m_rlc->m_enableHoldBuffer){
   	m_rlc->DoGetEndMarker();
+  }
 }
 
 } // namespace ns3

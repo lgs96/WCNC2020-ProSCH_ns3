@@ -133,7 +133,7 @@ namespace ns3 {
 				.SetParent<Object> ()
 				.SetGroupName("Lte")
 				.AddAttribute("ExpiredTime", "PDCP reordering time",
-						TimeValue(MilliSeconds(20)),
+						TimeValue(MilliSeconds(0)),
 						MakeTimeAccessor (&McUePdcp::expiredTime),
 						MakeTimeChecker ())
 				.AddTraceSource ("TxPDU",

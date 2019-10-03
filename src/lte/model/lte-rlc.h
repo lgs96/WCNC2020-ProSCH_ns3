@@ -179,9 +179,9 @@ public:
 
   /// \todo MRE What is the sense to duplicate all the interfaces here???
   // NB to avoid the use of multiple inheritance
- 
+
   bool m_enableHoldBuffer;
- 
+  
 protected:
   // Interface forwarded by LteRlcSapProvider
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p) = 0;
@@ -254,6 +254,7 @@ public:
   virtual void DoGetEndMarker();
 
   bool m_enableHoldBuffer;
+
 private:
   void ReportBufferStatus ();
 

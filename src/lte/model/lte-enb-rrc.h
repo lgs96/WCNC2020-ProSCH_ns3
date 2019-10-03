@@ -627,6 +627,7 @@ private:
   bool m_allMmWaveInOutageAtInitialAccess;
 
   std::ofstream m_forwardSizeFile;
+
 public:
   std::list<std::pair<uint8_t, Ptr<Packet>>> m_packetBuffer;
 }; // end of `class UeManager`

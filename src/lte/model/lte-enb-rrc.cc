@@ -1837,6 +1837,8 @@ void UeManager::RecvSecondaryCellHandoverCompleted(
 				m_rrc->m_imsiUsingLte[m_imsi] = false;
 
 				pdcp->SwitchConnection(true); // this is needed when an handover happens after coming back from outage
+				// Forward LTE buffer to mmWave cell
+				ForwardRlcBuffers(it->second->m_rlc,it->second->m_pdcp,it->second->m_gtpTeid, 1, 0, it->first);
 			} else {
 				NS_FATAL_ERROR(
 						"Trying to update a MC device with a non MC capable PDCP");
@@ -2000,6 +2002,12 @@ void UeManager::RecvConnectionSwitchToMmWave(bool useMmWaveConnection,
 					m_rlcMap.find(drbid)->second->gtpTeid,
 					rlc->GetEpcX2RlcUser());
 		}
+		NS_LOG_UNCOND("Send end marker from MmWave to LTE");
+		EpcX2Sap::UeDataParams endParams;
+		endParams.sourceCellId = m_rrc->GetCellId();
+		endParams.targetCellId = m_rlcMap.find(drbid)->second->targetCellId; // the LTE cell
+		endParams.gtpTeid = m_rlcMap.find(drbid)->second->gtpTeid;
+		m_rrc->m_x2SapProvider->SendEndMarker(endParams);
 
 		m_rrc->m_cmacSapProvider->AddLc(m_rlcMap.find(drbid)->second->lcinfo,
 				rlc->GetLteMacSapUser());
@@ -2285,6 +2293,27 @@ UeManager::ReleaseBufferAfterHandover ()
 		rlcIt->second->m_rlc->GetObject<LteRlcAm>()->FreeHoldBuffer ();
 	}
 }
+
+// This end marker is for from MmWave to LTE fallback
+         void
+                 UeManager::LteGetEndMarker ()
+                 {
+                         NS_LOG_UNCOND (this);
+
+                         while(!m_packetBuffer.empty())
+                         {
+                             NS_LOG_LOGIC ("dequeueing data from buffer");
+                             std::pair <uint8_t, Ptr<Packet>> bidPacket = m_packetBuffer.front ();
+                             uint8_t bid = bidPacket.first;
+                             Ptr <Packet> p = bidPacket.second;
+
+                             NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
+                             SendPacket (bid, p);
+
+                             m_packetBuffer.pop_front ();
+                         }
+                         m_rrc->m_enableHoldBufferMap.erase(m_rnti);
+                 }
 
 ///////////////////////////////////////////
 // eNB RRC methods
@@ -3464,6 +3493,7 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 					NS_LOG_INFO("Switch to LTE stack");
 					bool useMmWaveConnection = false;
 					m_imsiUsingLte[imsi] = !useMmWaveConnection;
+					m_enableHoldBufferMap.insert(std::make_pair(GetRntiFromImsi(imsi),true));
 					ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
 					//m_switchEnabled = false;
 					//Simulator::Schedule(MilliSeconds(50), &LteEnbRrc::EnableSwitching, this, imsi);
@@ -3718,7 +3748,15 @@ bool LteEnbRrc::SendData(Ptr<Packet> packet) {
 	bool found = packet->RemovePacketTag(tag);
 	NS_ASSERT_MSG(found, "no EpsBearerTag found in packet to be sent");
 	Ptr<UeManager> ueManager = GetUeManager(tag.GetRnti());
-	ueManager->SendData(tag.GetBid(), packet);
+	//NS_LOG_UNCOND(m_enableHoldBufferMap.find(tag.GetRnti())->second);
+
+	        if(m_enableHoldBufferMap.find(tag.GetRnti())==m_enableHoldBufferMap.end())
+	  	      ueManager->SendData(tag.GetBid(), packet);
+	        else
+		{
+		//    NS_LOG_UNCOND("Buffer packet in RRC");
+	              ueManager->m_packetBuffer.push_back (std::make_pair(tag.GetBid(),packet));
+		}
 
 	return true;
 }
@@ -4202,6 +4240,22 @@ void LteEnbRrc::DoRecvEndMarker(){
 
 	if(m_isSecond)
 		DoRecvUeContextRelease(TempContextReleaseParams);
+}
+
+void LteEnbRrc::DoLteGetEndMarker(uint32_t gtpTeid){
+	NS_LOG_LOGIC("Lte get end marker for switching");
+
+	std::map<uint32_t, X2uTeidInfo>::iterator teidInfoIt =m_x2uMcTeidInfoMap.find(gtpTeid);
+                 if(teidInfoIt != m_x2uMcTeidInfoMap.end())
+                 {
+                         NS_LOG_UNCOND(Simulator::Now()<<" LTE get end marker");
+                         Ptr<UeManager> ueMan = GetUeManager(teidInfoIt->second.rnti);
+                         ueMan->LteGetEndMarker();
+                 /*      for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator drbIt =
+                                         ueMan->m_drbMap.begin(); drbIt != ueMan->m_drbMap.end(); ++drbIt) {
+                                drbIt->second->m_rlc->DoGetEndMarker();
+                         }*/
+                 }
 }
 
 uint16_t LteEnbRrc::DoAllocateTemporaryCellRnti() {

@@ -398,6 +398,8 @@ public:
 
   void ReleaseBufferAfterHandover ();
 
+  void LteGetEndMarker ();
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -627,7 +629,7 @@ private:
   bool m_allMmWaveInOutageAtInitialAccess;
 
   std::ofstream m_forwardSizeFile;
-
+public:
   std::list<std::pair<uint8_t, Ptr<Packet>>> m_packetBuffer;
 }; // end of `class UeManager`
 
@@ -1107,6 +1109,7 @@ private:
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
   //Process4
   void DoRecvEndMarker ();
+  void DoLteGetEndMarker (uint32_t gtpTeid);
 
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
   void DoRecvMcHandoverRequest(EpcX2SapUser::SecondaryHandoverParams params);
@@ -1574,6 +1577,11 @@ private:
   bool m_isEnd;
   bool m_isSecond;
   EpcX2SapUser::UeContextReleaseParams TempContextReleaseParams;
+
+  public:
+  	std::map<uint16_t, bool> m_enableHoldBufferMap;
+
+
 }; // end of `class LteEnbRrc`
 
 

@@ -1221,7 +1221,7 @@ namespace ns3 {
 				else if (gtpu.GetMessageType() == EpcX2Header::EndMarker)
 				{
 					m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
-					if(m_isMinimum && !m_isMmWave &&(cellsInfo->m_localCellId != gtpu.GetSequenceNumber())
+					if(m_isMinimum && !m_isMmWave &&(cellsInfo->m_localCellId != gtpu.GetSequenceNumber()))
 					{						
 						params.sourceCellId = cellsInfo->m_localCellId;
 						params.targetCellId = gtpu.GetSequenceNumber();
@@ -1229,7 +1229,7 @@ namespace ns3 {
 					}
 					else if(!m_isMmWave && cellsInfo->m_localCellId == gtpu.GetSequenceNumber())
 					{
-						m_x2SapUser->MmToLteGetEndMarker(params.gtpTeid);
+						m_x2SapUser->LteGetEndMarker(params.gtpTeid);
 					}
 					else
 					{
@@ -2168,7 +2168,12 @@ namespace ns3 {
 			{
  			  gtpu.SetSequenceNumber (params.targetCellId);
 			}
-			
+		
+			if(params.targetCellId == m_relayCellId)
+			{
+		          gtpu.SetSequenceNumber (params.targetCellId);
+			}
+	
 			NS_LOG_INFO ("GTP-U header: " << gtpu);
 
 			Ptr<Packet> packet = new Packet();

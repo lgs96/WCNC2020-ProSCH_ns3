@@ -51,13 +51,13 @@ namespace ns3 {
 		{
 			*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSsthresh << "\t" << newSsthresh << std::endl;
 		}
-
+	/*
 	static void
 		RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
 		{
 			*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
 		}
-
+	*/
 
 
 	NS_LOG_COMPONENT_DEFINE ("EpcEnbProxyApplication");
@@ -180,19 +180,19 @@ namespace ns3 {
 				m_proxyTcpPort++;
 				NS_ASSERT (retval == 0);
 				proxyTcpSocket->GetObject<TcpSocketBase>()->SetSndBufSize(m_proxyBufferSize);
-
+				/*
 				std::ostringstream fileName;
 				fileName<<"proxyRtt"<<srcPort<<".txt";
 				AsciiTraceHelper asciiTraceHelper;
 				Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
 				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange,stream));
+				*/
 
 				std::ostringstream fileName2;
 				fileName2<<"proxySst"<<srcPort<<".txt";
 				AsciiTraceHelper asciiTraceHelper2;
 				Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper2.CreateFileStream (fileName2.str ().c_str ());
-				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh,stream2));
-
+				proxyTcpSocket->GetObject<TcpSocketBase>()->TraceConnectWithoutContext ("SlowStartThreshold", MakeBoundCallback (&Ssthresh,stream2));				
 
 				Simulator::Schedule(Simulator::Now() + Seconds(0.5),&EpcEnbProxyApplication::GetDepartureRate, this, proxyTcpSocket);
 

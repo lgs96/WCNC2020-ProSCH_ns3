@@ -1093,6 +1093,8 @@ UeManager::SendPacket (uint8_t bid, Ptr<Packet> p)
   params.lcid = Bid2Lcid (bid);
   uint8_t drbid = Bid2Drbid (bid);
 
+  NS_LOG_UNCOND("Buffered packets forwarding");
+
   std::map<uint8_t, Ptr<LteDataRadioBearerInfo>>::iterator it = m_drbMap.find(drbid);
   if (it != m_drbMap.end ())
   {
@@ -1710,112 +1712,123 @@ void UeManager::RecvRrcConnectionReestablishmentComplete(
 	SwitchToState(CONNECTED_NORMALLY);
 }
 
-void UeManager::RecvMeasurementReport(LteRrcSap::MeasurementReport msg) {
-	uint8_t measId = msg.measResults.measId;
-	NS_LOG_FUNCTION(this << (uint16_t) measId);
-	NS_LOG_LOGIC(
-			"measId " << (uint16_t) measId << " haveMeasResultNeighCells " << msg.measResults.haveMeasResultNeighCells << " measResultListEutra " << msg.measResults.measResultListEutra.size ());
-	NS_LOG_LOGIC(
-			"serving cellId " << m_rrc->m_cellId << " RSRP " << (uint16_t) msg.measResults.rsrpResult << " RSRQ " << (uint16_t) msg.measResults.rsrqResult);
 
-	for (std::list<LteRrcSap::MeasResultEutra>::iterator it =
-			msg.measResults.measResultListEutra.begin();
-			it != msg.measResults.measResultListEutra.end(); ++it) {
-		NS_LOG_LOGIC(
-				"neighbour cellId " << it->physCellId << " RSRP " << (it->haveRsrpResult ? (uint16_t) it->rsrpResult : 255) << " RSRQ " << (it->haveRsrqResult ? (uint16_t) it->rsrqResult : 255));
-	}
+    void
+		UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
+		{
+			uint8_t measId = msg.measResults.measId;
+			NS_LOG_FUNCTION (this << (uint16_t) measId);
+			NS_LOG_LOGIC ("measId " << (uint16_t) measId
+					<< " haveMeasResultNeighCells " << msg.measResults.haveMeasResultNeighCells
+					<< " measResultListEutra " << msg.measResults.measResultListEutra.size ());
+			NS_LOG_LOGIC ("serving cellId " << m_rrc->m_cellId
+					<< " RSRP " << (uint16_t) msg.measResults.rsrpResult
+					<< " RSRQ " << (uint16_t) msg.measResults.rsrqResult);
 
-	if ((m_rrc->m_handoverManagementSapProvider != 0)
-			&& (m_rrc->m_handoverMeasIds.find(measId)
-					!= m_rrc->m_handoverMeasIds.end())) {
-		// this measurement was requested by the handover algorithm
-		m_rrc->m_handoverManagementSapProvider->ReportUeMeas(m_rnti,
-				msg.measResults);
-	}
+			for (std::list <LteRrcSap::MeasResultEutra>::iterator it = msg.measResults.measResultListEutra.begin ();
+					it != msg.measResults.measResultListEutra.end ();
+					++it)
+			{
+				NS_LOG_LOGIC ("neighbour cellId " << it->physCellId
+						<< " RSRP " << (it->haveRsrpResult ? (uint16_t) it->rsrpResult : 255)
+						<< " RSRQ " << (it->haveRsrqResult ? (uint16_t) it->rsrqResult : 255));
+			}
 
-	if ((m_rrc->m_anrSapProvider != 0)
-			&& (m_rrc->m_anrMeasIds.find(measId) != m_rrc->m_anrMeasIds.end())) {
-		// this measurement was requested by the ANR function
-		m_rrc->m_anrSapProvider->ReportUeMeas(msg.measResults);
-	}
+			if ((m_rrc->m_handoverManagementSapProvider != 0)
+					&& (m_rrc->m_handoverMeasIds.find (measId) != m_rrc->m_handoverMeasIds.end ()))
+			{
+				// this measurement was requested by the handover algorithm
+				m_rrc->m_handoverManagementSapProvider->ReportUeMeas (m_rnti,
+						msg.measResults);
+			}
 
-	if ((m_rrc->m_ffrRrcSapProvider != 0)
-			&& (m_rrc->m_ffrMeasIds.find(measId) != m_rrc->m_ffrMeasIds.end())) {
-		// this measurement was requested by the FFR function
-		m_rrc->m_ffrRrcSapProvider->ReportUeMeas(m_rnti, msg.measResults);
-	}
+			if ((m_rrc->m_anrSapProvider != 0)
+					&& (m_rrc->m_anrMeasIds.find (measId) != m_rrc->m_anrMeasIds.end ()))
+			{
+				// this measurement was requested by the ANR function
+				m_rrc->m_anrSapProvider->ReportUeMeas (msg.measResults);
+			}
 
-	// fire a trace source
-	m_rrc->m_recvMeasurementReportTrace(m_imsi, m_rrc->m_cellId, m_rnti, msg);
+			if ((m_rrc->m_ffrRrcSapProvider != 0)
+					&& (m_rrc->m_ffrMeasIds.find (measId) != m_rrc->m_ffrMeasIds.end ()))
+			{
+				// this measurement was requested by the FFR function
+				m_rrc->m_ffrRrcSapProvider->ReportUeMeas (m_rnti, msg.measResults);
+			}
 
-} // end of UeManager::RecvMeasurementReport
+			// fire a trace source
+			m_rrc->m_recvMeasurementReportTrace (m_imsi, m_rrc->m_cellId, m_rnti, msg);
 
-void UeManager::RecvRrcSecondaryCellInitialAccessSuccessful(uint16_t mmWaveRnti,
-		uint16_t mmWaveCellId) {
-	m_mmWaveCellId = mmWaveCellId;
-	m_mmWaveRnti = mmWaveRnti;
+		} // end of UeManager::RecvMeasurementReport
 
-	NS_LOG_INFO("Map size " << m_drbMap.size());
+	void
+		UeManager::RecvRrcSecondaryCellInitialAccessSuccessful(uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+		{
+			m_mmWaveCellId = mmWaveCellId;
+			m_mmWaveRnti = mmWaveRnti;
 
-	// If the Map size is > 0 (Bearers already setup in the LTE cell) perform this action
-	// immediately, otherwise wait for the InitialContextSetupResponse in EpcEnbApplication
-	// that calls DataRadioBearerSetupRequest
-	if (m_drbMap.size() == 0) {
-		m_mmWaveCellAvailableForMcSetup = true;
-		NS_LOG_INFO(
-				"Postpone RLC setup in the secondary cell since no bearers are yet available");
-		return;
-	} else {
-		for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it =
-				m_drbMap.begin(); it != m_drbMap.end(); ++it) {
-			if (!(it->second->m_isMc)
-					|| (it->second->m_isMc
-							&& m_rrc->m_lastMmWaveCell.find(m_imsi)->second
-									!= m_mmWaveCellId)) {
-				Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp>(
-						it->second->m_pdcp);
-				if (pdcp != 0) {
-					// Get the EPC X2 and set it in the PDCP
-					pdcp->SetEpcX2PdcpProvider(m_rrc->GetEpcX2PdcpProvider());
-					// Set UeDataParams
-					EpcX2Sap::UeDataParams params;
-					params.sourceCellId = m_rrc->GetCellId();
-					params.targetCellId = m_mmWaveCellId;
-					params.gtpTeid = it->second->m_gtpTeid;
-					pdcp->SetUeDataParams(params);
-					pdcp->SetMmWaveRnti(mmWaveRnti);
-					// Setup TEIDs for receiving data eventually forwarded over X2-U
-					LteEnbRrc::X2uTeidInfo x2uTeidInfo;
-					x2uTeidInfo.rnti = m_rnti;
-					x2uTeidInfo.drbid = it->first;
-					std::pair<
-							std::map<uint32_t, LteEnbRrc::X2uTeidInfo>::iterator,
-							bool> ret;
-					ret = m_rrc->m_x2uMcTeidInfoMap.insert(
-							std::pair<uint32_t, LteEnbRrc::X2uTeidInfo>(
-									it->second->m_gtpTeid, x2uTeidInfo));
-					// NS_ASSERT_MSG (ret.second == true, "overwriting a pre-existing entry in m_x2uMcTeidInfoMap");
-					// Setup McEpcX2PdcpUser
-					m_rrc->m_x2SapProvider->SetEpcX2PdcpUser(
-							it->second->m_gtpTeid, pdcp->GetEpcX2PdcpUser());
+			NS_LOG_INFO("Map size " << m_drbMap.size());
 
-					// Create a remote RLC, pass along the UeDataParams + mmWaveRnti
-					EpcX2SapProvider::RlcSetupRequest rlcParams =
-							it->second->m_rlcSetupRequest;
-					rlcParams.targetCellId = m_mmWaveCellId;
-					rlcParams.mmWaveRnti = mmWaveRnti;
+			// If the Map size is > 0 (Bearers already setup in the LTE cell) perform this action
+			// immediately, otherwise wait for the InitialContextSetupResponse in EpcEnbApplication
+			// that calls DataRadioBearerSetupRequest
+			if(m_drbMap.size() == 0)
+			{
+				m_mmWaveCellAvailableForMcSetup = true;
+				NS_LOG_INFO("Postpone RLC setup in the secondary cell since no bearers are yet available");
+				return;
+			}
+			else
+			{
+				for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
+						it != m_drbMap.end ();
+						++it)
+				{
+					if(!(it->second->m_isMc) || (it->second->m_isMc && m_rrc->m_lastMmWaveCell.find(m_imsi)->second != m_mmWaveCellId))
+					{
+						Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp> (it->second->m_pdcp);
+						if (pdcp != 0)
+						{
+							// Get the EPC X2 and set it in the PDCP
+							pdcp->SetEpcX2PdcpProvider(m_rrc->GetEpcX2PdcpProvider());
+							// Set UeDataParams
+							EpcX2Sap::UeDataParams params;
+							params.sourceCellId = m_rrc->GetCellId();
+							params.targetCellId = m_mmWaveCellId;
+							params.gtpTeid = it->second->m_gtpTeid;
+							pdcp->SetUeDataParams(params);
+							pdcp->SetMmWaveRnti(mmWaveRnti);
+							// Setup TEIDs for receiving data eventually forwarded over X2-U
+							LteEnbRrc::X2uTeidInfo x2uTeidInfo;
+							x2uTeidInfo.rnti = m_rnti;
+							x2uTeidInfo.drbid = it->first;
+							std::pair<std::map<uint32_t, LteEnbRrc::X2uTeidInfo>::iterator, bool> ret;
+							ret = m_rrc->m_x2uMcTeidInfoMap.insert (std::pair<uint32_t, LteEnbRrc::X2uTeidInfo> (it->second->m_gtpTeid, x2uTeidInfo));
+							// NS_ASSERT_MSG (ret.second == true, "overwriting a pre-existing entry in m_x2uMcTeidInfoMap");
+							// Setup McEpcX2PdcpUser
+							m_rrc->m_x2SapProvider->SetEpcX2PdcpUser(it->second->m_gtpTeid, pdcp->GetEpcX2PdcpUser());
 
-					m_rrc->m_x2SapProvider->SendRlcSetupRequest(rlcParams);
-				} else {
-					NS_FATAL_ERROR(
-							"Trying to setup a MC device with a non MC capable PDCP");
+							// Create a remote RLC, pass along the UeDataParams + mmWaveRnti
+							EpcX2SapProvider::RlcSetupRequest rlcParams = it->second->m_rlcSetupRequest;
+							rlcParams.targetCellId = m_mmWaveCellId;
+							rlcParams.mmWaveRnti = mmWaveRnti;
+
+							m_rrc->m_x2SapProvider->SendRlcSetupRequest(rlcParams);
+						}
+						else
+						{
+							NS_FATAL_ERROR("Trying to setup a MC device with a non MC capable PDCP");
+						}
+					}
+					else
+					{
+						NS_LOG_INFO("MC Bearer already setup"); // TODO consider bearer modifications
+					}
 				}
-			} else {
-				NS_LOG_INFO("MC Bearer already setup"); // TODO consider bearer modifications
 			}
 		}
-	}
-}
+
+
 
 void UeManager::RecvSecondaryCellHandoverCompleted(
 		EpcX2Sap::SecondaryHandoverCompletedParams params) {
@@ -1860,6 +1873,7 @@ void UeManager::RecvSecondaryCellHandoverCompleted(
 				m_rrc->m_imsiUsingLte[m_imsi] = false;
 
 				pdcp->SwitchConnection(true); // this is needed when an handover happens after coming back from outage
+				ForwardRlcBuffers(it->second->m_rlc,it->second->m_pdcp,it->second->m_gtpTeid, 1, 0, it->first);	
 			} else {
 				NS_FATAL_ERROR(
 						"Trying to update a MC device with a non MC capable PDCP");
@@ -1966,12 +1980,16 @@ void UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection) {
 					params.drbid = it->first;
 					m_rrc->m_x2SapProvider->SendSwitchConnectionToMmWave(
 							params);
-
+					/*
 					EpcX2SapProvider::HoldBufferParams hbParams;
 					hbParams.sourceCellId = m_mmWaveCellId;
 					hbParams.targetCellId = m_rrc->m_cellId;
 
 					SendHoldBufferMsg(hbParams);
+					*/
+					NS_LOG_UNCOND("LTE hold buffer");
+					//m_rrc->m_enableHoldBufferMap.insert(std::make_pair(m_rnti,true));
+					NS_LOG_UNCOND("m_enableHoldBuffer: "<<m_rrc->m_enableHoldBufferMap.find(m_rnti)->second);
 				}
 
 			} else {
@@ -2030,6 +2048,7 @@ void UeManager::RecvConnectionSwitchToMmWave(bool useMmWaveConnection,
 					rlc->GetEpcX2RlcUser());
 		}
 
+		NS_LOG_UNCOND("Send end marker from MmWave to LTE");
 		EpcX2Sap::UeDataParams endParams;
 		endParams.sourceCellId = m_rrc->GetCellId();
 		endParams.targetCellId = m_rlcMap.find(drbid)->second->targetCellId; // the LTE cell
@@ -2320,6 +2339,26 @@ UeManager::ReleaseBufferAfterHandover ()
 		rlcIt->second->m_rlc->GetObject<LteRlcAm>()->FreeHoldBuffer ();
 	}
 }
+        // This end marker is for from MmWave to LTE fallback
+         void
+                 UeManager::LteGetEndMarker ()
+                 {
+                         NS_LOG_UNCOND (this);
+ 
+                         while(!m_packetBuffer.empty())
+                         {
+                             NS_LOG_LOGIC ("dequeueing data from buffer");
+                             std::pair <uint8_t, Ptr<Packet>> bidPacket = m_packetBuffer.front ();
+                             uint8_t bid = bidPacket.first;
+                             Ptr <Packet> p = bidPacket.second;
+ 
+                             NS_LOG_LOGIC ("queueing data on PDCP for transmission over the air");
+                             SendPacket (bid, p);
+ 
+                             m_packetBuffer.pop_front ();
+                         }
+                         m_rrc->m_enableHoldBufferMap.erase(m_rnti);
+                 }
 
 ///////////////////////////////////////////
 // eNB RRC methods
@@ -2450,7 +2489,7 @@ TypeId LteEnbRrc::GetTypeId(void) {
 					MakeTimeAccessor(
 							&LteEnbRrc::m_handoverLeavingTimeoutDuration),
 					MakeTimeChecker()).AddAttribute("OutageThreshold",
-					"SNR threshold for outage events [dB]", DoubleValue(-1.0),
+					"SNR threshold for outage events [dB]", DoubleValue(-10.0),
 					MakeDoubleAccessor(&LteEnbRrc::m_outageThreshold),
 					MakeDoubleChecker<long double>(-10000.0, 10.0))
 
@@ -3499,6 +3538,7 @@ void LteEnbRrc::TriggerUeAssociationUpdate() {
 					NS_LOG_INFO("Switch to LTE stack");
 					bool useMmWaveConnection = false;
 					m_imsiUsingLte[imsi] = !useMmWaveConnection;
+					m_enableHoldBufferMap.insert(std::make_pair(GetRntiFromImsi(imsi),true));
 					ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
 					//m_switchEnabled = false;
 					//Simulator::Schedule(MilliSeconds(50), &LteEnbRrc::EnableSwitching, this, imsi);
@@ -3753,8 +3793,16 @@ bool LteEnbRrc::SendData(Ptr<Packet> packet) {
 	bool found = packet->RemovePacketTag(tag);
 	NS_ASSERT_MSG(found, "no EpsBearerTag found in packet to be sent");
 	Ptr<UeManager> ueManager = GetUeManager(tag.GetRnti());
-	ueManager->SendData(tag.GetBid(), packet);
 
+        //NS_LOG_UNCOND(m_enableHoldBufferMap.find(tag.GetRnti())->second);
+
+        if(m_enableHoldBufferMap.find(tag.GetRnti())==m_enableHoldBufferMap.end())
+  	      ueManager->SendData(tag.GetBid(), packet);
+        else 
+	{
+	//    NS_LOG_UNCOND("Buffer packet in RRC");
+              ueManager->m_packetBuffer.push_back (std::make_pair(tag.GetBid(),packet));
+	}
 	return true;
 }
 
@@ -4300,6 +4348,23 @@ void LteEnbRrc::DoRecvEndMarker(){
 	if(m_isSecond)
 		DoRecvUeContextRelease(TempContextReleaseParams);
 }
+
+void LteEnbRrc::DoLteGetEndMarker(uint32_t gtpTeid){
+	NS_LOG_LOGIC("Lte get end marker for switching");
+
+	std::map<uint32_t, X2uTeidInfo>::iterator teidInfoIt =m_x2uMcTeidInfoMap.find(gtpTeid);
+                 if(teidInfoIt != m_x2uMcTeidInfoMap.end())
+                 {
+                         NS_LOG_UNCOND(Simulator::Now()<<" LTE get end marker");
+                         Ptr<UeManager> ueMan = GetUeManager(teidInfoIt->second.rnti);
+                         ueMan->LteGetEndMarker();
+                 /*      for (std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator drbIt =
+                                         ueMan->m_drbMap.begin(); drbIt != ueMan->m_drbMap.end(); ++drbIt) {
+                                drbIt->second->m_rlc->DoGetEndMarker();
+                         }*/
+                 }	
+}
+
 
 uint16_t LteEnbRrc::DoAllocateTemporaryCellRnti() {
 	NS_LOG_FUNCTION(this);

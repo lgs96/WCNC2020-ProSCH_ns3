@@ -429,6 +429,7 @@ public:
   virtual void SendMcPdcpPdu (UeDataParams params) = 0;
   //Process4
   virtual void SendEndMarker (UeDataParams params) = 0;
+ 
 };
 
 
@@ -542,7 +543,6 @@ public:
   virtual void ForwardRlcPdu (UeDataParams params) = 0;
   // Process3, send end marker to notify end of the packet forwarding from source cell
   virtual void SendEndMarker (UeDataParams params) = 0;
-
   /* gsoul
    * Set relay node: interface
    */
@@ -597,6 +597,8 @@ public:
 
   //Process4
   virtual void RecvEndMarker () = 0;
+
+  virtual void LteGetEndMarker (uint32_t gtpTeid) = 0;
 };
 
 ///////////////////////////////////////
@@ -656,6 +658,8 @@ public:
   virtual void ForwardRlcPdu (UeDataParams params);
 
   virtual void SendEndMarker (UeDataParams params);
+
+  //virtual void LteGetEndMarker (uint32_t gtpTeid);
 
   virtual void SetRelayNode (uint16_t relayCellId);
 
@@ -836,6 +840,7 @@ EpcX2SpecificEpcX2SapProvider<C>::SendEndMarker(UeDataParams params)
   m_x2->DoSendEndMarker(params);
 }
 
+
 ///////////////////////////////////////
 
 template <class C>
@@ -890,6 +895,7 @@ public:
   //Process4
   virtual void RecvEndMarker ();
 
+  virtual void LteGetEndMarker (uint32_t gtpTeid);
 private:
   EpcX2SpecificEpcX2SapUser ();
   C* m_rrc;
@@ -1025,6 +1031,13 @@ void
 EpcX2SpecificEpcX2SapUser<C>::RecvEndMarker ()
 {
   m_rrc->DoRecvEndMarker();
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::LteGetEndMarker(uint32_t gtpTeid)
+{
+  m_rrc->DoLteGetEndMarker (gtpTeid);
 }
 
 /////////////////////////////////////////////
